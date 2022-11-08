@@ -8,7 +8,7 @@
 ```
 2. Pull Docker container:
 ```
-    docker pull pgc-images.sbgenomics.com/corbettr/pbta-ancestry:latest bash
+    docker pull pgc-images.sbgenomics.com/corbettr/pbta-ancestry:latest
 ```
 3. Start the Docker container; from the `pbta-ancestry` folder, run:
 ```
