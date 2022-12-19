@@ -1,0 +1,113 @@
+---
+title: 'Merge ancestry and histology data'
+output: 
+  html_document:
+  toc: TRUE
+toc_float: TRUE
+author: Ryan Corbett
+date: "2022-12-14"
+---
+  
+  
+```{r load libraries and set directories}
+library(data.table)
+library(tidyverse)
+
+root_dir <- rprojroot::find_root(rprojroot::has_dir(".git"))
+setwd(root_dir)
+
+data_dir <- file.path(root_dir, "data")
+analysis_dir <- file.path(root_dir, "analyses", "add-histologies")
+results_dir <- file.path(analysis_dir, "results")
+input_dir <- file.path(analysis_dir, "input")
+```
+
+```{r set file paths}
+cbtn_file <- file.path(input_dir, 'CBTN-WGS.somalier-ancestry.tsv')
+pnoc_file <- file.path(input_dir, 'DEI_PNOC.somalier-ancestry.tsv')
+pbta_file <- file.path(input_dir, 'DEI_PBTA.somalier-ancestry.tsv')
+
+pbta_mapping <- file.path(input_dir, 'Broad_to_BS.txt')
+eu_pt_file <- file.path(input_dir, 'Meyer_Tableau_Pull_11.8.2022.xlsm')
+hist_file <- file.path(input_dir, 'histologies.tsv')
+
+methyl_file <- file.path(input_dir, 'cbtn-dkfz-methylation-classification.csv')
+
+output_file <- file.path(results_dir, 'merged_ancestry_histology_data.tsv')
+```
+
+## Read in somalier results
+```{r read in results}
+res_cbtn <- read_tsv(cbtn_file) %>%
+  filter(grepl('BS', `#sample_id`)) %>%
+  rename('Kids_First_Biospecimen_ID' = '#sample_id') %>%
+  mutate(cohort = 'CBTN')
+
+res_pnoc <- read_tsv(pnoc_file) %>%
+  filter(grepl('BS', `#sample_id`)) %>%
+  rename('Kids_First_Biospecimen_ID' = '#sample_id') %>%
+  mutate(cohort = 'PNOC')
+
+pbta_bs <- read_tsv(pbta_mapping)
+
+res_pbta <- read_tsv(pbta_file) %>%
+  rename('name' = '#sample_id') %>%
+  left_join(pbta_bs, by = 'name') %>%
+  rename('Kids_First_Biospecimen_ID' = 'Kids First Biospecimen ID') %>%
+  select(-name) %>%
+  relocate(`Kids_First_Biospecimen_ID`, .before = predicted_ancestry) %>%
+  mutate(cohort = 'PBTA')
+```
+
+Merge results across cohorts
+
+```{r merge ancestry}
+res_all <- res_cbtn %>%
+  bind_rows(res_pnoc, res_pbta) %>%
+  filter(!is.na(Kids_First_Biospecimen_ID))
+```
+  
+## Filter out EU patients
+## match patient IDs from EU list and histology file, filter out corresponding BS_ids from somalier results
+```{r filter eu}
+hist <- read_tsv(hist_file)
+
+eu_pts <- readxl::read_excel(eu_pt_file)
+
+eu_ids <- hist %>%
+  filter(cohort_participant_id %in% eu_pts$`Participant`) %>%
+  pull(Kids_First_Biospecimen_ID)
+
+res_all <- res_all %>%
+  filter(!Kids_First_Biospecimen_ID %in% eu_ids)
+```
+
+
+## Add data columns from histology file
+## pathology diagnosis, molecular subtype, survival
+```{r add histology}
+# match patient ID to BS ID in `res_all`
+res_all <- res_all %>%
+  left_join(hist[,c('Kids_First_Biospecimen_ID', 'Kids_First_Participant_ID')], by = 'Kids_First_Biospecimen_ID')
+
+# filter histology file to exclude Normal samples and only retain one row per particpant ID
+hist <- hist %>%
+  filter(sample_type != 'Normal') %>%
+  distinct(Kids_First_Participant_ID, .keep_all = T)
+
+# add histology data to `res_all` by participant ID
+res_all <- res_all %>%
+  left_join(hist[,c('Kids_First_Participant_ID', 'sample_id', 'race', 'broad_histology', 'cancer_group', 'molecular_subtype', 'OS_days', 'OS_status')], by = 'Kids_First_Participant_ID')
+```
+
+```{r add methylation}
+methyl <- read_csv(methyl_file)
+head(methyl)
+
+res_all <- res_all %>%
+  left_join(methyl[,c('sample_id', 'dkfz_v12_methylation_subclass', 'dkfz_v12_methylation_subclass_score')], by = 'sample_id')
+
+# Write merged data to file
+readr::write_tsv(res_all, file.path(results_dir, 'merged_ancestry_histology_data.tsv'))
+```
+
