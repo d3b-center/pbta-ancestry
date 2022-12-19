@@ -25,81 +25,56 @@ input_dir <- file.path(analysis_dir, "input")
 Define input and output file paths
 
 ```{r set file paths}
-cbtn_file <- file.path(input_dir, 'CBTN-WGS.somalier-ancestry.tsv')
-pnoc_file <- file.path(input_dir, 'DEI_PNOC.somalier-ancestry.tsv')
-pbta_file <- file.path(input_dir, 'DEI_PBTA.somalier-ancestry.tsv')
+# Somalier results
+ancestry_file <- file.path(data_dir, "DEI_CBTN-PNOC_rerun_somalier_ancestry.tsv")
 
-pbta_mapping <- file.path(input_dir, 'Broad_to_BS.txt')
+# files for converting IDs and filtering EU patients
 pnoc_ids_file <- file.path(input_dir, "all_pnoc_normal_wgs.tsv")
 hist_file <- file.path(data_dir, 'histologies.tsv')
 
 ## plot group designation file
 plot_mapping_file <- file.path(input_dir, 'plot-mapping.tsv')
 
-
-
-epn_subgroup_file <- file.path(input_dir, "EPN_all_data_withsubgroup.tsv")
-
-methyl_file <- file.path(input_dir, 'cbtn-dkfz-methylation-classification.csv')
+# hope project pathology review 
+hope_file <- file.path(input_dir, "hope-non-hgg_path_review.tsv")
 
 # output file
 output_file <- file.path(results_dir, 'merged_ancestry_histology_data.tsv')
 ```
 
-## Read in somalier results
-```{r read in results}
-res_cbtn <- read_tsv(cbtn_file) %>%
-  dplyr::filter(grepl('BS', `#sample_id`)) %>%
-  dplyr::rename('Kids_First_Biospecimen_ID' = '#sample_id') %>%
-  dplyr::mutate(cohort = 'CBTN')
+## Read in somalier results and histologies files
 
-res_pnoc <- read_tsv(pnoc_file) %>%
-  dplyr::filter(grepl('BS', `#sample_id`)) %>%
-  dplyr::rename('Kids_First_Biospecimen_ID' = '#sample_id') %>%
-  dplyr::mutate(cohort = 'PNOC')
+```{r load data}
+ancestry <- read_tsv(ancestry_file)
 
-pbta_bs <- read_tsv(pbta_mapping)
+hist <- read_tsv(hist_file, guess_max = 1000000)
 
-ancestry <- read_tsv(ancestry_file) %>%
-  rename('name' = '#sample_id') %>%  
-  left_join(pbta_bs, by = 'name') %>%
-  dplyr::rename('Kids_First_Biospecimen_ID' = 'Kids First Biospecimen ID') %>%
-  dplyr::select(-name) %>%
-  relocate(`Kids_First_Biospecimen_ID`, .before = predicted_ancestry) %>%
-  mutate(cohort = 'PBTA')
-```
-
-Merge results across cohorts
-
-```{r merge ancestry}
-res_all <- res_cbtn %>%
-  bind_rows(res_pnoc, res_pbta) %>%
-  filter(!is.na(Kids_First_Biospecimen_ID))
 ```
 
 ## Add data columns from histology file
-## pathology diagnosis, molecular subtype, survival
+
+demographic data, pathology, and clinical data 
 ```{r add histology}
 # match patient ID to BS ID in `res_all`
 pnoc_ids <- read_tsv(pnoc_ids_file)
 
-res_all <- res_all %>%
-  left_join(hist[,c('Kids_First_Biospecimen_ID', 'Kids_First_Participant_ID')], by = 'Kids_First_Biospecimen_ID')
+# Add participant IDs to `ancestry`
+ancestry <- ancestry %>%
   left_join(hist[,c('Kids_First_Biospecimen_ID', 'Kids_First_Participant_ID', 'sample_type', "cohort_participant_id")], by = 'Kids_First_Biospecimen_ID') %>%
   dplyr::mutate(sample_type = case_when(
     is.na(sample_type) & Kids_First_Biospecimen_ID %in% pnoc_ids$Kids_First_Biospecimen_ID ~ 'Normal', 
     TRUE ~ sample_type)) %>%
   dplyr::filter(sample_type != 'Tumor')
 
-<<<<<<< HEAD
-# filter histology file to exclude Normal samples
-hist <- hist %>%
-  filter(sample_type != 'Normal') %>%
-  distinct(Kids_First_Participant_ID, .keep_all = T)
 # filter histologies file to exclude Normal samples
 hist_tumor <- hist %>%
   filter(sample_type != 'Normal' & experimental_strategy == "WGS") %>%
   rename('Kids_First_Biospecimen_ID_tumor' = 'Kids_First_Biospecimen_ID')
+
+# read in plot_mapping file to add plot group to results
+plot_mapping <- read_tsv(plot_mapping_file)
+
+# add histology data to `ancestry` by participant ID
 ancestry <- ancestry %>%
   dplyr::left_join(hist_tumor[, c('Kids_First_Participant_ID', 'Kids_First_Biospecimen_ID_tumor', 'sample_id',
                               'reported_gender', 'race', 'ethnicity', 'broad_histology', 'cancer_group',
@@ -110,15 +85,7 @@ ancestry <- ancestry %>%
   dplyr::left_join(plot_mapping[,c('cancer_group', 'plot_group')], by = 'cancer_group')
 ```
 
-```{r add methylation}
-methyl <- read_csv(methyl_file)
-head(methyl)
 
-<<<<<<< HEAD
-# add methylation subclass and score columns to `res_all`
-res_all <- res_all %>%
-  left_join(methyl[,c('sample_id', 'dkfz_v12_methylation_subclass', 'dkfz_v12_methylation_subclass_score')], by = 'sample_id')
-=======
 To select one normal-tumor pair per patient, select matched tumors in the following prioritization order: intial CNS tumor, recurrent, other. There are rare cases of different molecular subtypes being called from different tumors from the same patient. 
 
 ```{r}
@@ -141,7 +108,6 @@ Merge data to obtain one row per patient
 ancestry_unique <- initial_tumors %>%
   bind_rows(recurrent_tumors, other_tumors)
 ```
->>>>>>> c4e1c32 (change input data file paths)
 
 Use molecular subtyping from HOPE project, replacing OPC plot_group and subtypes for included patients
 ```{r}
@@ -164,5 +130,7 @@ ancestry_unique <- ancestry_unique %>%
 ```
 
 # Write merged data to file
-readr::write_tsv(res_all, file.path(results_dir, 'merged_ancestry_histology_data.tsv'))
+
+```{r write output}
+readr::write_tsv(ancestry_unique, file.path(results_dir, 'merged_ancestry_histology_data.tsv'))
 ```
