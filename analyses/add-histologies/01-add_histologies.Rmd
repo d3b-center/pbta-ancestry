@@ -8,6 +8,7 @@ author: Ryan Corbett
 date: "2022-12-14"
 ---
   
+Load libraries and set directories
   
 ```{r load libraries and set directories}
 library(data.table)
@@ -22,23 +23,37 @@ results_dir <- file.path(analysis_dir, "results")
 input_dir <- file.path(analysis_dir, "input")
 ```
 
+Define input and output file paths
+
 ```{r set file paths}
+# Somalier results
 cbtn_file <- file.path(input_dir, 'CBTN-WGS.somalier-ancestry.tsv')
 pnoc_file <- file.path(input_dir, 'DEI_PNOC.somalier-ancestry.tsv')
 pbta_file <- file.path(input_dir, 'DEI_PBTA.somalier-ancestry.tsv')
+cbtn_run2_file <- file.path(input_dir, 'CBTN-PNOC_DEI.somalier-ancestry.tsv')
 
+#f iles for converting IDs and filtering EU patients
 pbta_mapping <- file.path(input_dir, 'Broad_to_BS.txt')
 eu_pt_file <- file.path(input_dir, 'Meyer_Tableau_Pull_11.8.2022.xlsm')
 hist_file <- file.path(input_dir, 'histologies.tsv')
 
+# Methylation classification files
 methyl_file <- file.path(input_dir, 'cbtn-dkfz-methylation-classification.csv')
+subtype_file <- file.path(input_dir, 'methylation_to_OPC_subtype.csv')
 
+# output file
 output_file <- file.path(results_dir, 'merged_ancestry_histology_data.tsv')
 ```
 
 ## Read in somalier results
+
 ```{r read in results}
 res_cbtn <- read_tsv(cbtn_file) %>%
+  filter(grepl('BS', `#sample_id`)) %>%
+  rename('Kids_First_Biospecimen_ID' = '#sample_id') %>%
+  mutate(cohort = 'CBTN')
+
+res_cbtn2 <- read_tsv(cbtn_run2_file) %>%
   filter(grepl('BS', `#sample_id`)) %>%
   rename('Kids_First_Biospecimen_ID' = '#sample_id') %>%
   mutate(cohort = 'CBTN')
@@ -48,6 +63,7 @@ res_pnoc <- read_tsv(pnoc_file) %>%
   rename('Kids_First_Biospecimen_ID' = '#sample_id') %>%
   mutate(cohort = 'PNOC')
 
+# read in file to convert PBTA sample names to BS IDs
 pbta_bs <- read_tsv(pbta_mapping)
 
 res_pbta <- read_tsv(pbta_file) %>%
@@ -56,15 +72,15 @@ res_pbta <- read_tsv(pbta_file) %>%
   rename('Kids_First_Biospecimen_ID' = 'Kids First Biospecimen ID') %>%
   select(-name) %>%
   relocate(`Kids_First_Biospecimen_ID`, .before = predicted_ancestry) %>%
-  mutate(cohort = 'PBTA')
+  mutate(cohort = 'PBTA') %>%
+  filter(grepl('BS', Kids_First_Biospecimen_ID))
 ```
 
 Merge results across cohorts
 
 ```{r merge ancestry}
 res_all <- res_cbtn %>%
-  bind_rows(res_pnoc, res_pbta) %>%
-  filter(!is.na(Kids_First_Biospecimen_ID))
+  bind_rows(res_cbtn2, res_pnoc, res_pbta)
 ```
   
 ## Filter out EU patients
@@ -84,30 +100,62 @@ res_all <- res_all %>%
 
 
 ## Add data columns from histology file
-## pathology diagnosis, molecular subtype, survival
+##
+#demographic data, histology, cancer_group, molecular subtype, survival
 ```{r add histology}
 # match patient ID to BS ID in `res_all`
 res_all <- res_all %>%
-  left_join(hist[,c('Kids_First_Biospecimen_ID', 'Kids_First_Participant_ID')], by = 'Kids_First_Biospecimen_ID')
+  left_join(hist[,c('Kids_First_Biospecimen_ID', 'Kids_First_Participant_ID', 'sample_type')], by = 'Kids_First_Biospecimen_ID') %>%
+  filter(sample_type != 'Tumor')
 
 # filter histology file to exclude Normal samples and only retain one row per particpant ID
 hist <- hist %>%
   filter(sample_type != 'Normal') %>%
-  distinct(Kids_First_Participant_ID, .keep_all = T)
+  distinct(Kids_First_Participant_ID, .keep_all = T) %>%
+  rename('Kids_First_Biospecimen_ID_tumor' = 'Kids_First_Biospecimen_ID')
 
 # add histology data to `res_all` by participant ID
 res_all <- res_all %>%
-  left_join(hist[,c('Kids_First_Participant_ID', 'sample_id', 'race', 'broad_histology', 'cancer_group', 'molecular_subtype', 'OS_days', 'OS_status')], by = 'Kids_First_Participant_ID')
+  left_join(hist[,c('Kids_First_Participant_ID', 'Kids_First_Biospecimen_ID_tumor', 'reported_gender', 
+                    'race', 'broad_histology', 'cancer_group', 'molecular_subtype', 
+                    'extent_of_tumor_resection', 'OS_days', 'OS_status')], 
+            by = 'Kids_First_Participant_ID')
 ```
 
+## Add methylation subclass and scores 
 ```{r add methylation}
-methyl <- read_csv(methyl_file)
+#read in methylation file
+methyl <- read_csv(methyl_file) %>%
+  filter(sample_type == 'Tumor') %>%
+  rename('Kids_First_Biospecimen_ID_tumor' = 'Kids_First_Biospecimen_ID')
 head(methyl)
 
+## add methylation subclass and score columns to `res_all`
 res_all <- res_all %>%
-  left_join(methyl[,c('sample_id', 'dkfz_v12_methylation_subclass', 'dkfz_v12_methylation_subclass_score')], by = 'sample_id')
-
-# Write merged data to file
-readr::write_tsv(res_all, file.path(results_dir, 'merged_ancestry_histology_data.tsv'))
+  left_join(methyl[,c('Kids_First_Biospecimen_ID_tumor', 'dkfz_v12_methylation_subclass', 'dkfz_v12_methylation_subclass_score')], by = 'Kids_First_Biospecimen_ID_tumor') %>%
+  filter(!is.na(Kids_First_Participant_ID)) %>%
+  distinct(Kids_First_Participant_ID, .keep_all = T)
 ```
 
+## Add column with corresponding OPC subtype for methylation subclasses, and create new aggregate subtype column prioritizing OPC subtype and taking methylation subtype when OPC not available
+```{r}
+subtypes <- read_csv(subtype_file) %>%
+  rename('dkfz_v12_methylation_subclass' = 'Abbrevation')
+
+#add OPC subtype corresponding to methylation subclasses
+res_all <- res_all %>%
+  left_join(subtypes[,c('dkfz_v12_methylation_subclass', 'OPC_molecular_subtype')], by = 'dkfz_v12_methylation_subclass') %>%
+  rename('methylation_subtype' = 'OPC_molecular_subtype') %>%
+  mutate(OPC_methyl_subtype = case_when(
+    !is.na(molecular_subtype) & !grepl('To be classified', molecular_subtype) ~ molecular_subtype,
+    !is.na(methylation_subtype) & dkfz_v12_methylation_subclass_score >= 0.8 ~ methylation_subtype,
+    grepl('To be classified', molecular_subtype) ~ molecular_subtype,
+    TRUE ~ NA_character_)
+  )
+```
+
+# Write merged data to file
+
+```{r write output}
+readr::write_tsv(res_all, file.path(results_dir, 'merged_ancestry_histology_data.tsv'))
+```

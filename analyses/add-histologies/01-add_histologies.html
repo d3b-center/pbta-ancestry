@@ -429,12 +429,12 @@ font-size: 0.95em;
 
 <pre class="r"><code>library(data.table)
 library(tidyverse)</code></pre>
-<pre><code>## ── Attaching packages ────────────────────────────────────────────────────────────────── tidyverse 1.3.2 ──
+<pre><code>## ── Attaching packages ─────────────────────────────────────────────────────────────────────────── tidyverse 1.3.2 ──
 ## ✔ ggplot2 3.3.6      ✔ purrr   0.3.5 
 ## ✔ tibble  3.1.8      ✔ dplyr   1.0.10
 ## ✔ tidyr   1.2.1      ✔ stringr 1.4.1 
 ## ✔ readr   2.1.3      ✔ forcats 0.5.2 
-## ── Conflicts ───────────────────────────────────────────────────────────────────── tidyverse_conflicts() ──
+## ── Conflicts ────────────────────────────────────────────────────────────────────────────── tidyverse_conflicts() ──
 ## ✖ dplyr::between()   masks data.table::between()
 ## ✖ dplyr::filter()    masks stats::filter()
 ## ✖ dplyr::first()     masks data.table::first()
@@ -451,12 +451,14 @@ input_dir &lt;- file.path(analysis_dir, &quot;input&quot;)</code></pre>
 <pre class="r"><code>cbtn_file &lt;- file.path(input_dir, &#39;CBTN-WGS.somalier-ancestry.tsv&#39;)
 pnoc_file &lt;- file.path(input_dir, &#39;DEI_PNOC.somalier-ancestry.tsv&#39;)
 pbta_file &lt;- file.path(input_dir, &#39;DEI_PBTA.somalier-ancestry.tsv&#39;)
+cbtn_run2_file &lt;- file.path(input_dir, &#39;CBTN-PNOC_DEI.somalier-ancestry.tsv&#39;)
 
 pbta_mapping &lt;- file.path(input_dir, &#39;Broad_to_BS.txt&#39;)
 eu_pt_file &lt;- file.path(input_dir, &#39;Meyer_Tableau_Pull_11.8.2022.xlsm&#39;)
 hist_file &lt;- file.path(input_dir, &#39;histologies.tsv&#39;)
 
 methyl_file &lt;- file.path(input_dir, &#39;cbtn-dkfz-methylation-classification.csv&#39;)
+subtype_file &lt;- file.path(input_dir, &#39;methylation_to_OPC_subtype.csv&#39;)
 
 output_file &lt;- file.path(results_dir, &#39;merged_ancestry_histology_data.tsv&#39;)</code></pre>
 <div id="read-in-somalier-results" class="section level2">
@@ -466,10 +468,22 @@ output_file &lt;- file.path(results_dir, &#39;merged_ancestry_histology_data.tsv
   rename(&#39;Kids_First_Biospecimen_ID&#39; = &#39;#sample_id&#39;) %&gt;%
   mutate(cohort = &#39;CBTN&#39;)</code></pre>
 <pre><code>## Rows: 3349 Columns: 18
-## ── Column specification ───────────────────────────────────────────────────────────────────────────────────
+## ── Column specification ────────────────────────────────────────────────────────────────────────────────────────────
 ## Delimiter: &quot;\t&quot;
 ## chr  (3): #sample_id, predicted_ancestry, given_ancestry
 ## dbl (15): EAS_prob, AFR_prob, AMR_prob, SAS_prob, EUR_prob, PC1, PC2, PC3, P...
+## 
+## ℹ Use `spec()` to retrieve the full column specification for this data.
+## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
+<pre class="r"><code>res_cbtn2 &lt;- read_tsv(cbtn_run2_file) %&gt;%
+  filter(grepl(&#39;BS&#39;, `#sample_id`)) %&gt;%
+  rename(&#39;Kids_First_Biospecimen_ID&#39; = &#39;#sample_id&#39;) %&gt;%
+  mutate(cohort = &#39;CBTN&#39;)</code></pre>
+<pre><code>## Rows: 2631 Columns: 13
+## ── Column specification ────────────────────────────────────────────────────────────────────────────────────────────
+## Delimiter: &quot;\t&quot;
+## chr  (3): #sample_id, predicted_ancestry, given_ancestry
+## dbl (10): EAS_prob, AFR_prob, AMR_prob, SAS_prob, EUR_prob, PC1, PC2, PC3, P...
 ## 
 ## ℹ Use `spec()` to retrieve the full column specification for this data.
 ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
@@ -478,7 +492,7 @@ output_file &lt;- file.path(results_dir, &#39;merged_ancestry_histology_data.tsv
   rename(&#39;Kids_First_Biospecimen_ID&#39; = &#39;#sample_id&#39;) %&gt;%
   mutate(cohort = &#39;PNOC&#39;)</code></pre>
 <pre><code>## Rows: 2556 Columns: 18
-## ── Column specification ───────────────────────────────────────────────────────────────────────────────────
+## ── Column specification ────────────────────────────────────────────────────────────────────────────────────────────
 ## Delimiter: &quot;\t&quot;
 ## chr  (3): #sample_id, predicted_ancestry, given_ancestry
 ## dbl (15): EAS_prob, AFR_prob, AMR_prob, SAS_prob, EUR_prob, PC1, PC2, PC3, P...
@@ -487,7 +501,7 @@ output_file &lt;- file.path(results_dir, &#39;merged_ancestry_histology_data.tsv
 ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
 <pre class="r"><code>pbta_bs &lt;- read_tsv(pbta_mapping)</code></pre>
 <pre><code>## Rows: 880 Columns: 2
-## ── Column specification ───────────────────────────────────────────────────────────────────────────────────
+## ── Column specification ────────────────────────────────────────────────────────────────────────────────────────────
 ## Delimiter: &quot;\t&quot;
 ## chr (2): name, Kids First Biospecimen ID
 ## 
@@ -501,7 +515,7 @@ output_file &lt;- file.path(results_dir, &#39;merged_ancestry_histology_data.tsv
   relocate(`Kids_First_Biospecimen_ID`, .before = predicted_ancestry) %&gt;%
   mutate(cohort = &#39;PBTA&#39;)</code></pre>
 <pre><code>## Rows: 3384 Columns: 18
-## ── Column specification ───────────────────────────────────────────────────────────────────────────────────
+## ── Column specification ────────────────────────────────────────────────────────────────────────────────────────────
 ## Delimiter: &quot;\t&quot;
 ## chr  (3): #sample_id, predicted_ancestry, given_ancestry
 ## dbl (15): EAS_prob, AFR_prob, AMR_prob, SAS_prob, EUR_prob, PC1, PC2, PC3, P...
@@ -510,7 +524,7 @@ output_file &lt;- file.path(results_dir, &#39;merged_ancestry_histology_data.tsv
 ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
 <p>Merge results across cohorts</p>
 <pre class="r"><code>res_all &lt;- res_cbtn %&gt;%
-  bind_rows(res_pnoc, res_pbta) %&gt;%
+  bind_rows(res_cbtn2, res_pnoc, res_pbta) %&gt;%
   filter(!is.na(Kids_First_Biospecimen_ID))</code></pre>
 </div>
 <div id="filter-out-eu-patients" class="section level2">
@@ -521,7 +535,7 @@ output_file &lt;- file.path(results_dir, &#39;merged_ancestry_histology_data.tsv
 corresponding BS_ids from somalier results</h2>
 <pre class="r"><code>hist &lt;- read_tsv(hist_file)</code></pre>
 <pre><code>## Rows: 39892 Columns: 46
-## ── Column specification ───────────────────────────────────────────────────────────────────────────────────
+## ── Column specification ────────────────────────────────────────────────────────────────────────────────────────────
 ## Delimiter: &quot;\t&quot;
 ## chr (36): Kids_First_Biospecimen_ID, sample_id, aliquot_id, Kids_First_Parti...
 ## dbl (10): OS_days, age_last_update_days, cns_methylation_class_score, cns_me...
@@ -544,19 +558,27 @@ res_all &lt;- res_all %&gt;%
 <h2>pathology diagnosis, molecular subtype, survival</h2>
 <pre class="r"><code># match patient ID to BS ID in `res_all`
 res_all &lt;- res_all %&gt;%
-  left_join(hist[,c(&#39;Kids_First_Biospecimen_ID&#39;, &#39;Kids_First_Participant_ID&#39;)], by = &#39;Kids_First_Biospecimen_ID&#39;)
+  left_join(hist[,c(&#39;Kids_First_Biospecimen_ID&#39;, &#39;Kids_First_Participant_ID&#39;, &#39;sample_type&#39;)], by = &#39;Kids_First_Biospecimen_ID&#39;) %&gt;%
+  filter(sample_type != &#39;Tumor&#39;)
 
 # filter histology file to exclude Normal samples and only retain one row per particpant ID
 hist &lt;- hist %&gt;%
   filter(sample_type != &#39;Normal&#39;) %&gt;%
-  distinct(Kids_First_Participant_ID, .keep_all = T)
+  distinct(Kids_First_Participant_ID, .keep_all = T) %&gt;%
+  rename(&#39;Kids_First_Biospecimen_ID_tumor&#39; = &#39;Kids_First_Biospecimen_ID&#39;)
 
 # add histology data to `res_all` by participant ID
 res_all &lt;- res_all %&gt;%
-  left_join(hist[,c(&#39;Kids_First_Participant_ID&#39;, &#39;sample_id&#39;, &#39;race&#39;, &#39;broad_histology&#39;, &#39;cancer_group&#39;, &#39;molecular_subtype&#39;, &#39;OS_days&#39;, &#39;OS_status&#39;)], by = &#39;Kids_First_Participant_ID&#39;)</code></pre>
-<pre class="r"><code>methyl &lt;- read_csv(methyl_file)</code></pre>
+  left_join(hist[,c(&#39;Kids_First_Participant_ID&#39;, &#39;Kids_First_Biospecimen_ID_tumor&#39;, &#39;reported_gender&#39;, &#39;race&#39;, &#39;broad_histology&#39;, &#39;cancer_group&#39;, &#39;molecular_subtype&#39;, &#39;extent_of_tumor_resection&#39;, &#39;OS_days&#39;, &#39;OS_status&#39;)], by = &#39;Kids_First_Participant_ID&#39;)</code></pre>
+</div>
+<div id="add-methylation-subclass-and-scores" class="section level2">
+<h2>Add methylation subclass and scores</h2>
+<pre class="r"><code>#read in methylation file
+methyl &lt;- read_csv(methyl_file) %&gt;%
+  filter(sample_type == &#39;Tumor&#39;) %&gt;%
+  rename(&#39;Kids_First_Biospecimen_ID_tumor&#39; = &#39;Kids_First_Biospecimen_ID&#39;)</code></pre>
 <pre><code>## Rows: 1854 Columns: 13
-## ── Column specification ───────────────────────────────────────────────────────────────────────────────────
+## ── Column specification ────────────────────────────────────────────────────────────────────────────────────────────
 ## Delimiter: &quot;,&quot;
 ## chr (6): sample_id, dkfz_v11_methylation_subclass, dkfz_v12_methylation_subc...
 ## dbl (7): aliquot_id, tumor_fraction_RFpurify_ABSOLUTE, tumor_fraction_RFpuri...
@@ -574,14 +596,41 @@ res_all &lt;- res_all %&gt;%
 ## 5 7316-6528    1250316     0.604   0.906   0.809 MB_SHH…   1     MB_SHH…   0.999
 ## 6 7316-7756    1250317     0.580   0.868   0.681 GBM_RT…   0.366 GBM_RT…   0.180
 ## # … with 4 more variables: dkfz_v12_methylation_mgmt_status &lt;chr&gt;,
-## #   dkfz_v12_methylation_mgmt_estimated &lt;dbl&gt;, Kids_First_Biospecimen_ID &lt;chr&gt;,
-## #   sample_type &lt;chr&gt;, and abbreviated variable names
-## #   ¹​tumor_fraction_RFpurify_ABSOLUTE, ²​tumor_fraction_RFpurify_ESTIMATE,
-## #   ³​tumor_fraction_LUMP, ⁴​dkfz_v11_methylation_subclass,
-## #   ⁵​dkfz_v11_methylation_subclass_score, ⁶​dkfz_v12_methylation_subclass,
-## #   ⁷​dkfz_v12_methylation_subclass_score</code></pre>
-<pre class="r"><code>res_all &lt;- res_all %&gt;%
-  left_join(methyl[,c(&#39;sample_id&#39;, &#39;dkfz_v12_methylation_subclass&#39;, &#39;dkfz_v12_methylation_subclass_score&#39;)], by = &#39;sample_id&#39;)
+## #   dkfz_v12_methylation_mgmt_estimated &lt;dbl&gt;,
+## #   Kids_First_Biospecimen_ID_tumor &lt;chr&gt;, sample_type &lt;chr&gt;, and abbreviated
+## #   variable names ¹​tumor_fraction_RFpurify_ABSOLUTE,
+## #   ²​tumor_fraction_RFpurify_ESTIMATE, ³​tumor_fraction_LUMP,
+## #   ⁴​dkfz_v11_methylation_subclass, ⁵​dkfz_v11_methylation_subclass_score,
+## #   ⁶​dkfz_v12_methylation_subclass, ⁷​dkfz_v12_methylation_subclass_score</code></pre>
+<pre class="r"><code>## add methylation subclass and score columns to `res_all`
+res_all &lt;- res_all %&gt;%
+  left_join(methyl[,c(&#39;Kids_First_Biospecimen_ID_tumor&#39;, &#39;dkfz_v12_methylation_subclass&#39;, &#39;dkfz_v12_methylation_subclass_score&#39;)], by = &#39;Kids_First_Biospecimen_ID_tumor&#39;) %&gt;%
+  filter(!is.na(Kids_First_Participant_ID)) %&gt;%
+  distinct(Kids_First_Participant_ID, .keep_all = T)</code></pre>
+</div>
+<div id="add-column-with-corresponding-opc-subtype-for-methylation-subclasses-and-create-new-aggregate-subtype-column-prioritizing-opc-subtype-and-taking-methylation-subtype-when-opc-not-available" class="section level2">
+<h2>Add column with corresponding OPC subtype for methylation
+subclasses, and create new aggregate subtype column prioritizing OPC
+subtype and taking methylation subtype when OPC not available</h2>
+<pre class="r"><code>subtypes &lt;- read_csv(subtype_file) %&gt;%
+  rename(&#39;dkfz_v12_methylation_subclass&#39; = &#39;Abbrevation&#39;)</code></pre>
+<pre><code>## Rows: 184 Columns: 3
+## ── Column specification ────────────────────────────────────────────────────────────────────────────────────────────
+## Delimiter: &quot;,&quot;
+## chr (3): Abbrevation_internal, Abbrevation, OPC_molecular_subtype
+## 
+## ℹ Use `spec()` to retrieve the full column specification for this data.
+## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
+<pre class="r"><code>#add OPC subtype corresponding to methylation subclasses
+res_all &lt;- res_all %&gt;%
+  left_join(subtypes[,c(&#39;dkfz_v12_methylation_subclass&#39;, &#39;OPC_molecular_subtype&#39;)], by = &#39;dkfz_v12_methylation_subclass&#39;) %&gt;%
+  rename(&#39;methylation_subtype&#39; = &#39;OPC_molecular_subtype&#39;) %&gt;%
+  mutate(OPC_methyl_subtype = case_when(
+    !is.na(molecular_subtype) &amp; !grepl(&#39;To be classified&#39;, molecular_subtype) ~ molecular_subtype,
+    !is.na(methylation_subtype) &amp; dkfz_v12_methylation_subclass_score &gt;= 0.8 ~ methylation_subtype,
+    grepl(&#39;To be classified&#39;, molecular_subtype) ~ molecular_subtype,
+    TRUE ~ NA_character_)
+  )
 
 # Write merged data to file
 readr::write_tsv(res_all, file.path(results_dir, &#39;merged_ancestry_histology_data.tsv&#39;))</code></pre>
