@@ -54,31 +54,31 @@ output_file <- file.path(results_dir, 'merged_ancestry_histology_data.tsv')
 
 ```{r read in results}
 res_cbtn <- read_tsv(cbtn_file) %>%
-  filter(grepl('BS', `#sample_id`)) %>%
-  rename('Kids_First_Biospecimen_ID' = '#sample_id') %>%
-  mutate(cohort = 'CBTN')
+  dplyr::filter(grepl('BS', `#sample_id`)) %>%
+  dplyr::rename('Kids_First_Biospecimen_ID' = '#sample_id') %>%
+  dplyr::mutate(cohort = 'CBTN')
 
 res_cbtn2 <- read_tsv(cbtn_run2_file) %>%
-  filter(grepl('BS', `#sample_id`)) %>%
-  rename('Kids_First_Biospecimen_ID' = '#sample_id') %>%
-  mutate(cohort = 'CBTN2')
+  dplyr::filter(grepl('BS', `#sample_id`)) %>%
+  dplyr::rename('Kids_First_Biospecimen_ID' = '#sample_id') %>%
+  dplyr::mutate(cohort = 'CBTN2')
 
 res_pnoc <- read_tsv(pnoc_file) %>%
-  filter(grepl('BS', `#sample_id`)) %>%
-  rename('Kids_First_Biospecimen_ID' = '#sample_id') %>%
-  mutate(cohort = 'PNOC')
+  dplyr::filter(grepl('BS', `#sample_id`)) %>%
+  dplyr::rename('Kids_First_Biospecimen_ID' = '#sample_id') %>%
+  dplyr::mutate(cohort = 'PNOC')
 
 # read in file to convert PBTA sample names to BS IDs
 pbta_bs <- read_tsv(pbta_mapping)
 
 res_pbta <- read_tsv(pbta_file) %>%
-  rename('name' = '#sample_id') %>%
+  dplyr::rename('name' = '#sample_id') %>%
   left_join(pbta_bs, by = 'name') %>%
-  rename('Kids_First_Biospecimen_ID' = 'Kids First Biospecimen ID') %>%
-  select(-name) %>%
+  dplyr::rename('Kids_First_Biospecimen_ID' = 'Kids First Biospecimen ID') %>%
+  dplyr::select(-name) %>%
   relocate(`Kids_First_Biospecimen_ID`, .before = predicted_ancestry) %>%
-  mutate(cohort = 'PBTA') %>%
-  filter(grepl('BS', Kids_First_Biospecimen_ID))
+  dplyr::mutate(cohort = 'PBTA') %>%
+  dplyr::filter(grepl('BS', Kids_First_Biospecimen_ID))
 ```
 
 Merge results across cohorts
