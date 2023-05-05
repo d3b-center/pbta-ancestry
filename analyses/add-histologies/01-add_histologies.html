@@ -430,13 +430,13 @@ font-size: 0.95em;
 <p>Load libraries and set directories</p>
 <pre class="r"><code>library(data.table)
 library(tidyverse)</code></pre>
-<pre><code>## ── Attaching core tidyverse packages ────────────────────────────────────────────────────────────────────────────────── tidyverse 2.0.0 ──
-## ✔ dplyr     1.1.0     ✔ readr     2.1.4
+<pre><code>## ── Attaching core tidyverse packages ───────────────────────────────────────────────────────────────────────────────── tidyverse 2.0.0 ──
+## ✔ dplyr     1.1.1     ✔ readr     2.1.4
 ## ✔ forcats   1.0.0     ✔ stringr   1.5.0
-## ✔ ggplot2   3.4.1     ✔ tibble    3.2.0
+## ✔ ggplot2   3.4.2     ✔ tibble    3.2.1
 ## ✔ lubridate 1.9.2     ✔ tidyr     1.3.0
 ## ✔ purrr     1.0.1     
-## ── Conflicts ──────────────────────────────────────────────────────────────────────────────────────────────────── tidyverse_conflicts() ──
+## ── Conflicts ─────────────────────────────────────────────────────────────────────────────────────────────────── tidyverse_conflicts() ──
 ## ✖ dplyr::between()     masks data.table::between()
 ## ✖ dplyr::filter()      masks stats::filter()
 ## ✖ dplyr::first()       masks data.table::first()
@@ -464,10 +464,8 @@ results_dir &lt;- file.path(analysis_dir, &quot;results&quot;)
 input_dir &lt;- file.path(analysis_dir, &quot;input&quot;)</code></pre>
 <p>Define input and output file paths</p>
 <pre class="r"><code># Somalier results
-cbtn_file &lt;- file.path(input_dir, &#39;CBTN-WGS.somalier-ancestry.tsv&#39;)
-pnoc_file &lt;- file.path(input_dir, &#39;DEI_PNOC.somalier-ancestry.tsv&#39;)
-pbta_file &lt;- file.path(input_dir, &#39;DEI_PBTA.somalier-ancestry.tsv&#39;)
-cbtn_run2_file &lt;- file.path(input_dir, &#39;CBTN-PNOC_DEI.somalier-ancestry.tsv&#39;)
+
+ancestry_file &lt;- file.path(input_dir, &quot;DEI_CBTN-PNOC_rerun.somalier-ancestry.tsv&quot;)
 
 # files for converting IDs and filtering EU patients
 pbta_mapping &lt;- file.path(input_dir, &#39;Broad_to_BS.txt&#39;)
@@ -475,93 +473,55 @@ pnoc_ids_file &lt;- file.path(input_dir, &quot;all_pnoc_normal_wgs.tsv&quot;)
 eu_pt_file &lt;- file.path(input_dir, &#39;Meyer_Tableau_Pull_11.8.2022.xlsm&#39;)
 hist_file &lt;- file.path(input_dir, &#39;histologies.tsv&#39;)
 
+## plot group designation file
 plot_mapping_file &lt;- file.path(input_dir, &#39;plot-mapping.tsv&#39;)
-
-epn_subgroup_file &lt;- file.path(input_dir, &quot;EPN_all_data_withsubgroup.tsv&quot;)
-
-# Methylation classification files
-methyl_file &lt;- file.path(input_dir, &#39;cbtn-dkfz-methylation-classification.csv&#39;)
-subtype_file &lt;- file.path(input_dir, &#39;methylation_to_OPC_subtype.csv&#39;)
 
 # output file
 output_file &lt;- file.path(results_dir, &#39;merged_ancestry_histology_data.tsv&#39;)</code></pre>
 <div id="read-in-somalier-results" class="section level2">
 <h2>Read in somalier results</h2>
-<pre class="r"><code>res_cbtn &lt;- read_tsv(cbtn_file) %&gt;%
-  filter(grepl(&#39;BS&#39;, `#sample_id`)) %&gt;%
-  rename(&#39;Kids_First_Biospecimen_ID&#39; = &#39;#sample_id&#39;) %&gt;%
-  mutate(cohort = &#39;CBTN&#39;)</code></pre>
-<pre><code>## Rows: 3349 Columns: 18
-## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+<pre class="r"><code>pbta_bs &lt;- read_tsv(pbta_mapping)</code></pre>
+<pre><code>## Rows: 880 Columns: 2
+## ── Column specification ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 ## Delimiter: &quot;\t&quot;
-## chr  (3): #sample_id, predicted_ancestry, given_ancestry
-## dbl (15): EAS_prob, AFR_prob, AMR_prob, SAS_prob, EUR_prob, PC1, PC2, PC3, P...
+## chr (2): name, Kids First Biospecimen ID
 ## 
 ## ℹ Use `spec()` to retrieve the full column specification for this data.
 ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
-<pre class="r"><code>res_cbtn2 &lt;- read_tsv(cbtn_run2_file) %&gt;%
-  filter(grepl(&#39;BS&#39;, `#sample_id`)) %&gt;%
-  rename(&#39;Kids_First_Biospecimen_ID&#39; = &#39;#sample_id&#39;) %&gt;%
-  mutate(cohort = &#39;CBTN2&#39;)</code></pre>
-<pre><code>## Rows: 2631 Columns: 13
-## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+<pre class="r"><code>ancestry &lt;- read_tsv(ancestry_file) %&gt;%
+  rename(&#39;name&#39; = &#39;#sample_id&#39;) %&gt;%  
+  left_join(pbta_bs, by = &#39;name&#39;) %&gt;%
+  dplyr::mutate(Kids_First_Biospecimen_ID = case_when(
+    grepl(&quot;BS&quot;, name) ~ name, 
+    grepl(&quot;BS&quot;, `Kids First Biospecimen ID`) ~ `Kids First Biospecimen ID`,
+    TRUE ~ NA
+  )) %&gt;%
+  dplyr::filter(grepl(&#39;BS&#39;, Kids_First_Biospecimen_ID)) %&gt;%
+  dplyr::select(Kids_First_Biospecimen_ID, predicted_ancestry, given_ancestry,
+                EAS_prob, AFR_prob, AMR_prob, SAS_prob, EUR_prob,
+                PC1, PC2, PC3, PC4, PC5)</code></pre>
+<pre><code>## Rows: 4479 Columns: 13
+## ── Column specification ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 ## Delimiter: &quot;\t&quot;
 ## chr  (3): #sample_id, predicted_ancestry, given_ancestry
 ## dbl (10): EAS_prob, AFR_prob, AMR_prob, SAS_prob, EUR_prob, PC1, PC2, PC3, P...
 ## 
 ## ℹ Use `spec()` to retrieve the full column specification for this data.
 ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
-<pre class="r"><code>res_pnoc &lt;- read_tsv(pnoc_file) %&gt;%
-  filter(grepl(&#39;BS&#39;, `#sample_id`)) %&gt;%
-  rename(&#39;Kids_First_Biospecimen_ID&#39; = &#39;#sample_id&#39;) %&gt;%
-  mutate(cohort = &#39;PNOC&#39;)</code></pre>
-<pre><code>## Rows: 2556 Columns: 18
-## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-## Delimiter: &quot;\t&quot;
-## chr  (3): #sample_id, predicted_ancestry, given_ancestry
-## dbl (15): EAS_prob, AFR_prob, AMR_prob, SAS_prob, EUR_prob, PC1, PC2, PC3, P...
-## 
-## ℹ Use `spec()` to retrieve the full column specification for this data.
-## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
-<pre class="r"><code># read in file to convert PBTA sample names to BS IDs
-pbta_bs &lt;- read_tsv(pbta_mapping)</code></pre>
-<pre><code>## Rows: 880 Columns: 2
-## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-## Delimiter: &quot;\t&quot;
-## chr (2): name, Kids First Biospecimen ID
-## 
-## ℹ Use `spec()` to retrieve the full column specification for this data.
-## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
-<pre class="r"><code>res_pbta &lt;- read_tsv(pbta_file) %&gt;%
-  rename(&#39;name&#39; = &#39;#sample_id&#39;) %&gt;%
-  left_join(pbta_bs, by = &#39;name&#39;) %&gt;%
-  rename(&#39;Kids_First_Biospecimen_ID&#39; = &#39;Kids First Biospecimen ID&#39;) %&gt;%
-  select(-name) %&gt;%
-  relocate(`Kids_First_Biospecimen_ID`, .before = predicted_ancestry) %&gt;%
-  mutate(cohort = &#39;PBTA&#39;) %&gt;%
-  filter(grepl(&#39;BS&#39;, Kids_First_Biospecimen_ID))</code></pre>
-<pre><code>## Rows: 3384 Columns: 18
-## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-## Delimiter: &quot;\t&quot;
-## chr  (3): #sample_id, predicted_ancestry, given_ancestry
-## dbl (15): EAS_prob, AFR_prob, AMR_prob, SAS_prob, EUR_prob, PC1, PC2, PC3, P...
-## 
-## ℹ Use `spec()` to retrieve the full column specification for this data.
-## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
-<p>Merge results across cohorts</p>
-<pre class="r"><code>res_all &lt;- res_cbtn %&gt;%
-  bind_rows(res_cbtn2, res_pnoc, res_pbta)</code></pre>
 </div>
 <div id="filter-out-eu-patients" class="section level2">
 <h2>Filter out EU patients</h2>
 <p>match patient IDs from EU list and histology file, filter out
 corresponding BS_ids from somalier results</p>
 <pre class="r"><code>hist &lt;- read_tsv(hist_file)</code></pre>
-<pre><code>## Rows: 39892 Columns: 46
-## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+<pre><code>## Warning: One or more parsing issues, call `problems()` on your data frame for details, e.g.:
+##   dat &lt;- vroom(...)
+##   problems(dat)</code></pre>
+<pre><code>## Rows: 43729 Columns: 55
+## ── Column specification ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 ## Delimiter: &quot;\t&quot;
-## chr (36): Kids_First_Biospecimen_ID, sample_id, aliquot_id, Kids_First_Parti...
-## dbl (10): OS_days, age_last_update_days, cns_methylation_class_score, cns_me...
+## chr (38): Kids_First_Biospecimen_ID, sample_id, aliquot_id, Kids_First_Parti...
+## dbl (17): age_at_diagnosis_days, OS_days, EFS_days, age_last_update_days, no...
 ## 
 ## ℹ Use `spec()` to retrieve the full column specification for this data.
 ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
@@ -571,42 +531,40 @@ eu_ids &lt;- hist %&gt;%
   filter(cohort_participant_id %in% eu_pts$`Participant`) %&gt;%
   pull(Kids_First_Biospecimen_ID)
 
-res_all &lt;- res_all %&gt;%
+ancestry &lt;- ancestry %&gt;%
   filter(!Kids_First_Biospecimen_ID %in% eu_ids)</code></pre>
 </div>
 <div id="add-data-columns-from-histology-file" class="section level2">
 <h2>Add data columns from histology file</h2>
-<p>demographic data, histology, cancer_group, molecular subtype,
-survival</p>
+<p>demographic data, pathology, and clinical data</p>
 <pre class="r"><code># match patient ID to BS ID in `res_all`
 pnoc_ids &lt;- read_tsv(pnoc_ids_file)</code></pre>
 <pre><code>## Rows: 52 Columns: 2
-## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+## ── Column specification ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 ## Delimiter: &quot;\t&quot;
 ## chr (2): Kids_First_Biospecimen_ID, Kids_First_Participant_ID
 ## 
 ## ℹ Use `spec()` to retrieve the full column specification for this data.
 ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
-<pre class="r"><code>res_all &lt;- res_all %&gt;%
+<pre class="r"><code>ancestry &lt;- ancestry %&gt;%
   left_join(hist[,c(&#39;Kids_First_Biospecimen_ID&#39;, &#39;Kids_First_Participant_ID&#39;, &#39;sample_type&#39;, &quot;cohort_participant_id&quot;)], by = &#39;Kids_First_Biospecimen_ID&#39;) %&gt;%
   left_join(pnoc_ids[,c(&#39;Kids_First_Biospecimen_ID&#39;, &#39;Kids_First_Participant_ID&#39;)], by = &#39;Kids_First_Biospecimen_ID&#39;) %&gt;%
   mutate(Kids_First_Participant_ID = case_when(
     !is.na(Kids_First_Participant_ID.x) ~ Kids_First_Participant_ID.x,
     !is.na(Kids_First_Participant_ID.y) ~ Kids_First_Participant_ID.y)
     ) %&gt;%
-  mutate(sample_type = ifelse(is.na(sample_type) &amp; cohort == &#39;PNOC&#39;, &#39;Normal&#39;, sample_type)) %&gt;%
+  mutate(sample_type = ifelse(is.na(sample_type) &amp; Kids_First_Biospecimen_ID %in% pnoc_ids$Kids_First_Biospecimen_ID, &#39;Normal&#39;, sample_type)) %&gt;%
   filter(sample_type != &#39;Tumor&#39;) %&gt;%
   dplyr::select(-c(Kids_First_Participant_ID.x, Kids_First_Participant_ID.y))
 
-
-# filter histology file to exclude Normal samples and only retain one row per particpant ID
+# filter histology file to exclude Normal samples
 hist &lt;- hist %&gt;%
-  filter(sample_type != &#39;Normal&#39;) %&gt;%
+  filter(sample_type != &#39;Normal&#39; &amp; experimental_strategy == &quot;WGS&quot;) %&gt;%
   rename(&#39;Kids_First_Biospecimen_ID_tumor&#39; = &#39;Kids_First_Biospecimen_ID&#39;)
 
 plot_mapping &lt;- read_tsv(plot_mapping_file)</code></pre>
-<pre><code>## Rows: 69 Columns: 9
-## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+<pre><code>## Rows: 79 Columns: 9
+## ── Column specification ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 ## Delimiter: &quot;\t&quot;
 ## chr (8): broad_histology, cancer_group, broad_histology_display, plot_group,...
 ## dbl (1): broad_histology_order
@@ -614,155 +572,43 @@ plot_mapping &lt;- read_tsv(plot_mapping_file)</code></pre>
 ## ℹ Use `spec()` to retrieve the full column specification for this data.
 ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
 <pre class="r"><code># add histology data to `res_all` by participant ID
-res_all &lt;- res_all %&gt;%
-  left_join(hist[hist$experimental_strategy %in% c(&#39;Methylation&#39;, &#39;WGS&#39;), c(&#39;Kids_First_Participant_ID&#39;, &#39;Kids_First_Biospecimen_ID_tumor&#39;,
-                                                                            &#39;reported_gender&#39;, &#39;race&#39;, &#39;ethnicity&#39;, &#39;broad_histology&#39;, &#39;cancer_group&#39;,
-                                                                            &#39;molecular_subtype&#39;, &#39;tumor_descriptor&#39;, &#39;extent_of_tumor_resection&#39;, 
-                                                                            &#39;age_at_diagnosis_days&#39;, &#39;OS_days&#39;, &#39;PFS_days&#39;, &#39;OS_status&#39;)], 
+ancestry &lt;- ancestry %&gt;%
+  left_join(hist[, c(&#39;Kids_First_Participant_ID&#39;, &#39;Kids_First_Biospecimen_ID_tumor&#39;,
+                              &#39;reported_gender&#39;, &#39;race&#39;, &#39;ethnicity&#39;, &#39;broad_histology&#39;, &#39;cancer_group&#39;,
+                              &#39;molecular_subtype&#39;, &#39;tumor_descriptor&#39;, &#39;extent_of_tumor_resection&#39;, 
+                              &#39;age_at_diagnosis_days&#39;, &#39;OS_days&#39;, &#39;OS_status&#39;, &#39;EFS_days&#39;)], 
             by = &#39;Kids_First_Participant_ID&#39;) %&gt;%
-  mutate_at(&#39;PFS_days&#39;, as.numeric) %&gt;%
   left_join(plot_mapping[,c(&#39;cancer_group&#39;, &#39;plot_group&#39;)], by = &#39;cancer_group&#39;)</code></pre>
-<pre><code>## Warning in left_join(., hist[hist$experimental_strategy %in% c(&quot;Methylation&quot;, : Each row in `x` is expected to match at most 1 row in `y`.
-## ℹ Row 1 of `x` matches multiple rows.
-## ℹ If multiple matches are expected, set `multiple = &quot;all&quot;` to silence this warning.</code></pre>
-<pre><code>## Warning: There was 1 warning in `mutate()`.
-## ℹ In argument: `PFS_days = .Primitive(&quot;as.double&quot;)(PFS_days)`.
-## Caused by warning:
-## ! NAs introduced by coercion</code></pre>
-<pre><code>## Warning in left_join(., plot_mapping[, c(&quot;cancer_group&quot;, &quot;plot_group&quot;)], : Each row in `x` is expected to match at most 1 row in `y`.
-## ℹ Row 63 of `x` matches multiple rows.
-## ℹ If multiple matches are expected, set `multiple = &quot;all&quot;` to silence this warning.</code></pre>
-<p>Add EPN subtyping from OPC module (currenlty not included in v11
-histologies file)</p>
-<pre class="r"><code>epn &lt;- read_tsv(epn_subgroup_file) %&gt;%
+<pre><code>## Warning in left_join(., hist[, c(&quot;Kids_First_Participant_ID&quot;, &quot;Kids_First_Biospecimen_ID_tumor&quot;, : Detected an unexpected many-to-many relationship between `x` and `y`.
+## ℹ Row 14 of `x` matches multiple rows in `y`.
+## ℹ Row 315 of `y` matches multiple rows in `x`.
+## ℹ If a many-to-many relationship is expected, set `relationship = &quot;many-to-many&quot;` to silence this warning.</code></pre>
+<pre><code>## Warning in left_join(., plot_mapping[, c(&quot;cancer_group&quot;, &quot;plot_group&quot;)], : Detected an unexpected many-to-many relationship between `x` and `y`.
+## ℹ Row 154 of `x` matches multiple rows in `y`.
+## ℹ Row 3 of `y` matches multiple rows in `x`.
+## ℹ If a many-to-many relationship is expected, set `relationship = &quot;many-to-many&quot;` to silence this warning.</code></pre>
+<p>To select one call per patient, select matched tumors in the
+following prioritization order: intial CNS tumor, recurrent, other.
+There are rare cases of different molecular subtypes being called from
+different tumors from the same patient.</p>
+<pre class="r"><code>initial_tumors &lt;- ancestry %&gt;%
+  filter(tumor_descriptor == &#39;Initial CNS Tumor&#39;) %&gt;%
+  distinct(Kids_First_Participant_ID, .keep_all = T)
+
+recurrent_tumors &lt;- ancestry %&gt;%
+  filter(!Kids_First_Participant_ID %in% c(initial_tumors$Kids_First_Participant_ID) &amp; tumor_descriptor == &#39;Recurrence&#39;) %&gt;%
+  distinct(Kids_First_Participant_ID, .keep_all = T)
+
+other_tumors &lt;- ancestry %&gt;%
+  filter(!Kids_First_Participant_ID %in% c(recurrent_tumors$Kids_First_Participant_ID, initial_tumors$Kids_First_Participant_ID)) %&gt;%
   distinct(Kids_First_Participant_ID, .keep_all = T)</code></pre>
-<pre><code>## Rows: 98 Columns: 55
-## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-## Delimiter: &quot;\t&quot;
-## chr (15): Kids_First_Participant_ID, sample_id, Kids_First_Biospecimen_ID_DN...
-## dbl (40): 1q_loss, 1q_gain, 9p_loss, 9q_loss, 6p_loss, 6q_loss, 11q_loss, 11...
-## 
-## ℹ Use `spec()` to retrieve the full column specification for this data.
-## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
-<pre class="r"><code>res_all &lt;- res_all %&gt;%
-  left_join(epn[,c(&quot;Kids_First_Participant_ID&quot;, &quot;subgroup&quot;)]) %&gt;%
-  mutate(molecular_subtype = case_when(
-    !is.na(subgroup) ~ subgroup,
-    is.na(subgroup) ~ molecular_subtype
-  )) %&gt;%
-  select(-subgroup)</code></pre>
-<pre><code>## Joining with `by = join_by(Kids_First_Participant_ID)`</code></pre>
-</div>
-<div id="add-methylation-subclass-and-scores" class="section level2">
-<h2>Add methylation subclass and scores</h2>
-<pre class="r"><code># read in methylation file
-methyl &lt;- read_csv(methyl_file) %&gt;%
-  filter(sample_type == &#39;Tumor&#39;) %&gt;%
-  rename(&#39;Kids_First_Biospecimen_ID_tumor&#39; = &#39;Kids_First_Biospecimen_ID&#39;)</code></pre>
-<pre><code>## Rows: 1854 Columns: 13
-## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-## Delimiter: &quot;,&quot;
-## chr (6): sample_id, dkfz_v11_methylation_subclass, dkfz_v12_methylation_subc...
-## dbl (7): aliquot_id, tumor_fraction_RFpurify_ABSOLUTE, tumor_fraction_RFpuri...
-## 
-## ℹ Use `spec()` to retrieve the full column specification for this data.
-## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
-<pre class="r"><code>head(methyl)</code></pre>
-<pre><code>## # A tibble: 6 × 13
-##   sample_id aliquot_id tumor_f…¹ tumor…² tumor…³ dkfz_…⁴ dkfz_…⁵ dkfz_…⁶ dkfz_…⁷
-##   &lt;chr&gt;          &lt;dbl&gt;     &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt; &lt;chr&gt;     &lt;dbl&gt; &lt;chr&gt;     &lt;dbl&gt;
-## 1 7316-5530    1250312     0.565   0.890   0.779 HGNET_…   0.929 ABM_MN1   0.716
-## 2 7316-5268    1250313     0.532   0.888   0.894 ATRT_M…   0.989 ATRT_M…   1.00 
-## 3 7316-6389    1250314     0.480   0.815   0.715 A_IDH     0.929 A_IDH_…   0.777
-## 4 7316-5749    1250315     0.586   0.882   0.881 MB_G4     1     MB_G34…   1.00 
-## 5 7316-6528    1250316     0.604   0.906   0.809 MB_SHH…   1     MB_SHH…   0.999
-## 6 7316-7756    1250317     0.580   0.868   0.681 GBM_RT…   0.366 GBM_RT…   0.180
-## # … with 4 more variables: dkfz_v12_methylation_mgmt_status &lt;chr&gt;,
-## #   dkfz_v12_methylation_mgmt_estimated &lt;dbl&gt;,
-## #   Kids_First_Biospecimen_ID_tumor &lt;chr&gt;, sample_type &lt;chr&gt;, and abbreviated
-## #   variable names ¹​tumor_fraction_RFpurify_ABSOLUTE,
-## #   ²​tumor_fraction_RFpurify_ESTIMATE, ³​tumor_fraction_LUMP,
-## #   ⁴​dkfz_v11_methylation_subclass, ⁵​dkfz_v11_methylation_subclass_score,
-## #   ⁶​dkfz_v12_methylation_subclass, ⁷​dkfz_v12_methylation_subclass_score</code></pre>
-<pre class="r"><code># add methylation subclass and score columns to `res_all`
-res_all &lt;- res_all %&gt;%
-  left_join(methyl[,c(&#39;Kids_First_Biospecimen_ID_tumor&#39;, &#39;dkfz_v12_methylation_subclass&#39;, &#39;dkfz_v12_methylation_subclass_score&#39;)], by = &#39;Kids_First_Biospecimen_ID_tumor&#39;) %&gt;%
-  filter(!is.na(Kids_First_Participant_ID))
-
-# add OPC subtype corresponding to methylation subclasses
-subtypes &lt;- read_csv(subtype_file) %&gt;%
-  rename(&#39;dkfz_v12_methylation_subclass&#39; = &#39;Abbrevation&#39;)</code></pre>
-<pre><code>## Rows: 183 Columns: 3
-## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-## Delimiter: &quot;,&quot;
-## chr (3): Abbrevation_internal, Abbrevation, OPC_molecular_subtype
-## 
-## ℹ Use `spec()` to retrieve the full column specification for this data.
-## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
-<pre class="r"><code>res_all &lt;- res_all %&gt;%
-  left_join(subtypes[,c(&#39;dkfz_v12_methylation_subclass&#39;, &#39;OPC_molecular_subtype&#39;)], by = &#39;dkfz_v12_methylation_subclass&#39;) %&gt;%
-  rename(&#39;methylation_subtype&#39; = &#39;OPC_molecular_subtype&#39;)</code></pre>
-<p>To select on subtype call per patient, prioritze OPC calls over
-methylation calls, and prioritize <code>Initial CNS Tumor</code> over
-<code>Recurrence</code> and other values of
-<code>tumor descriptor</code></p>
-<pre class="r"><code>initial_opc_subtype &lt;- res_all %&gt;%
-  filter(!is.na(molecular_subtype) &amp; !grepl(&quot;To be classified&quot;, molecular_subtype) &amp; tumor_descriptor == &#39;Initial CNS Tumor&#39;) %&gt;%
-  distinct(Kids_First_Participant_ID, .keep_all = T)
-
-recur_opc_subtype &lt;- res_all %&gt;%
-  filter(!Kids_First_Participant_ID %in% c(initial_opc_subtype$Kids_First_Participant_ID) &amp; !is.na(molecular_subtype) &amp; !grepl(&quot;To be classified&quot;, molecular_subtype) &amp; tumor_descriptor == &#39;Recurrence&#39;) %&gt;%
-  distinct(Kids_First_Participant_ID, .keep_all = T)
-
-other_opc_subtype &lt;- res_all %&gt;%
-  filter(!Kids_First_Participant_ID %in% c(recur_opc_subtype$Kids_First_Participant_ID, initial_opc_subtype$Kids_First_Participant_ID) &amp; !is.na(molecular_subtype) &amp; !grepl(&quot;To be classified&quot;, molecular_subtype)) %&gt;%
-  distinct(Kids_First_Participant_ID, .keep_all = T)
-
-initial_methyl_subtype &lt;- res_all %&gt;%
-  filter(!Kids_First_Participant_ID %in% c(initial_opc_subtype$Kids_First_Participant_ID, recur_opc_subtype$Kids_First_Participant_ID, other_opc_subtype$Kids_First_Participant_ID) &amp; tumor_descriptor == &#39;Initial CNS Tumor&#39; &amp;  !is.na(methylation_subtype) &amp; dkfz_v12_methylation_subclass_score &gt;= 0.8) %&gt;%
-  distinct(Kids_First_Participant_ID, .keep_all = T)
-
-recur_methyl_subtype &lt;- res_all %&gt;%
-  filter(!Kids_First_Participant_ID %in% c(recur_opc_subtype$Kids_First_Participant_ID, initial_methyl_subtype$Kids_First_Participant_ID, initial_opc_subtype$Kids_First_Participant_ID, other_opc_subtype$Kids_First_Participant_ID) &amp; !is.na(methylation_subtype) &amp; dkfz_v12_methylation_subclass_score &gt;= 0.8 &amp; tumor_descriptor == &#39;Recurrence&#39;) %&gt;%
-  distinct(Kids_First_Participant_ID, .keep_all = T)
-
-other_methyl_subtype &lt;- res_all %&gt;%
-  filter(!Kids_First_Participant_ID %in% c(recur_opc_subtype$Kids_First_Participant_ID, initial_methyl_subtype$Kids_First_Participant_ID, initial_opc_subtype$Kids_First_Participant_ID, recur_methyl_subtype$Kids_First_Participant_ID, other_opc_subtype$Kids_First_Participant_ID) &amp; !is.na(methylation_subtype) &amp; dkfz_v12_methylation_subclass_score &gt;= 0.8) %&gt;%
-  distinct(Kids_First_Participant_ID, .keep_all = T)
-
-no_subtype &lt;- res_all %&gt;%
-  filter(!Kids_First_Participant_ID %in% c(recur_opc_subtype$Kids_First_Participant_ID, initial_methyl_subtype$Kids_First_Participant_ID, initial_opc_subtype$Kids_First_Participant_ID, recur_methyl_subtype$Kids_First_Participant_ID, other_opc_subtype$Kids_First_Participant_ID, other_methyl_subtype$Kids_First_Participant_ID)) %&gt;%
-  distinct(Kids_First_Participant_ID, .keep_all = T)
-
-res_unique &lt;- initial_opc_subtype %&gt;%
-  bind_rows(initial_methyl_subtype, recur_opc_subtype, recur_methyl_subtype,
-            other_opc_subtype, other_methyl_subtype, no_subtype)</code></pre>
-</div>
-<div id="create-new-aggregate-subtype-column-prioritizing-opc-molecular_subtype-and-taking-methylation_subtype-when-opc-not-available" class="section level2">
-<h2>Create new aggregate subtype column prioritizing OPC
-<code>molecular_subtype</code> and taking
-<code>methylation_subtype</code> when OPC not available</h2>
-<pre class="r"><code>subtypes &lt;- read_csv(subtype_file) %&gt;%
-  rename(&#39;dkfz_v12_methylation_subclass&#39; = &#39;Abbrevation&#39;)</code></pre>
-<pre><code>## Rows: 183 Columns: 3
-## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-## Delimiter: &quot;,&quot;
-## chr (3): Abbrevation_internal, Abbrevation, OPC_molecular_subtype
-## 
-## ℹ Use `spec()` to retrieve the full column specification for this data.
-## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
-<pre class="r"><code>#add OPC subtype corresponding to methylation subclasses
-res_unique &lt;- res_unique %&gt;%
-  mutate(OPC_methyl_subtype = case_when(
-    !is.na(molecular_subtype) &amp; !grepl(&#39;To be classified&#39;, molecular_subtype) ~ molecular_subtype,
-    !is.na(methylation_subtype) &amp; dkfz_v12_methylation_subclass_score &gt;= 0.8 ~ methylation_subtype,
-    grepl(&#39;To be classified&#39;, molecular_subtype) ~ molecular_subtype,
-    TRUE ~ NA_character_)
-  )</code></pre>
+<p>Merge data to obtain one row per patient</p>
+<pre class="r"><code>ancestry_unique &lt;- initial_tumors %&gt;%
+  bind_rows(recurrent_tumors, other_tumors)</code></pre>
 </div>
 <div id="write-merged-data-to-file" class="section level1">
 <h1>Write merged data to file</h1>
-<pre class="r"><code>readr::write_tsv(res_unique, file.path(results_dir, &#39;merged_ancestry_histology_data.tsv&#39;))</code></pre>
+<pre class="r"><code>readr::write_tsv(ancestry_unique, file.path(results_dir, &#39;merged_ancestry_histology_data.tsv&#39;))</code></pre>
 </div>
 
 
