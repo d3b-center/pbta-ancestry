@@ -1,0 +1,93 @@
+---
+title: "DEI Survival Analyses"
+output: 
+  html_notebook:
+    toc: TRUE
+    toc_float: TRUE
+author: Ryan Corbett
+date: 2022
+params:
+  plot_ci: TRUE
+---
+
+**Purpose:** 
+
+Prepare ancestry data for survival analyses by adding most recent survival data and coding event-free survival (EFS)
+
+## Usage 
+
+Uses a wrapper function (`survival_analysis`) from utils folder. 
+
+## Setup
+
+#### Packages and functions
+
+Read in set up script.
+
+```{r Set up library}
+library(survival)
+library(ggpubr)
+library(tidyverse)
+library(openxlsx)
+# Set directories
+root_dir <- rprojroot::find_root(rprojroot::has_dir(".git"))
+analysis_dir <- file.path(root_dir, "analyses", "survival")
+
+# Magrittr pipe
+`%>%` <- dplyr::`%>%`
+```
+
+#### Set up files and directories
+
+Set up output directories. 
+
+```{r Set up directories}
+results_dir <- file.path(analysis_dir, "results")
+input_dir <- file.path(analysis_dir, "input")
+```
+
+Make output directories.
+
+```{r Make output directories}
+if (!dir.exists(results_dir)) {
+  dir.create(results_dir)
+}
+```
+
+Declare input file paths and useful variables
+
+```{r Set input file paths}
+ancestry_file <- file.path(root_dir, "analyses", "add-histologies", "results", "merged_ancestry_histology_data.tsv")
+
+survival_file <- file.path(data_dir, "survival-histologies-base-2023-09-20.tsv")
+
+output_file <- file.path(results_dir, "merged_ancestry_histology_survival.tsv")
+```
+
+## Import the metadata and append updated EFS data from base histologies
+
+```{r Read in metadata}
+ancestry <- readr::read_tsv(ancestry_file) %>%
+  dplyr::select(-EFS_days, -OS_days, -OS_status)
+
+survival <- read_tsv(survival_file)
+
+ancestry <- ancestry %>%
+  left_join(survival[,c("Kids_First_Participant_ID", "OS_days", "OS_status", "EFS_days", "EFS_event_type")]) %>%
+  distinct(Kids_First_Participant_ID, .keep_all = T) %>%
+  dplyr::mutate(EFS_days = as.numeric(EFS_days),
+                OS_days = as.numeric(OS_days)) %>%
+  dplyr::mutate(OS_years = OS_days/365.25,
+         EFS_years = EFS_days/365.25) %>%
+  dplyr::mutate(EFS_status = case_when(
+    EFS_event_type == "Not Applicable" ~ "NO EVENT",
+    !is.na(EFS_event_type) ~ "EVENT",
+    TRUE ~ NA_character_
+  )) %>%
+  dplyr::mutate(EUR_status = case_when(
+    predicted_ancestry == "EUR" ~ "EUR", 
+    TRUE ~ "non-EUR"
+  ))
+
+write_tsv(ancestry, output_file)
+```
