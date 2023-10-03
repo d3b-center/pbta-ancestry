@@ -2903,49 +2903,55 @@ folder.</p>
 <h2>Setup</h2>
 <div id="packages-and-functions" class="section level4">
 <h4>Packages and functions</h4>
-<p>Read in set up script.</p>
+<p>Set up directory paths</p>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGlicmFyeShzdXJ2aXZhbClcbmxpYnJhcnkoZ2dwdWJyKVxubGlicmFyeSh0aWR5dmVyc2UpXG5saWJyYXJ5KG9wZW54bHN4KVxuIyBTZXQgZGlyZWN0b3JpZXNcbnJvb3RfZGlyIDwtIHJwcm9qcm9vdDo6ZmluZF9yb290KHJwcm9qcm9vdDo6aGFzX2RpcihcIi5naXRcIikpXG5hbmFseXNpc19kaXIgPC0gZmlsZS5wYXRoKHJvb3RfZGlyLCBcImFuYWx5c2VzXCIsIFwic3Vydml2YWxcIilcblxuIyBNYWdyaXR0ciBwaXBlXG5gJT4lYCA8LSBkcGx5cjo6YCU+JWBcbmBgYCJ9 -->
+<!-- rnb-source-begin eyJkYXRhIjpbImxpYnJhcnkoc3Vydml2YWwpIiwibGlicmFyeShnZ3B1YnIpIl19 -->
 <pre class="r"><code>library(survival)
-library(ggpubr)
-library(tidyverse)
-library(openxlsx)
-# Set directories
+library(ggpubr)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-message-begin eyJkYXRhIjoiTG9hZGluZyByZXF1aXJlZCBwYWNrYWdlOiBnZ3Bsb3QyXG4ifQ== -->
+<pre><code>Loading required package: ggplot2</code></pre>
+<!-- rnb-message-end -->
+<!-- rnb-source-begin eyJkYXRhIjoibGlicmFyeSh0aWR5dmVyc2UpIn0= -->
+<pre class="r"><code>library(tidyverse)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-message-begin eyJkYXRhIjoi4pSA4pSAIEF0dGFjaGluZyBwYWNrYWdlc1xu4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSAXG50aWR5dmVyc2UgMS4zLjIg4pSA4pSAXG4ifQ== -->
+<pre><code>── Attaching packages
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+tidyverse 1.3.2 ──</code></pre>
+<!-- rnb-message-end -->
+<!-- rnb-message-begin eyJkYXRhIjoi4pyUIHRpYmJsZSAgMy4xLjggICAgIOKclCBkcGx5ciAgIDEuMS4wXG7inJQgdGlkeXIgICAxLjMuMCAgICAg4pyUIHN0cmluZ3IgMS41LjBcbuKclCByZWFkciAgIDIuMS4zICAgICDinJQgZm9yY2F0cyAxLjAuMFxu4pyUIHB1cnJyICAgMS4wLjEgICAgIFxu4pSA4pSAIENvbmZsaWN0cyDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIAgdGlkeXZlcnNlX2NvbmZsaWN0cygpIOKUgOKUgFxu4pyWIGRwbHlyOjpmaWx0ZXIoKSBtYXNrcyBzdGF0czo6ZmlsdGVyKClcbuKcliBkcGx5cjo6bGFnKCkgICAgbWFza3Mgc3RhdHM6OmxhZygpXG4ifQ== -->
+<pre><code>✔ tibble  3.1.8     ✔ dplyr   1.1.0
+✔ tidyr   1.3.0     ✔ stringr 1.5.0
+✔ readr   2.1.3     ✔ forcats 1.0.0
+✔ purrr   1.0.1     
+── Conflicts ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── tidyverse_conflicts() ──
+✖ dplyr::filter() masks stats::filter()
+✖ dplyr::lag()    masks stats::lag()</code></pre>
+<!-- rnb-message-end -->
+<!-- rnb-source-begin eyJkYXRhIjpbIiMgU2V0IGRpcmVjdG9yaWVzIiwicm9vdF9kaXIgPC0gcnByb2pyb290OjpmaW5kX3Jvb3QocnByb2pyb290OjpoYXNfZGlyKFwiLmdpdFwiKSkiLCJkYXRhX2RpciA8LSBmaWxlLnBhdGgocm9vdF9kaXIsIFwiZGF0YVwiKSIsImFuYWx5c2lzX2RpciA8LSBmaWxlLnBhdGgocm9vdF9kaXIsIFwiYW5hbHlzZXNcIiwgXCJzdXJ2aXZhbFwiKSIsIiIsImlucHV0X2RpciA8LSBmaWxlLnBhdGgoYW5hbHlzaXNfZGlyLCBcImlucHV0XCIpIiwicmVzdWx0c19kaXIgPC0gZmlsZS5wYXRoKGFuYWx5c2lzX2RpciwgXCJyZXN1bHRzXCIpIiwiIiwiaWYgKCFkaXIuZXhpc3RzKHJlc3VsdHNfZGlyKSkge1xuICBkaXIuY3JlYXRlKHJlc3VsdHNfZGlyKVxufSIsIiIsIiMgTWFncml0dHIgcGlwZSIsImAlPiVgIDwtIGRwbHlyOjpgJT4lYCJdfQ== -->
+<pre class="r"><code># Set directories
 root_dir &lt;- rprojroot::find_root(rprojroot::has_dir(&quot;.git&quot;))
+data_dir &lt;- file.path(root_dir, &quot;data&quot;)
 analysis_dir &lt;- file.path(root_dir, &quot;analyses&quot;, &quot;survival&quot;)
+
+input_dir &lt;- file.path(analysis_dir, &quot;input&quot;)
+results_dir &lt;- file.path(analysis_dir, &quot;results&quot;)
+
+if (!dir.exists(results_dir)) {
+  dir.create(results_dir)
+}
 
 # Magrittr pipe
 `%&gt;%` &lt;- dplyr::`%&gt;%`</code></pre>
 <!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
-</div>
-<div id="set-up-files-and-directories" class="section level4">
-<h4>Set up files and directories</h4>
-<p>Set up output directories.</p>
-<!-- rnb-text-end -->
-<!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxucmVzdWx0c19kaXIgPC0gZmlsZS5wYXRoKGFuYWx5c2lzX2RpciwgXCJyZXN1bHRzXCIpXG5pbnB1dF9kaXIgPC0gZmlsZS5wYXRoKGFuYWx5c2lzX2RpciwgXCJpbnB1dFwiKVxuYGBgIn0= -->
-<pre class="r"><code>results_dir &lt;- file.path(analysis_dir, &quot;results&quot;)
-input_dir &lt;- file.path(analysis_dir, &quot;input&quot;)</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-chunk-end -->
-<!-- rnb-text-begin -->
-<p>Make output directories.</p>
-<!-- rnb-text-end -->
-<!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuaWYgKCFkaXIuZXhpc3RzKHJlc3VsdHNfZGlyKSkge1xuICBkaXIuY3JlYXRlKHJlc3VsdHNfZGlyKVxufVxuYGBgIn0= -->
-<pre class="r"><code>if (!dir.exists(results_dir)) {
-  dir.create(results_dir)
-}</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-chunk-end -->
-<!-- rnb-text-begin -->
 <p>Declare input file paths and useful variables</p>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuYW5jZXN0cnlfZmlsZSA8LSBmaWxlLnBhdGgocm9vdF9kaXIsIFwiYW5hbHlzZXNcIiwgXCJhZGQtaGlzdG9sb2dpZXNcIiwgXCJyZXN1bHRzXCIsIFwibWVyZ2VkX2FuY2VzdHJ5X2hpc3RvbG9neV9kYXRhLnRzdlwiKVxuXG5zdXJ2aXZhbF9maWxlIDwtIGZpbGUucGF0aChkYXRhX2RpciwgXCJzdXJ2aXZhbC1oaXN0b2xvZ2llcy1iYXNlLTIwMjMtMDktMjAudHN2XCIpXG5cbm91dHB1dF9maWxlIDwtIGZpbGUucGF0aChyZXN1bHRzX2RpciwgXCJtZXJnZWRfYW5jZXN0cnlfaGlzdG9sb2d5X3N1cnZpdmFsLnRzdlwiKVxuYGBgIn0= -->
+<!-- rnb-source-begin eyJkYXRhIjpbImFuY2VzdHJ5X2ZpbGUgPC0gZmlsZS5wYXRoKHJvb3RfZGlyLCBcImFuYWx5c2VzXCIsIFwiYWRkLWhpc3RvbG9naWVzXCIsIFwicmVzdWx0c1wiLCBcIm1lcmdlZF9hbmNlc3RyeV9oaXN0b2xvZ3lfZGF0YS50c3ZcIikiLCIiLCJzdXJ2aXZhbF9maWxlIDwtIGZpbGUucGF0aChkYXRhX2RpciwgXCJzdXJ2aXZhbC1oaXN0b2xvZ2llcy1iYXNlLTIwMjMtMDktMjAudHN2XCIpIiwiIiwib3V0cHV0X2ZpbGUgPC0gZmlsZS5wYXRoKHJlc3VsdHNfZGlyLCBcIm1lcmdlZF9hbmNlc3RyeV9oaXN0b2xvZ3lfc3Vydml2YWwudHN2XCIpIl19 -->
 <pre class="r"><code>ancestry_file &lt;- file.path(root_dir, &quot;analyses&quot;, &quot;add-histologies&quot;, &quot;results&quot;, &quot;merged_ancestry_histology_data.tsv&quot;)
 
 survival_file &lt;- file.path(data_dir, &quot;survival-histologies-base-2023-09-20.tsv&quot;)
@@ -2961,30 +2967,34 @@ output_file &lt;- file.path(results_dir, &quot;merged_ancestry_histology_surviva
 histologies</h2>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuYW5jZXN0cnkgPC0gcmVhZHI6OnJlYWRfdHN2KGFuY2VzdHJ5X2ZpbGUpICU+JVxuICBkcGx5cjo6c2VsZWN0KC1FRlNfZGF5cywgLU9TX2RheXMsIC1PU19zdGF0dXMpXG5gYGAifQ== -->
+<!-- rnb-source-begin eyJkYXRhIjoiYW5jZXN0cnkgPC0gcmVhZHI6OnJlYWRfdHN2KGFuY2VzdHJ5X2ZpbGUpICU+JVxuICBkcGx5cjo6c2VsZWN0KC1FRlNfZGF5cywgLU9TX2RheXMsIC1PU19zdGF0dXMpIn0= -->
 <pre class="r"><code>ancestry &lt;- readr::read_tsv(ancestry_file) %&gt;%
   dplyr::select(-EFS_days, -OS_days, -OS_status)</code></pre>
 <!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiUm93czogMTQ4NyBDb2x1bW5zOiAzNOKUgOKUgCBDb2x1bW4gc3BlY2lmaWNhdGlvbiDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIBcbkRlbGltaXRlcjogXCJcXHRcIlxuY2hyICgxOCk6IEtpZHNfRmlyc3RfQmlvc3BlY2ltZW5fSUQsIHByZWRpY3RlZF9hbmNlc3RyeSwgS2lkc19GaXJzdF9QYXJ0aWNpcGFudF9JRCwgc2FtcGxlX3R5cGUsIGNvaG9ydF9wYXJ0aWNpcGFudF9pZCwgS2lkc19GaXJzLi4uXG5kYmwgKDE1KTogRUFTX3Byb2IsIEFGUl9wcm9iLCBBTVJfcHJvYiwgU0FTX3Byb2IsIEVVUl9wcm9iLCBQQzEsIFBDMiwgUEMzLCBQQzQsIFBDNSwgYWdlX2F0X2RpYWdub3Npc19kYXlzLCBPU19kYXlzLCBFRlNfZGF5cywgYWcuLi5cbmxnbCAgKDEpOiBnaXZlbl9hbmNlc3RyeVxu4oS5IFVzZSBgc3BlYygpYCB0byByZXRyaWV2ZSB0aGUgZnVsbCBjb2x1bW4gc3BlY2lmaWNhdGlvbiBmb3IgdGhpcyBkYXRhLlxu4oS5IFNwZWNpZnkgdGhlIGNvbHVtbiB0eXBlcyBvciBzZXQgYHNob3dfY29sX3R5cGVzID0gRkFMU0VgIHRvIHF1aWV0IHRoaXMgbWVzc2FnZS5cbiJ9 -->
-<pre><code>Rows: 1487 Columns: 34── Column specification ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
+<!-- rnb-message-begin eyJkYXRhIjoiUm93czogMTQ4NyBDb2x1bW5zOiAzNFxu4pSA4pSAIENvbHVtbiBzcGVjaWZpY2F0aW9uIOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgFxuRGVsaW1pdGVyOiBcIlxcdFwiXG5jaHIgKDE4KTogS2lkc19GaXJzdF9CaW9zcGVjaW1lbl9JRCwgcHJlZGljdGVkX2FuY2VzdHJ5LCBLaWRzX0ZpcnN0X1BhcnRpY2lwLi4uXG5kYmwgKDE1KTogRUFTX3Byb2IsIEFGUl9wcm9iLCBBTVJfcHJvYiwgU0FTX3Byb2IsIEVVUl9wcm9iLCBQQzEsIFBDMiwgUEMzLCBQLi4uXG5sZ2wgICgxKTogZ2l2ZW5fYW5jZXN0cnlcblxu4oS5IFVzZSBgc3BlYygpYCB0byByZXRyaWV2ZSB0aGUgZnVsbCBjb2x1bW4gc3BlY2lmaWNhdGlvbiBmb3IgdGhpcyBkYXRhLlxu4oS5IFNwZWNpZnkgdGhlIGNvbHVtbiB0eXBlcyBvciBzZXQgYHNob3dfY29sX3R5cGVzID0gRkFMU0VgIHRvIHF1aWV0IHRoaXMgbWVzc2FnZS5cbiJ9 -->
+<pre><code>Rows: 1487 Columns: 34
+── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 Delimiter: &quot;\t&quot;
-chr (18): Kids_First_Biospecimen_ID, predicted_ancestry, Kids_First_Participant_ID, sample_type, cohort_participant_id, Kids_Firs...
-dbl (15): EAS_prob, AFR_prob, AMR_prob, SAS_prob, EUR_prob, PC1, PC2, PC3, PC4, PC5, age_at_diagnosis_days, OS_days, EFS_days, ag...
+chr (18): Kids_First_Biospecimen_ID, predicted_ancestry, Kids_First_Particip...
+dbl (15): EAS_prob, AFR_prob, AMR_prob, SAS_prob, EUR_prob, PC1, PC2, PC3, P...
 lgl  (1): given_ancestry
+
 ℹ Use `spec()` to retrieve the full column specification for this data.
 ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuc3Vydml2YWwgPC0gcmVhZF90c3Yoc3Vydml2YWxfZmlsZSlcbmBgYCJ9 -->
+<!-- rnb-message-end -->
+<!-- rnb-source-begin eyJkYXRhIjoic3Vydml2YWwgPC0gcmVhZF90c3Yoc3Vydml2YWxfZmlsZSkifQ== -->
 <pre class="r"><code>survival &lt;- read_tsv(survival_file)</code></pre>
 <!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiUm93czogNDc5NTMgQ29sdW1uczogNuKUgOKUgCBDb2x1bW4gc3BlY2lmaWNhdGlvbiDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIDilIBcbkRlbGltaXRlcjogXCJcXHRcIlxuY2hyICg2KTogS2lkc19GaXJzdF9CaW9zcGVjaW1lbl9JRCwgS2lkc19GaXJzdF9QYXJ0aWNpcGFudF9JRCwgT1NfZGF5cywgT1Nfc3RhdHVzLCBFRlNfZGF5cywgRUZTX2V2ZW50X3R5cGVcbuKEuSBVc2UgYHNwZWMoKWAgdG8gcmV0cmlldmUgdGhlIGZ1bGwgY29sdW1uIHNwZWNpZmljYXRpb24gZm9yIHRoaXMgZGF0YS5cbuKEuSBTcGVjaWZ5IHRoZSBjb2x1bW4gdHlwZXMgb3Igc2V0IGBzaG93X2NvbF90eXBlcyA9IEZBTFNFYCB0byBxdWlldCB0aGlzIG1lc3NhZ2UuXG4ifQ== -->
-<pre><code>Rows: 47953 Columns: 6── Column specification ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
+<!-- rnb-message-begin eyJkYXRhIjoiUm93czogNDc5NTMgQ29sdW1uczogNlxu4pSA4pSAIENvbHVtbiBzcGVjaWZpY2F0aW9uIOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgFxuRGVsaW1pdGVyOiBcIlxcdFwiXG5jaHIgKDYpOiBLaWRzX0ZpcnN0X0Jpb3NwZWNpbWVuX0lELCBLaWRzX0ZpcnN0X1BhcnRpY2lwYW50X0lELCBPU19kYXlzLCBPU19zLi4uXG5cbuKEuSBVc2UgYHNwZWMoKWAgdG8gcmV0cmlldmUgdGhlIGZ1bGwgY29sdW1uIHNwZWNpZmljYXRpb24gZm9yIHRoaXMgZGF0YS5cbuKEuSBTcGVjaWZ5IHRoZSBjb2x1bW4gdHlwZXMgb3Igc2V0IGBzaG93X2NvbF90eXBlcyA9IEZBTFNFYCB0byBxdWlldCB0aGlzIG1lc3NhZ2UuXG4ifQ== -->
+<pre><code>Rows: 47953 Columns: 6
+── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 Delimiter: &quot;\t&quot;
-chr (6): Kids_First_Biospecimen_ID, Kids_First_Participant_ID, OS_days, OS_status, EFS_days, EFS_event_type
+chr (6): Kids_First_Biospecimen_ID, Kids_First_Participant_ID, OS_days, OS_s...
+
 ℹ Use `spec()` to retrieve the full column specification for this data.
 ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuYW5jZXN0cnkgPC0gYW5jZXN0cnkgJT4lXG4gIGxlZnRfam9pbihzdXJ2aXZhbFssYyhcIktpZHNfRmlyc3RfUGFydGljaXBhbnRfSURcIiwgXCJPU19kYXlzXCIsIFwiT1Nfc3RhdHVzXCIsIFwiRUZTX2RheXNcIiwgXCJFRlNfZXZlbnRfdHlwZVwiKV0pICU+JVxuICBkaXN0aW5jdChLaWRzX0ZpcnN0X1BhcnRpY2lwYW50X0lELCAua2VlcF9hbGwgPSBUKSAlPiVcbiAgZHBseXI6Om11dGF0ZShFRlNfZGF5cyA9IGFzLm51bWVyaWMoRUZTX2RheXMpLFxuICAgICAgICAgICAgICAgIE9TX2RheXMgPSBhcy5udW1lcmljKE9TX2RheXMpKSAlPiVcbiAgZHBseXI6Om11dGF0ZShPU195ZWFycyA9IE9TX2RheXMvMzY1LjI1LFxuICAgICAgICAgRUZTX3llYXJzID0gRUZTX2RheXMvMzY1LjI1KSAlPiVcbiAgZHBseXI6Om11dGF0ZShFRlNfc3RhdHVzID0gY2FzZV93aGVuKFxuICAgIEVGU19ldmVudF90eXBlID09IFwiTm90IEFwcGxpY2FibGVcIiB+IFwiTk8gRVZFTlRcIixcbiAgICAhaXMubmEoRUZTX2V2ZW50X3R5cGUpIH4gXCJFVkVOVFwiLFxuICAgIFRSVUUgfiBOQV9jaGFyYWN0ZXJfXG4gICkpICU+JVxuICBkcGx5cjo6bXV0YXRlKEVVUl9zdGF0dXMgPSBjYXNlX3doZW4oXG4gICAgcHJlZGljdGVkX2FuY2VzdHJ5ID09IFwiRVVSXCIgfiBcIkVVUlwiLCBcbiAgICBUUlVFIH4gXCJub24tRVVSXCJcbiAgKSlcbmBgYCJ9 -->
+<!-- rnb-message-end -->
+<!-- rnb-source-begin eyJkYXRhIjoiYW5jZXN0cnkgPC0gYW5jZXN0cnkgJT4lXG4gIGxlZnRfam9pbihzdXJ2aXZhbFssYyhcIktpZHNfRmlyc3RfUGFydGljaXBhbnRfSURcIiwgXCJPU19kYXlzXCIsIFwiT1Nfc3RhdHVzXCIsIFwiRUZTX2RheXNcIiwgXCJFRlNfZXZlbnRfdHlwZVwiKV0pICU+JVxuICBkaXN0aW5jdChLaWRzX0ZpcnN0X1BhcnRpY2lwYW50X0lELCAua2VlcF9hbGwgPSBUKSAlPiVcbiAgZHBseXI6Om11dGF0ZShFRlNfZGF5cyA9IGFzLm51bWVyaWMoRUZTX2RheXMpLFxuICAgICAgICAgICAgICAgIE9TX2RheXMgPSBhcy5udW1lcmljKE9TX2RheXMpKSAlPiVcbiAgZHBseXI6Om11dGF0ZShPU195ZWFycyA9IE9TX2RheXMvMzY1LjI1LFxuICAgICAgICAgRUZTX3llYXJzID0gRUZTX2RheXMvMzY1LjI1KSAlPiVcbiAgZHBseXI6Om11dGF0ZShFRlNfc3RhdHVzID0gY2FzZV93aGVuKFxuICAgIEVGU19ldmVudF90eXBlID09IFwiTm90IEFwcGxpY2FibGVcIiB+IFwiTk8gRVZFTlRcIixcbiAgICAhaXMubmEoRUZTX2V2ZW50X3R5cGUpIH4gXCJFVkVOVFwiLFxuICAgIFRSVUUgfiBOQV9jaGFyYWN0ZXJfXG4gICkpICU+JVxuICBkcGx5cjo6bXV0YXRlKEVVUl9zdGF0dXMgPSBjYXNlX3doZW4oXG4gICAgcHJlZGljdGVkX2FuY2VzdHJ5ID09IFwiRVVSXCIgfiBcIkVVUlwiLCBcbiAgICBUUlVFIH4gXCJub24tRVVSXCJcbiAgKSkifQ== -->
 <pre class="r"><code>ancestry &lt;- ancestry %&gt;%
   left_join(survival[,c(&quot;Kids_First_Participant_ID&quot;, &quot;OS_days&quot;, &quot;OS_status&quot;, &quot;EFS_days&quot;, &quot;EFS_event_type&quot;)]) %&gt;%
   distinct(Kids_First_Participant_ID, .keep_all = T) %&gt;%
@@ -3002,21 +3012,29 @@ chr (6): Kids_First_Biospecimen_ID, Kids_First_Participant_ID, OS_days, OS_statu
     TRUE ~ &quot;non-EUR&quot;
   ))</code></pre>
 <!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiSm9pbmluZyB3aXRoIGBieSA9IGpvaW5fYnkoS2lkc19GaXJzdF9QYXJ0aWNpcGFudF9JRClgV2FybmluZzogVGhlcmUgd2VyZSAyIHdhcm5pbmdzIGluIGBkcGx5cjo6bXV0YXRlKClgLlxuVGhlIGZpcnN0IHdhcm5pbmcgd2FzOlxu4oS5IEluIGFyZ3VtZW50OiBgRUZTX2RheXMgPSBhcy5udW1lcmljKEVGU19kYXlzKWAuXG5DYXVzZWQgYnkgd2FybmluZzpcbiEgTkFzIGludHJvZHVjZWQgYnkgY29lcmNpb25cbuKEuSBSdW4gXHUwMDFiXTg7O2lkZTpydW46ZHBseXI6Omxhc3RfZHBseXJfd2FybmluZ3MoKVx1MDAwN2RwbHlyOjpsYXN0X2RwbHlyX3dhcm5pbmdzKClcdTAwMWJdODs7XHUwMDA3IHRvIHNlZSB0aGUgMSByZW1haW5pbmcgd2FybmluZy5cbiJ9 -->
-<pre><code>Joining with `by = join_by(Kids_First_Participant_ID)`Warning: There were 2 warnings in `dplyr::mutate()`.
+<!-- rnb-message-begin eyJkYXRhIjoiSm9pbmluZyB3aXRoIGBieSA9IGpvaW5fYnkoS2lkc19GaXJzdF9QYXJ0aWNpcGFudF9JRClgXG4ifQ== -->
+<pre><code>Joining with `by = join_by(Kids_First_Participant_ID)`</code></pre>
+<!-- rnb-message-end -->
+<!-- rnb-warning-begin eyJkYXRhIjoiV2FybmluZyBpbiBsZWZ0X2pvaW4oLiwgc3Vydml2YWxbLCBjKFwiS2lkc19GaXJzdF9QYXJ0aWNpcGFudF9JRFwiLCBcIk9TX2RheXNcIiwgOiBFYWNoIHJvdyBpbiBgeGAgaXMgZXhwZWN0ZWQgdG8gbWF0Y2ggYXQgbW9zdCAxIHJvdyBpbiBgeWAuXG7ihLkgUm93IDEgb2YgYHhgIG1hdGNoZXMgbXVsdGlwbGUgcm93cy5cbuKEuSBJZiBtdWx0aXBsZSBtYXRjaGVzIGFyZSBleHBlY3RlZCwgc2V0IGBtdWx0aXBsZSA9IFwiYWxsXCJgIHRvIHNpbGVuY2UgdGhpcyB3YXJuaW5nLlxuIn0= -->
+<pre><code>Warning in left_join(., survival[, c(&quot;Kids_First_Participant_ID&quot;, &quot;OS_days&quot;, : Each row in `x` is expected to match at most 1 row in `y`.
+ℹ Row 1 of `x` matches multiple rows.
+ℹ If multiple matches are expected, set `multiple = &quot;all&quot;` to silence this warning.</code></pre>
+<!-- rnb-warning-end -->
+<!-- rnb-warning-begin eyJkYXRhIjoiV2FybmluZzogVGhlcmUgd2VyZSAyIHdhcm5pbmdzIGluIGBkcGx5cjo6bXV0YXRlKClgLlxuVGhlIGZpcnN0IHdhcm5pbmcgd2FzOlxu4oS5IEluIGFyZ3VtZW50OiBgRUZTX2RheXMgPSBhcy5udW1lcmljKEVGU19kYXlzKWAuXG5DYXVzZWQgYnkgd2FybmluZzpcbiEgTkFzIGludHJvZHVjZWQgYnkgY29lcmNpb25cbuKEuSBSdW4gYGRwbHlyOjpsYXN0X2RwbHlyX3dhcm5pbmdzKClgIHRvIHNlZSB0aGUgMSByZW1haW5pbmcgd2FybmluZy5cbiJ9 -->
+<pre><code>Warning: There were 2 warnings in `dplyr::mutate()`.
 The first warning was:
 ℹ In argument: `EFS_days = as.numeric(EFS_days)`.
 Caused by warning:
 ! NAs introduced by coercion
-ℹ Run ]8;;ide:run:dplyr::last_dplyr_warnings()dplyr::last_dplyr_warnings()]8;; to see the 1 remaining warning.</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxud3JpdGVfdHN2KGFuY2VzdHJ5LCBvdXRwdXRfZmlsZSlcbmBgYCJ9 -->
+ℹ Run `dplyr::last_dplyr_warnings()` to see the 1 remaining warning.</code></pre>
+<!-- rnb-warning-end -->
+<!-- rnb-source-begin eyJkYXRhIjoid3JpdGVfdHN2KGFuY2VzdHJ5LCBvdXRwdXRfZmlsZSkifQ== -->
 <pre class="r"><code>write_tsv(ancestry, output_file)</code></pre>
 <!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 </div>
 
-<div id="rmd-source-code">LS0tCnRpdGxlOiAiREVJIFN1cnZpdmFsIEFuYWx5c2VzIgpvdXRwdXQ6IAogIGh0bWxfbm90ZWJvb2s6CiAgICB0b2M6IFRSVUUKICAgIHRvY19mbG9hdDogVFJVRQphdXRob3I6IFJ5YW4gQ29yYmV0dApkYXRlOiAyMDIyCnBhcmFtczoKICBwbG90X2NpOiBUUlVFCi0tLQoKKipQdXJwb3NlOioqIAoKUHJlcGFyZSBhbmNlc3RyeSBkYXRhIGZvciBzdXJ2aXZhbCBhbmFseXNlcyBieSBhZGRpbmcgbW9zdCByZWNlbnQgc3Vydml2YWwgZGF0YSBhbmQgY29kaW5nIGV2ZW50LWZyZWUgc3Vydml2YWwgKEVGUykKCiMjIFVzYWdlIAoKVXNlcyBhIHdyYXBwZXIgZnVuY3Rpb24gKGBzdXJ2aXZhbF9hbmFseXNpc2ApIGZyb20gdXRpbHMgZm9sZGVyLiAKCiMjIFNldHVwCgojIyMjIFBhY2thZ2VzIGFuZCBmdW5jdGlvbnMKClJlYWQgaW4gc2V0IHVwIHNjcmlwdC4KCmBgYHtyIFNldCB1cCBsaWJyYXJ5fQpsaWJyYXJ5KHN1cnZpdmFsKQpsaWJyYXJ5KGdncHVicikKbGlicmFyeSh0aWR5dmVyc2UpCmxpYnJhcnkob3Blbnhsc3gpCiMgU2V0IGRpcmVjdG9yaWVzCnJvb3RfZGlyIDwtIHJwcm9qcm9vdDo6ZmluZF9yb290KHJwcm9qcm9vdDo6aGFzX2RpcigiLmdpdCIpKQphbmFseXNpc19kaXIgPC0gZmlsZS5wYXRoKHJvb3RfZGlyLCAiYW5hbHlzZXMiLCAic3Vydml2YWwiKQoKIyBNYWdyaXR0ciBwaXBlCmAlPiVgIDwtIGRwbHlyOjpgJT4lYApgYGAKCiMjIyMgU2V0IHVwIGZpbGVzIGFuZCBkaXJlY3RvcmllcwoKU2V0IHVwIG91dHB1dCBkaXJlY3Rvcmllcy4gCgpgYGB7ciBTZXQgdXAgZGlyZWN0b3JpZXN9CnJlc3VsdHNfZGlyIDwtIGZpbGUucGF0aChhbmFseXNpc19kaXIsICJyZXN1bHRzIikKaW5wdXRfZGlyIDwtIGZpbGUucGF0aChhbmFseXNpc19kaXIsICJpbnB1dCIpCmBgYAoKTWFrZSBvdXRwdXQgZGlyZWN0b3JpZXMuCgpgYGB7ciBNYWtlIG91dHB1dCBkaXJlY3Rvcmllc30KaWYgKCFkaXIuZXhpc3RzKHJlc3VsdHNfZGlyKSkgewogIGRpci5jcmVhdGUocmVzdWx0c19kaXIpCn0KYGBgCgpEZWNsYXJlIGlucHV0IGZpbGUgcGF0aHMgYW5kIHVzZWZ1bCB2YXJpYWJsZXMKCmBgYHtyIFNldCBpbnB1dCBmaWxlIHBhdGhzfQphbmNlc3RyeV9maWxlIDwtIGZpbGUucGF0aChyb290X2RpciwgImFuYWx5c2VzIiwgImFkZC1oaXN0b2xvZ2llcyIsICJyZXN1bHRzIiwgIm1lcmdlZF9hbmNlc3RyeV9oaXN0b2xvZ3lfZGF0YS50c3YiKQoKc3Vydml2YWxfZmlsZSA8LSBmaWxlLnBhdGgoZGF0YV9kaXIsICJzdXJ2aXZhbC1oaXN0b2xvZ2llcy1iYXNlLTIwMjMtMDktMjAudHN2IikKCm91dHB1dF9maWxlIDwtIGZpbGUucGF0aChyZXN1bHRzX2RpciwgIm1lcmdlZF9hbmNlc3RyeV9oaXN0b2xvZ3lfc3Vydml2YWwudHN2IikKYGBgCgojIyBJbXBvcnQgdGhlIG1ldGFkYXRhIGFuZCBhcHBlbmQgdXBkYXRlZCBFRlMgZGF0YSBmcm9tIGJhc2UgaGlzdG9sb2dpZXMKCmBgYHtyIFJlYWQgaW4gbWV0YWRhdGF9CmFuY2VzdHJ5IDwtIHJlYWRyOjpyZWFkX3RzdihhbmNlc3RyeV9maWxlKSAlPiUKICBkcGx5cjo6c2VsZWN0KC1FRlNfZGF5cywgLU9TX2RheXMsIC1PU19zdGF0dXMpCgpzdXJ2aXZhbCA8LSByZWFkX3RzdihzdXJ2aXZhbF9maWxlKQoKYW5jZXN0cnkgPC0gYW5jZXN0cnkgJT4lCiAgbGVmdF9qb2luKHN1cnZpdmFsWyxjKCJLaWRzX0ZpcnN0X1BhcnRpY2lwYW50X0lEIiwgIk9TX2RheXMiLCAiT1Nfc3RhdHVzIiwgIkVGU19kYXlzIiwgIkVGU19ldmVudF90eXBlIildKSAlPiUKICBkaXN0aW5jdChLaWRzX0ZpcnN0X1BhcnRpY2lwYW50X0lELCAua2VlcF9hbGwgPSBUKSAlPiUKICBkcGx5cjo6bXV0YXRlKEVGU19kYXlzID0gYXMubnVtZXJpYyhFRlNfZGF5cyksCiAgICAgICAgICAgICAgICBPU19kYXlzID0gYXMubnVtZXJpYyhPU19kYXlzKSkgJT4lCiAgZHBseXI6Om11dGF0ZShPU195ZWFycyA9IE9TX2RheXMvMzY1LjI1LAogICAgICAgICBFRlNfeWVhcnMgPSBFRlNfZGF5cy8zNjUuMjUpICU+JQogIGRwbHlyOjptdXRhdGUoRUZTX3N0YXR1cyA9IGNhc2Vfd2hlbigKICAgIEVGU19ldmVudF90eXBlID09ICJOb3QgQXBwbGljYWJsZSIgfiAiTk8gRVZFTlQiLAogICAgIWlzLm5hKEVGU19ldmVudF90eXBlKSB+ICJFVkVOVCIsCiAgICBUUlVFIH4gTkFfY2hhcmFjdGVyXwogICkpICU+JQogIGRwbHlyOjptdXRhdGUoRVVSX3N0YXR1cyA9IGNhc2Vfd2hlbigKICAgIHByZWRpY3RlZF9hbmNlc3RyeSA9PSAiRVVSIiB+ICJFVVIiLCAKICAgIFRSVUUgfiAibm9uLUVVUiIKICApKQoKd3JpdGVfdHN2KGFuY2VzdHJ5LCBvdXRwdXRfZmlsZSkKYGBg</div>
+<div id="rmd-source-code">LS0tCnRpdGxlOiAiREVJIFN1cnZpdmFsIEFuYWx5c2VzIgpvdXRwdXQ6IAogIGh0bWxfbm90ZWJvb2s6CiAgICB0b2M6IFRSVUUKICAgIHRvY19mbG9hdDogVFJVRQphdXRob3I6IFJ5YW4gQ29yYmV0dApkYXRlOiAyMDIyCnBhcmFtczoKICBwbG90X2NpOiBUUlVFCi0tLQoKKipQdXJwb3NlOioqIAoKUHJlcGFyZSBhbmNlc3RyeSBkYXRhIGZvciBzdXJ2aXZhbCBhbmFseXNlcyBieSBhZGRpbmcgbW9zdCByZWNlbnQgc3Vydml2YWwgZGF0YSBhbmQgY29kaW5nIGV2ZW50LWZyZWUgc3Vydml2YWwgKEVGUykKCiMjIFVzYWdlIAoKVXNlcyBhIHdyYXBwZXIgZnVuY3Rpb24gKGBzdXJ2aXZhbF9hbmFseXNpc2ApIGZyb20gdXRpbHMgZm9sZGVyLiAKCiMjIFNldHVwCgojIyMjIFBhY2thZ2VzIGFuZCBmdW5jdGlvbnMKClNldCB1cCBkaXJlY3RvcnkgcGF0aHMKCmBgYHtyIFNldCB1cCBsaWJyYXJ5fQpsaWJyYXJ5KHN1cnZpdmFsKQpsaWJyYXJ5KGdncHVicikKbGlicmFyeSh0aWR5dmVyc2UpCiMgU2V0IGRpcmVjdG9yaWVzCnJvb3RfZGlyIDwtIHJwcm9qcm9vdDo6ZmluZF9yb290KHJwcm9qcm9vdDo6aGFzX2RpcigiLmdpdCIpKQpkYXRhX2RpciA8LSBmaWxlLnBhdGgocm9vdF9kaXIsICJkYXRhIikKYW5hbHlzaXNfZGlyIDwtIGZpbGUucGF0aChyb290X2RpciwgImFuYWx5c2VzIiwgInN1cnZpdmFsIikKCmlucHV0X2RpciA8LSBmaWxlLnBhdGgoYW5hbHlzaXNfZGlyLCAiaW5wdXQiKQpyZXN1bHRzX2RpciA8LSBmaWxlLnBhdGgoYW5hbHlzaXNfZGlyLCAicmVzdWx0cyIpCgppZiAoIWRpci5leGlzdHMocmVzdWx0c19kaXIpKSB7CiAgZGlyLmNyZWF0ZShyZXN1bHRzX2RpcikKfQoKIyBNYWdyaXR0ciBwaXBlCmAlPiVgIDwtIGRwbHlyOjpgJT4lYApgYGAKCkRlY2xhcmUgaW5wdXQgZmlsZSBwYXRocyBhbmQgdXNlZnVsIHZhcmlhYmxlcwoKYGBge3IgU2V0IGlucHV0IGZpbGUgcGF0aHN9CmFuY2VzdHJ5X2ZpbGUgPC0gZmlsZS5wYXRoKHJvb3RfZGlyLCAiYW5hbHlzZXMiLCAiYWRkLWhpc3RvbG9naWVzIiwgInJlc3VsdHMiLCAibWVyZ2VkX2FuY2VzdHJ5X2hpc3RvbG9neV9kYXRhLnRzdiIpCgpzdXJ2aXZhbF9maWxlIDwtIGZpbGUucGF0aChkYXRhX2RpciwgInN1cnZpdmFsLWhpc3RvbG9naWVzLWJhc2UtMjAyMy0wOS0yMC50c3YiKQoKb3V0cHV0X2ZpbGUgPC0gZmlsZS5wYXRoKHJlc3VsdHNfZGlyLCAibWVyZ2VkX2FuY2VzdHJ5X2hpc3RvbG9neV9zdXJ2aXZhbC50c3YiKQpgYGAKCiMjIEltcG9ydCB0aGUgbWV0YWRhdGEgYW5kIGFwcGVuZCB1cGRhdGVkIEVGUyBkYXRhIGZyb20gYmFzZSBoaXN0b2xvZ2llcwoKYGBge3IgUmVhZCBpbiBtZXRhZGF0YX0KYW5jZXN0cnkgPC0gcmVhZHI6OnJlYWRfdHN2KGFuY2VzdHJ5X2ZpbGUpICU+JQogIGRwbHlyOjpzZWxlY3QoLUVGU19kYXlzLCAtT1NfZGF5cywgLU9TX3N0YXR1cykKCnN1cnZpdmFsIDwtIHJlYWRfdHN2KHN1cnZpdmFsX2ZpbGUpCgphbmNlc3RyeSA8LSBhbmNlc3RyeSAlPiUKICBsZWZ0X2pvaW4oc3Vydml2YWxbLGMoIktpZHNfRmlyc3RfUGFydGljaXBhbnRfSUQiLCAiT1NfZGF5cyIsICJPU19zdGF0dXMiLCAiRUZTX2RheXMiLCAiRUZTX2V2ZW50X3R5cGUiKV0pICU+JQogIGRpc3RpbmN0KEtpZHNfRmlyc3RfUGFydGljaXBhbnRfSUQsIC5rZWVwX2FsbCA9IFQpICU+JQogIGRwbHlyOjptdXRhdGUoRUZTX2RheXMgPSBhcy5udW1lcmljKEVGU19kYXlzKSwKICAgICAgICAgICAgICAgIE9TX2RheXMgPSBhcy5udW1lcmljKE9TX2RheXMpKSAlPiUKICBkcGx5cjo6bXV0YXRlKE9TX3llYXJzID0gT1NfZGF5cy8zNjUuMjUsCiAgICAgICAgIEVGU195ZWFycyA9IEVGU19kYXlzLzM2NS4yNSkgJT4lCiAgZHBseXI6Om11dGF0ZShFRlNfc3RhdHVzID0gY2FzZV93aGVuKAogICAgRUZTX2V2ZW50X3R5cGUgPT0gIk5vdCBBcHBsaWNhYmxlIiB+ICJOTyBFVkVOVCIsCiAgICAhaXMubmEoRUZTX2V2ZW50X3R5cGUpIH4gIkVWRU5UIiwKICAgIFRSVUUgfiBOQV9jaGFyYWN0ZXJfCiAgKSkgJT4lCiAgZHBseXI6Om11dGF0ZShFVVJfc3RhdHVzID0gY2FzZV93aGVuKAogICAgcHJlZGljdGVkX2FuY2VzdHJ5ID09ICJFVVIiIH4gIkVVUiIsIAogICAgVFJVRSB+ICJub24tRVVSIgogICkpCgp3cml0ZV90c3YoYW5jZXN0cnksIG91dHB1dF9maWxlKQpgYGA=</div>
 
 
 </div>

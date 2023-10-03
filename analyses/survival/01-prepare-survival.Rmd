@@ -22,36 +22,26 @@ Uses a wrapper function (`survival_analysis`) from utils folder.
 
 #### Packages and functions
 
-Read in set up script.
+Set up directory paths
 
 ```{r Set up library}
 library(survival)
 library(ggpubr)
 library(tidyverse)
-library(openxlsx)
 # Set directories
 root_dir <- rprojroot::find_root(rprojroot::has_dir(".git"))
+data_dir <- file.path(root_dir, "data")
 analysis_dir <- file.path(root_dir, "analyses", "survival")
 
-# Magrittr pipe
-`%>%` <- dplyr::`%>%`
-```
-
-#### Set up files and directories
-
-Set up output directories. 
-
-```{r Set up directories}
-results_dir <- file.path(analysis_dir, "results")
 input_dir <- file.path(analysis_dir, "input")
-```
+results_dir <- file.path(analysis_dir, "results")
 
-Make output directories.
-
-```{r Make output directories}
 if (!dir.exists(results_dir)) {
   dir.create(results_dir)
 }
+
+# Magrittr pipe
+`%>%` <- dplyr::`%>%`
 ```
 
 Declare input file paths and useful variables
