@@ -79,5 +79,39 @@ ancestry <- ancestry %>%
     TRUE ~ "non-EUR"
   ))
 
+```
+
+
+```{r format mol sub gruop}
+
+ancestry <- ancestry %>%
+    mutate(mol_sub_group = case_when(
+    plot_group %in% c("DIPG or DMG", "Other high-grade glioma") & grepl("wildtype", molecular_subtype) ~ "HGG, H3 WT",
+    plot_group %in% c("DIPG or DMG", "Other high-grade glioma") & grepl("K28", molecular_subtype) ~ "DMG, H3 K28",
+    plot_group %in% c("DIPG or DMG", "Other high-grade glioma") & grepl("G35", molecular_subtype) ~ "DHG, H3 G35",
+    plot_group %in% c("DIPG or DMG", "Other high-grade glioma") & grepl("IHG", molecular_subtype) ~ "IHG",
+    plot_group %in% c("DIPG or DMG", "Other high-grade glioma") & grepl("IDH", molecular_subtype) ~ "HGG, IDH",
+    plot_group %in% c("Low-grade glioma") & grepl("SEGA", molecular_subtype) ~ "SEGA",
+    plot_group %in% c("Low-grade glioma") & grepl("-BRAF", molecular_subtype) ~ "LGG, BRAF fusion",
+    plot_group %in% c("Low-grade glioma") & grepl("wildtype", molecular_subtype) ~ "LGG, WT",
+    plot_group %in% c("Low-grade glioma") & grepl("To be classified", molecular_subtype) ~ "LGG, To be classified",
+    plot_group %in% c("Low-grade glioma") ~ "LGG, Other alteration",
+    plot_group %in% c("Mixed neuronal-glial tumor") & grepl("wildtype", molecular_subtype) ~ "GNG/GNT, WT",
+    plot_group %in% c("Mixed neuronal-glial tumor") & grepl("-BRAF", molecular_subtype) ~ "GNG/GNT, BRAF fusion",
+    plot_group %in% c("Mixed neuronal-glial tumor") & !grepl("To be classified", molecular_subtype) ~ "GNG/GNT, Other alteration",
+    !is.na(molecular_subtype) ~ molecular_subtype
+  )) %>%
+  mutate(age_at_diagnosis_days = as.numeric(age_at_diagnosis_days)) %>%
+  mutate(age_at_diagnosis_years = age_at_diagnosis_days/365.25)
+
+```
+
+```{r save output}
 write_tsv(ancestry, output_file)
+
+```
+
+```{r sessionInfo}
+sessionInfo()
+
 ```
