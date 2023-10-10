@@ -25,7 +25,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v4
         with:
-          images: docker pull pgc-images.sbgenomics.com/corbettr/pbta-ancestry
+          images: pgc-images.sbgenomics.com/corbettr/pbta-ancestry
           tags: |
             type=raw,value=latest
             # Only tag the image with latest if we're building on the default
