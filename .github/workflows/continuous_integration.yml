@@ -27,7 +27,7 @@ jobs:
         with:
           images: docker pull pgc-images.sbgenomics.com/corbettr/pbta-ancestry
           tags: |
-            type=raw,value=analysisjob
+            type=raw,value=latest
             # Only tag the image with latest if we're building on the default
             # branch (e.g., main).
             type=raw,value=latest,enable={{is_default_branch}}
