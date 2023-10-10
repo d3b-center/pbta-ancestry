@@ -3,7 +3,7 @@ name: Docker Image CI
 on:
   push:
     branches: 
-      - github_workflow
+      - rjcorb/github-action-docker
   pull_request:
   workflow_dispatch:
 
