@@ -40,10 +40,6 @@ if (!dir.exists(results_dir)) {
   dir.create(results_dir)
 }
 
-# Magrittr pipe
-`%>%` <- dplyr::`%>%`
-```
-
 Declare input file paths and useful variables
 
 ```{r Set input file paths}
