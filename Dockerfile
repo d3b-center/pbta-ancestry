@@ -27,6 +27,7 @@ RUN apt-get -y --no-install-recommends install \
 RUN install2.r \
 	BiocManager \
   data.table \
+  ggalluvial \
   ggpubr \
   ggthemes \
 	optparse \
