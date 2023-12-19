@@ -26,6 +26,7 @@ RUN apt-get -y --no-install-recommends install \
 # install R packages from CRAN
 RUN install2.r \
 	BiocManager \
+	circlize \
   data.table \
   ggalluvial \
   ggpubr \
@@ -37,6 +38,10 @@ RUN install2.r \
   survMisc \
   survminer \
   tidytext
+  
+  # install R packages from Bioconductor 
+RUN ./install_bioc.r \
+  ComplexHeatmap 
   
 RUN ./install_github.r \
 	clauswilke/colorblindr
