@@ -4,6 +4,8 @@ LABEL maintainer = "Ryan Corbett (corbettr@chop.edu)"
 
 COPY scripts/install_github.r .
 
+COPY scripts/install_bioc.r .
+
 ### Install apt-getable packages to start
 #########################################
 RUN apt-get update && apt-get install -y --no-install-recommends apt-utils dialog
