@@ -79,7 +79,7 @@ ancestry <- ancestry %>%
   dplyr::left_join(hist_tumor[, c('Kids_First_Participant_ID', 'Kids_First_Biospecimen_ID_tumor', 'sample_id',
                               'reported_gender', 'race', 'ethnicity', 'broad_histology', 'cancer_group',
                               'molecular_subtype', 'tumor_descriptor', "CNS_region", 'extent_of_tumor_resection', 
-                              'age_at_diagnosis_days', 'OS_days', 'OS_status', 'EFS_days',
+                              'age_at_diagnosis_days', 'OS_days', 'OS_status', 'EFS_days', "EFS_event_type",
                      'age_at_chemo_start', 'age_at_radiation_start')], 
             by = 'Kids_First_Participant_ID') %>%
   dplyr::left_join(plot_mapping[,c('cancer_group', 'plot_group')], by = 'cancer_group')
