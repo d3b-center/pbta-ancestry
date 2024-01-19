@@ -1,0 +1,179 @@
+---
+title: 'Annotate BRAF fusion breakpoints'
+output: 
+  html_document:
+  toc: TRUE
+toc_float: TRUE
+author: Ryan Corbett
+date: "2024"
+---
+
+This script annotates BRAF fusion breakpoints with exon ids and rank in canonical transcripts
+  
+Load libraries and set directories
+  
+```{r load libraries and set directories}
+library(data.table)
+library(tidyverse)
+library(GenomicRanges)
+library(biomaRt)
+
+root_dir <- rprojroot::find_root(rprojroot::has_dir(".git"))
+
+data_dir <- file.path(root_dir, "data")
+analysis_dir <- file.path(root_dir, "analyses", "braf-fusions")
+results_dir <- file.path(analysis_dir, "results")
+input_dir <- file.path(analysis_dir, "input")
+```
+
+Define file paths
+```{r}
+fusion_file <- file.path(input_dir, "fusion-putative-oncogenic.tsv")
+
+hist_file <- file.path(root_dir, "analyses", "add-histologies", "results", "merged_ancestry_histology_data.tsv")
+
+```
+
+Load oncogenic fusion file and filter for KIAA1549--BRAF fusions
+
+```{r}
+braf_fusions <- read_tsv(fusion_file) %>%
+  dplyr::filter(FusionName %in% c("KIAA1549--BRAF", "BRAF--KIAA1549"))
+
+```
+
+Create breakpoint coordinate columns
+
+```{r}
+braf_fusions <- braf_fusions %>%
+  dplyr::mutate(Chromosome = 7) %>%
+  dplyr::mutate(LeftBreakpoint_position = as.numeric(str_sub(LeftBreakpoint, start = 3)),
+                RightBreakpoint_position = as.numeric(str_sub(RightBreakpoint, start = 3)))
+
+```
+
+Create GRanges objects for left and right breakpoints
+
+```{r}
+left_granges <- GRanges(seqnames = braf_fusions$Chromosome,
+                        ranges = IRanges(start = braf_fusions$LeftBreakpoint_position,
+                                         end = braf_fusions$LeftBreakpoint_position))
+
+right_granges <- GRanges(seqnames = braf_fusions$Chromosome,
+                        ranges = IRanges(start = braf_fusions$RightBreakpoint_position,
+                                         end = braf_fusions$RightBreakpoint_position))
+
+```
+
+Obtain data frame of BRAF and KIAA1549 canonical transcript exon coordinates
+
+```{r}
+ensembl <- useMart("ensembl", dataset = "hsapiens_gene_ensembl")
+
+# Generate data frame of chr7 exon ids for all transcripts
+exons_feature_bm <- getBM(
+  attributes = c("external_gene_name", "ensembl_transcript_id", "transcript_is_canonical", "ensembl_exon_id", "chromosome_name"),
+  filters = "chromosome_name",
+  values = "7",  # Chromosome name (adjust as needed)
+  mart = ensembl
+)
+
+# Generate data frame of chr7 exon coordinates for all transcripts
+exons_structure_bm <- getBM(
+  attributes = c("ensembl_exon_id", "rank", "chromosome_name", "exon_chrom_start", "exon_chrom_end"),
+  filters = "chromosome_name",
+  values = "7",  # Chromosome name (adjust as needed)
+  mart = ensembl
+)
+
+# Merge exon data, filter for BRAF and KIAA1549 canonical transcripts
+exons_bm <- exons_feature_bm %>%
+  dplyr::filter(!is.na(transcript_is_canonical) & external_gene_name %in% c("BRAF", "KIAA1549")) %>%
+  left_join(exons_structure_bm[,c("ensembl_exon_id", "exon_chrom_start", "exon_chrom_end", "rank")]) %>%
+  distinct(ensembl_exon_id, .keep_all = T) %>%
+  # add row ids to be used when assessing breakpoint-exon overlaps
+  dplyr::mutate(subjectHits = row_number())
+  
+```
+
+Create exon GRanges object
+
+```{r}
+exon_granges <- GRanges(
+  seqnames = exons_bm$chromosome_name,
+  ranges = IRanges(
+    start = exons_bm$exon_chrom_start,
+    end = exons_bm$exon_chrom_end
+  ),
+  mcols = c(exons_bm[,c("external_gene_name", "ensembl_transcript_id", "ensembl_exon_id", "rank")])
+)
+
+```
+
+Identify breakpoint-exon overlaps
+
+```{r}
+left_exons <- findOverlaps(left_granges, exon_granges)
+
+# Append exon annotation to overlap df
+left_exons <- left_exons %>%
+  as.data.frame() %>%
+  left_join(exons_bm[,c("subjectHits", "ensembl_exon_id", "rank")])
+
+right_exons <- findOverlaps(right_granges, exon_granges)
+
+right_exons <- right_exons %>%
+  as.data.frame() %>%
+  left_join(exons_bm[,c("subjectHits", "ensembl_exon_id", "rank")])
+
+```
+
+Add exon annotation to fusion df using overlap dfs
+
+```{r}
+
+braf_fusions <- braf_fusions %>%
+  # Add rownames ids to match with overlap dfs
+  dplyr::mutate(queryHits = row_number()) %>%
+  # join by queryHits
+  left_join(left_exons) %>%
+  dplyr::rename("left_exon_id" = ensembl_exon_id,
+                "left_exon_rank" = rank) %>%
+  dplyr::select(-subjectHits) %>%
+  # join by queryHits
+  left_join(right_exons) %>%
+  dplyr::rename("right_exon_id" = ensembl_exon_id,
+                "right_exon_rank" = rank) %>%
+  # create column of breakpoint exons
+  dplyr::mutate(breakpoint_exons = case_when(
+    is.na(left_exon_rank) & is.na(right_exon_rank) ~ NA_character_,
+    FusionName == "KIAA1549--BRAF" ~ glue::glue("{left_exon_rank}:{right_exon_rank}"),
+    FusionName == "BRAF--KIAA1549" ~ glue::glue("{right_exon_rank}:{left_exon_rank}")
+    )) %>%
+  dplyr::select(-subjectHits, -queryHits)
+
+# add column indicating if breakpoint is common or rare/novel
+common_breakpoints <- c("16:9", "15:9", "16:11", "18:10")
+
+braf_fusions <- braf_fusions %>%
+  dplyr::mutate(breakpoint_type = case_when(
+    breakpoint_exons %in% common_breakpoints ~ "common",
+    !is.na(breakpoint_exons) ~ "rare/novel"
+  ))
+
+```
+
+Save annotated fusion file
+
+```{r}
+write_tsv(braf_fusions, 
+          file.path(results_dir, "braf-fusions-exon-annotation.tsv"))
+
+```
+
+Print session info
+
+```{r}
+sessionInfo()
+
+```
