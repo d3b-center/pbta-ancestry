@@ -82,7 +82,7 @@ ancestry <- ancestry %>%
                               'age_at_diagnosis_days', 'OS_days', 'OS_status', 'EFS_days', "EFS_event_type",
                      'age_at_chemo_start', 'age_at_radiation_start')], 
             by = 'Kids_First_Participant_ID') %>%
-  dplyr::left_join(plot_mapping[,c('cancer_group', 'plot_group')], by = 'cancer_group')
+  dplyr::left_join(plot_mapping[,c('broad_histology', 'cancer_group', 'plot_group')], by = c('broad_histology', 'cancer_group'))
 ```
 
 
@@ -109,25 +109,6 @@ ancestry_unique <- initial_tumors %>%
   bind_rows(recurrent_tumors, other_tumors)
 ```
 
-Use molecular subtyping from HOPE project, replacing OPC plot_group and subtypes for included patients
-```{r}
-# hope <- read_tsv(hope_file) 
-# 
-# ancestry_unique <- ancestry_unique %>%
-#   left_join(hope[,c("sample_id", "plot_group", "molecular_subtype")], 
-#             by = "sample_id", suffix = c(".opc", ".hope")) %>%
-#   dplyr::mutate(molecular_subtype = case_when(
-#     sample_id %in% hope$sample_id ~ molecular_subtype.hope,
-#     TRUE ~ molecular_subtype.opc
-#   ),
-#   plot_group = case_when(
-#     sample_id %in% hope$sample_id ~ plot_group.hope,
-#     TRUE ~ plot_group.opc
-#   )) %>%
-#   dplyr::select(-plot_group.opc, -plot_group.hope,
-#                 -molecular_subtype.opc, -molecular_subtype.hope)
-
-```
 
 # Write merged data to file
 
