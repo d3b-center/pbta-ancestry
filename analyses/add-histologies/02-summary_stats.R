@@ -537,3 +537,26 @@ ancestry %>%
 
 dev.off()
 
+
+# plot LGG molecular subtype by predicted ancestry
+pdf(file.path(plots_dir, "lgg_subtype_by_predicted_ancestry.pdf"),
+    width = 5, height = 6)
+
+ancestry %>%
+  filter(plot_group == "Low-grade glioma") %>%
+  dplyr::mutate(molecular_subtype = factor(molecular_subtype,
+                                           levels = rev(unique(molecular_subtype[order(molecular_subtype)])))) %>%
+  count(predicted_ancestry, molecular_subtype, .drop = FALSE) %>%
+  left_join(lgg_anc_total, by = "predicted_ancestry") %>%
+  mutate(perc = round(n/total*100, 2)) %>%
+  ggplot(aes(x = predicted_ancestry, y = molecular_subtype, fill = n)) +
+  geom_tile(color = "black",
+            lwd = 1,
+            linetype = 1, show.legend = FALSE) +
+  scale_fill_gradient(low="white", high="orangered") +
+  geom_text(aes(label = n), color = "black", size = 3) +
+  labs(x = NULL, y = NULL) +
+  theme_minimal()
+
+dev.off()
+
