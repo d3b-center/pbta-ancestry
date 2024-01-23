@@ -30,8 +30,6 @@ Define file paths
 ```{r}
 fusion_file <- file.path(input_dir, "fusion-putative-oncogenic.tsv")
 
-hist_file <- file.path(root_dir, "analyses", "add-histologies", "results", "merged_ancestry_histology_data.tsv")
-
 ```
 
 Load oncogenic fusion file and filter for KIAA1549--BRAF fusions
