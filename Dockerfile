@@ -43,7 +43,9 @@ RUN install2.r \
   
   # install R packages from Bioconductor 
 RUN ./install_bioc.r \
-  ComplexHeatmap 
+  biomaRt \
+  ComplexHeatmap \
+  GenomicRanges
   
 RUN ./install_github.r \
 	clauswilke/colorblindr
