@@ -110,14 +110,18 @@ dev.off()
 # consolidate unreported/unknown reported races and ethnicities 
 ancestry <- ancestry %>%
   dplyr::mutate(race = case_when(
-    race %in% c("Not Reported", "Other", "Reported Unknown", "Not Reported/Unknown", "Unknown") | is.na(race) ~ "Not Reported/Unknown",
+    race %in% c("Not Reported", "Other", "Reported Unknown", "Not Reported/Unknown", "Unknown") | is.na(race) ~ "Race Unknown",
     race == "White/Caucasian" ~ "White",
+    race == "American Indian or Alaska Native" ~ "AI/AN",
+    race == "Native Hawaiian or Other Pacific Islander" ~ "NHPI",
+    race == "Black or African American" ~ "Black/Afr. Am.",
+    race == "More Than One Race" ~ ">1 Race",
     TRUE ~ race
   )) %>%
   mutate(ethnicity = case_when(
-    grepl("Reported|Available|Unavailable", ethnicity) | is.na(ethnicity) ~ "Not Reported/Unavailable",
-    grepl("Non-Hispanic|Not Hispanic", ethnicity) ~ "Not Hispanic or Latino",
-    TRUE ~ ethnicity
+    grepl("Reported|Available|Unavailable", ethnicity) | is.na(ethnicity) ~ "Unknown",
+    grepl("Non-Hispanic|Not Hispanic", ethnicity) ~ "Not Hispanic/Latino",
+    TRUE ~ "Hispanic/Latino"
   ))
 
 # Create data frame for alluvial plots, including only predicted_ancestry, race, and ethnicity columns
@@ -129,21 +133,21 @@ alluvial_df <- as.data.frame(table(ancestry$predicted_ancestry, ancestry$race, a
   to_lodes_form(axes = 1:3) %>% 
   dplyr::rename(Group = stratum) %>% 
   mutate(Group = factor(Group, levels = c("EAS", "SAS", "AFR", "AMR", "EUR",
-                                          "Asian", "Black or African American", "American Indian or Alaska Native", 
-                                          "Native Hawaiian or Other Pacific Islander", "White", "More Than One Race",
-                                          "Not Reported/Unknown", 
-                                          "Hispanic or Latino",
-                                          "Not Hispanic or Latino",
-                                          "Not Reported/Unavailable"))) %>% 
-  mutate(race = case_when(Group %in% c("Asian", "Black or African American", "American Indian or Alaska Native", 
-                                       "Native Hawaiian or Other Pacific Islander", "White", "More Than One Race",
-                                       "Not Reported/Unknown") ~ Group, 
+                                          "Asian", "Black/Afr. Am.", "AI/AN", 
+                                          "NHPI", "White", ">1 Race",
+                                          "Race Unknown", 
+                                          "Hispanic/Latino",
+                                          "Not Hispanic/Latino",
+                                          "Unknown"))) %>% 
+  mutate(race = case_when(Group %in% c("Asian", "Black/Afr. Am.", "AI/AN", 
+                                       "NHPI", "White", ">1 Race",
+                                       "Race Unknown") ~ Group, 
                           TRUE ~ NA), 
          predicted_ancestry = case_when(Group %in% c("EAS", "SAS", "AFR", "EUR", "AMR") ~ Group, 
                                         TRUE ~ NA),
-         ethnicity = case_when(Group %in% c("Hispanic or Latino",
-                                            "Not Hispanic or Latino",
-                                            "Not Reported/Unavailable") ~ Group,
+         ethnicity = case_when(Group %in% c("Hispanic/Latino",
+                                            "Not Hispanic/Latino",
+                                            "Unknown") ~ Group,
                                TRUE ~ NA))
 
 # Generate alluvial plot
@@ -152,53 +156,53 @@ p1 <- ggplot(alluvial_df, aes(y = Freq, stratum = Group, alluvium = alluvium, x 
   geom_stratum(show.legend = F) +
   scale_fill_manual(values = c("Asian" = "#009E73", "SAS" = "#D55E00", "EAS" = "#009E73",
                                "White" = "#0072B2", "EUR" = "#0072B2",
-                               "Black or African American" = "#E69F00", "AFR" = "#E69F00",
-                               "Native Hawaiian or Other Pacific Islander" = "skyblue", "AMR" = "#56B4E9",
-                               "American Indian or Alaska Native" = "#56B4E9",
-                               "Not Reported/Unknown" = "grey", "More Than One Race" = "brown",
-                               "Hispanic or Latino" = "#56B4E9",
-                               "Not Hispanic or Latino" = "#0072B2",
-                               "Not Reported/Unavailable" = "grey")) +
+                               "Black/Afr. Am." = "#E69F00", "AFR" = "#E69F00",
+                               "NHPI" = "skyblue", "AMR" = "#56B4E9",
+                               "AI/AN" = "#56B4E9",
+                               "Race Unknown" = "grey", ">1 Race" = "brown",
+                               "Hispanic/Latino" = "#56B4E9",
+                               "Not Hispanic/Latino" = "#0072B2",
+                               "Unknown" = "grey")) +
   xlab("") + 
   ylab("Number of Patients") +
   scale_x_discrete(labels = c("predicted ancestry", "reported race", "reported ethnicity")) + 
   theme_Publication()
 
 # Create separate ancestry, race, and ethnicity dfs for legend generation
-race_df <- data.frame(race = c("Asian", "Black or African American", "American Indian or Alaska Native", 
-                               "Native Hawaiian or Other Pacific Islander", "White", "More Than One Race",
-                               "Not Reported/Unknown"), 
+race_df <- data.frame(race = c("Asian", "Black/Afr. Am.", "AI/AN", 
+                               "NHPI", "White", ">1 Race",
+                               "Race Unknown"), 
                       value = 1)
 ancestry_df <- data.frame(predicted_ancestry = c("EAS", "SAS", "AFR", "EUR", "AMR"), 
                           value = 1)
-ethnicity_df <- data.frame(ethnicity = c("Hispanic or Latino",
-                                                  "Not Hispanic or Latino",
-                                                  "Not Reported/Unavailable"), 
+ethnicity_df <- data.frame(ethnicity = c("Hispanic/Latino",
+                                                  "Not Hispanic/Latino",
+                                                  "Unknown"), 
                           value = 1)
 
 # plot race legend
-lgd_race <- ggplot(race_df, aes(x = value, y = factor(race, levels = c("Not Reported/Unknown", 
-                                                                   "More Than One Race", "White", 
-                                                                   "American Indian or Alaska Native",
-                                                                   "Native Hawaiian or Other Pacific Islander", 
-                                                                   "Black or African American", "Asian")), 
+lgd_race <- ggplot(race_df, aes(x = value, y = factor(race, levels = c("Race Unknown", 
+                                                                   ">1 Race", "White", 
+                                                                   "AI/AN",
+                                                                   "NHPI", 
+                                                                   "Black/Afr. Am.", "Asian")), 
                             fill = race)) + 
   geom_tile(show.legend = T, color = "black",
             lwd = 0.5, linetype = 1) + 
   scale_fill_manual(values = c("Asian" = "#009E73",  
                                "White" = "#0072B2", 
-                               "Black or African American" = "#E69F00", 
-                               "American Indian or Alaska Native" = "#56B4E9",
-                               "Native Hawaiian or Other Pacific Islander" = "skyblue", 
-                               "More Than One Race" = "brown",
-                               "Not Reported/Unknown" = "grey"),
+                               "Black/Afr. Am." = "#E69F00", 
+                               "AI/AN" = "#56B4E9",
+                               "NHPI" = "skyblue", 
+                               ">1 Race" = "brown",
+                               "Race Unknown" = "grey"),
                     breaks = c("Asian",  
-                               "Black or African American", 
-                               "American Indian or Alaska Native",
-                               "Native Hawaiian or Other Pacific Islander", 
+                               "Black/Afr. Am.", 
+                               "AI/AN",
+                               "NHPI", 
                                "White", 
-                               "More Than One Race",
-                               "Not Reported/Unknown")) +
+                               ">1 Race",
+                               "Race Unknown")) +
   labs(fill = "Reported Race") +
   theme_Publication()
 leg_race <- get_legend(lgd_race)
@@ -221,16 +225,16 @@ leg_anc <- get_legend(lgd_anc)
 
 # Plot ethnicity legend
 lgd_ethn <- ggplot(ethnicity_df, aes(x = value, y = factor(ethnicity, 
-                                                      levels = c("Hispanic or Latino",
-                                                                 "Not Hispanic or Latino",
-                                                                 "Not Reported/Unavailable")), 
+                                                      levels = c("Hispanic/Latino",
+                                                                 "Not Hispanic/Latino",
+                                                                 "Unknown")), 
                                 fill = ethnicity)) + 
   geom_tile(show.legend = T, col = "black",
             lwd = 0.5, linetype = 1) + 
   #xlim() + 
-  scale_fill_manual(values = c("Hispanic or Latino" = "#56B4E9",
-                               "Not Hispanic or Latino" = "#0072B2",
-                               "Not Reported/Unavailable" = "grey")) +
+  scale_fill_manual(values = c("Hispanic/Latino" = "#56B4E9",
+                               "Not Hispanic/Latino" = "#0072B2",
+                               "Unknown" = "grey")) +
   labs(fill = "Reported Ethnicity") +
   theme_Publication()
 leg_ethn <- get_legend(lgd_ethn)
@@ -259,16 +263,21 @@ race_total <- ancestry %>%
   #filter(Kids_First_Biospecimen_ID %in% survival$Kids_First_Biospecimen_ID) %>%
   count(race) %>%
   rename("total" = "n") %>%
+  mutate(race = fct_relevel(race,
+                            c("AI/AN", "Asian", "Black/Afr. Am.", "NHPI", 
+                                  "White", ">1 Race", "Race Unknown"))) %>%
   arrange(desc(race))
 
 # plot ancestry count by reported race
 pdf(file.path(plots_dir, "predicted_ancestry_counts_by_race.pdf"),
-    width = 8, height = 5)
+    width = 7, height = 4)
 
 ancestry %>%
   count(predicted_ancestry, race) %>%
-  mutate(race = factor(race,
-                       rev(unique(race)[order(unique(race))]))) %>%
+  mutate(race = fct_relevel(race,
+                       rev(c("AI/AN", "Asian", "Black/Afr. Am.", "NHPI", 
+                                      "White", ">1 Race", "Race Unknown")))) %>%
+  arrange(race) %>%
   ggplot(aes(x = race, y = n, fill = predicted_ancestry)) +
   geom_bar(position="stack", stat="identity", color = "black") +
   labs(y = "No. Patients", title = "reported race", 
@@ -284,13 +293,15 @@ dev.off()
 
 # plot ancestry percent by reported race
 pdf(file.path(plots_dir, "predicted_ancestry_percent_by_race.pdf"),
-    width = 8, height = 5)
+    width = 7, height = 4)
 
 ancestry %>%
   count(predicted_ancestry, race) %>%
   left_join(race_total, by = "race") %>%
-  mutate(race = factor(race,
-                       rev(unique(race)[order(unique(race))]))) %>%
+  mutate(race = fct_relevel(race,
+                       rev(c("AI/AN", "Asian", "Black/Afr. Am.", "NHPI", 
+                                  "White", ">1 Race", "Race Unknown")))) %>%
+  arrange(race) %>%
   mutate(perc = n/total) %>%
   ggplot(aes(x = race, y = perc, fill = predicted_ancestry)) +
   geom_bar(position="stack", stat="identity", color = "black") +
@@ -314,7 +325,7 @@ ethnicity_total <- ancestry %>%
 
 # plot ancestry count by reported ethnicity
 pdf(file.path(plots_dir, "predicted_ancestry_counts_by_ethnicity.pdf"),
-    width = 8, height = 5)
+    width = 7, height = 4)
 
 ancestry %>%
   count(predicted_ancestry, ethnicity) %>%
@@ -335,7 +346,7 @@ dev.off()
 
 # plot ancestry percent by reported ethnicity
 pdf(file.path(plots_dir, "predicted_ancestry_percent_by_ethnicity.pdf"),
-    width = 8, height = 5)
+    width = 7, height = 4)
 
 ancestry %>%
   count(predicted_ancestry, ethnicity) %>%
