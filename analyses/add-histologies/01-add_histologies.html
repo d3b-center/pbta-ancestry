@@ -465,8 +465,7 @@ input_dir &lt;- file.path(analysis_dir, &quot;input&quot;)</code></pre>
 <pre class="r"><code># Somalier results
 ancestry_file &lt;- file.path(data_dir, &quot;DEI_CBTN-PNOC_rerun_somalier_ancestry.tsv&quot;)
 
-# files for converting IDs and filtering EU patients
-pnoc_ids_file &lt;- file.path(input_dir, &quot;all_pnoc_normal_wgs.tsv&quot;)
+# histologies file
 hist_file &lt;- file.path(data_dir, &#39;histologies.tsv&#39;)
 
 ## plot group designation file
@@ -499,15 +498,6 @@ output_file &lt;- file.path(results_dir, &#39;merged_ancestry_histology_data.tsv
 <div id="add-data-columns-from-histology-file" class="section level2">
 <h2>Add data columns from histology file</h2>
 <p>demographic data, pathology, and clinical data</p>
-<pre class="r"><code># match patient ID to BS ID in `res_all`
-pnoc_ids &lt;- read_tsv(pnoc_ids_file)</code></pre>
-<pre><code>## Rows: 52 Columns: 2
-## ── Column specification ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-## Delimiter: &quot;\t&quot;
-## chr (2): Kids_First_Biospecimen_ID, Kids_First_Participant_ID
-## 
-## ℹ Use `spec()` to retrieve the full column specification for this data.
-## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
 <pre class="r"><code># Add participant IDs to `ancestry`
 ancestry &lt;- ancestry %&gt;%
   left_join(hist[,c(&#39;Kids_First_Biospecimen_ID&#39;, &#39;Kids_First_Participant_ID&#39;, &#39;sample_type&#39;, &quot;cohort_participant_id&quot;)], by = &#39;Kids_First_Biospecimen_ID&#39;) %&gt;%

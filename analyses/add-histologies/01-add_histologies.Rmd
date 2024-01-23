@@ -28,8 +28,7 @@ Define input and output file paths
 # Somalier results
 ancestry_file <- file.path(data_dir, "DEI_CBTN-PNOC_rerun_somalier_ancestry.tsv")
 
-# files for converting IDs and filtering EU patients
-pnoc_ids_file <- file.path(input_dir, "all_pnoc_normal_wgs.tsv")
+# histologies file
 hist_file <- file.path(data_dir, 'histologies.tsv')
 
 ## plot group designation file
@@ -52,8 +51,6 @@ hist <- read_tsv(hist_file, guess_max = 1000000)
 
 demographic data, pathology, and clinical data 
 ```{r add histology}
-# match patient ID to BS ID in `res_all`
-pnoc_ids <- read_tsv(pnoc_ids_file)
 
 # Add participant IDs to `ancestry`
 ancestry <- ancestry %>%
