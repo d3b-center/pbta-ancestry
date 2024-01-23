@@ -35,9 +35,6 @@ hist_file <- file.path(data_dir, 'histologies.tsv')
 ## plot group designation file
 plot_mapping_file <- file.path(input_dir, 'plot-mapping.tsv')
 
-# hope project pathology review 
-hope_file <- file.path(input_dir, "hope-non-hgg_path_review.tsv")
-
 # output file
 output_file <- file.path(results_dir, 'merged_ancestry_histology_data.tsv')
 ```
@@ -61,9 +58,6 @@ pnoc_ids <- read_tsv(pnoc_ids_file)
 # Add participant IDs to `ancestry`
 ancestry <- ancestry %>%
   left_join(hist[,c('Kids_First_Biospecimen_ID', 'Kids_First_Participant_ID', 'sample_type', "cohort_participant_id")], by = 'Kids_First_Biospecimen_ID') %>%
-  dplyr::mutate(sample_type = case_when(
-    is.na(sample_type) & Kids_First_Biospecimen_ID %in% pnoc_ids$Kids_First_Biospecimen_ID ~ 'Normal', 
-    TRUE ~ sample_type)) %>%
   dplyr::filter(sample_type != 'Tumor')
 
 # filter histologies file to exclude Normal samples

@@ -430,13 +430,13 @@ font-size: 0.95em;
 <p>Load libraries and set directories</p>
 <pre class="r"><code>library(data.table)
 library(tidyverse)</code></pre>
-<pre><code>## ── Attaching core tidyverse packages ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── tidyverse 2.0.0 ──
+<pre><code>## ── Attaching core tidyverse packages ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── tidyverse 2.0.0 ──
 ## ✔ dplyr     1.1.1     ✔ readr     2.1.4
 ## ✔ forcats   1.0.0     ✔ stringr   1.5.0
 ## ✔ ggplot2   3.4.2     ✔ tibble    3.2.1
 ## ✔ lubridate 1.9.2     ✔ tidyr     1.3.0
 ## ✔ purrr     1.0.1     
-## ── Conflicts ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── tidyverse_conflicts() ──
+## ── Conflicts ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── tidyverse_conflicts() ──
 ## ✖ dplyr::between()     masks data.table::between()
 ## ✖ dplyr::filter()      masks stats::filter()
 ## ✖ dplyr::first()       masks data.table::first()
@@ -472,16 +472,13 @@ hist_file &lt;- file.path(data_dir, &#39;histologies.tsv&#39;)
 ## plot group designation file
 plot_mapping_file &lt;- file.path(input_dir, &#39;plot-mapping.tsv&#39;)
 
-# hope project pathology review 
-hope_file &lt;- file.path(input_dir, &quot;hope-non-hgg_path_review.tsv&quot;)
-
 # output file
 output_file &lt;- file.path(results_dir, &#39;merged_ancestry_histology_data.tsv&#39;)</code></pre>
 <div id="read-in-somalier-results-and-histologies-files" class="section level2">
 <h2>Read in somalier results and histologies files</h2>
 <pre class="r"><code>ancestry &lt;- read_tsv(ancestry_file)</code></pre>
 <pre><code>## Rows: 1513 Columns: 13
-## ── Column specification ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+## ── Column specification ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 ## Delimiter: &quot;\t&quot;
 ## chr  (2): Kids_First_Biospecimen_ID, predicted_ancestry
 ## dbl (10): EAS_prob, AFR_prob, AMR_prob, SAS_prob, EUR_prob, PC1, PC2, PC3, P...
@@ -491,7 +488,7 @@ output_file &lt;- file.path(results_dir, &#39;merged_ancestry_histology_data.tsv
 ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
 <pre class="r"><code>hist &lt;- read_tsv(hist_file, guess_max = 1000000)</code></pre>
 <pre><code>## Rows: 47633 Columns: 58
-## ── Column specification ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+## ── Column specification ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 ## Delimiter: &quot;\t&quot;
 ## chr (41): Kids_First_Participant_ID, Kids_First_Biospecimen_ID, sample_id, a...
 ## dbl (17): cell_line_passage, OS_days, EFS_days, age_at_diagnosis_days, age_a...
@@ -505,7 +502,7 @@ output_file &lt;- file.path(results_dir, &#39;merged_ancestry_histology_data.tsv
 <pre class="r"><code># match patient ID to BS ID in `res_all`
 pnoc_ids &lt;- read_tsv(pnoc_ids_file)</code></pre>
 <pre><code>## Rows: 52 Columns: 2
-## ── Column specification ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+## ── Column specification ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 ## Delimiter: &quot;\t&quot;
 ## chr (2): Kids_First_Biospecimen_ID, Kids_First_Participant_ID
 ## 
@@ -514,9 +511,6 @@ pnoc_ids &lt;- read_tsv(pnoc_ids_file)</code></pre>
 <pre class="r"><code># Add participant IDs to `ancestry`
 ancestry &lt;- ancestry %&gt;%
   left_join(hist[,c(&#39;Kids_First_Biospecimen_ID&#39;, &#39;Kids_First_Participant_ID&#39;, &#39;sample_type&#39;, &quot;cohort_participant_id&quot;)], by = &#39;Kids_First_Biospecimen_ID&#39;) %&gt;%
-  dplyr::mutate(sample_type = case_when(
-    is.na(sample_type) &amp; Kids_First_Biospecimen_ID %in% pnoc_ids$Kids_First_Biospecimen_ID ~ &#39;Normal&#39;, 
-    TRUE ~ sample_type)) %&gt;%
   dplyr::filter(sample_type != &#39;Tumor&#39;)
 
 # filter histologies file to exclude Normal samples
@@ -527,7 +521,7 @@ hist_tumor &lt;- hist %&gt;%
 # read in plot_mapping file to add plot group to results
 plot_mapping &lt;- read_tsv(plot_mapping_file)</code></pre>
 <pre><code>## Rows: 79 Columns: 9
-## ── Column specification ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+## ── Column specification ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 ## Delimiter: &quot;\t&quot;
 ## chr (8): broad_histology, cancer_group, broad_histology_display, plot_group,...
 ## dbl (1): broad_histology_order
