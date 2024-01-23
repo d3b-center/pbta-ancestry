@@ -6,8 +6,7 @@ This analysis merges patient ancestry prediction data with OpenPedCan histologie
 
 
 ## Usage
-`Rscript -e "rmarkdown::render('01-add_histologies.Rmd')"`
-`Rscript 02-summary_stats.R`
+`bash run_module.sh`
 
 ## Folder content
 
@@ -18,11 +17,25 @@ This analysis merges patient ancestry prediction data with OpenPedCan histologie
 - `input/` files: 
   - `all_pnoc_normal_wgs.tsv`; biospecimen and participant IDs of PNOC normal samples
   - `Broad_to_BS.txt`; key for X01 patient biospecimen IDs
-  - `DEI_CBTN-PNOC_rerun.somalier-ancestry.tsv`; Somalier ancestry output for all WGS normal samples
-  - `histologies.tsv`; OpenPedCan v12 histologies file
-  - `Meyer_Tableau_Pull_11.8.2022.xlsm`; contains data on EU patients that are to be filtered out for this project
   - `plot-mapping.tsv` table of `plot_group` assignments by `broad histology` and `cancer_group`
 
 - `results/` files: 
+  - `merged_ancestry_histology_data.tsv`; merged ancestry and matched tumor histology data
 
-` `plots/` files: 
+- `plots/` files: 
+  - `ancestry-pcs.pdf`; plot of somalier PCs 1-4
+  - `ancestry-race-ethnicity-alluvial.pdf`; alluvial plot of cohort predicted ancestry, reported race, and reported ethnicity
+  - `lgg_subtype_by_predicted_ancestry.pdf`
+  - `lgg_tumor_location_by_predicted_ancestry.pdf`
+  - `lgg_tumor_resection_by_predicted_ancestry.pdf`
+  - `low_major_ancestry_heatmap.pdf`; heatmap of predicted ancestries probabilities for patients with major (predicted) ancestry probability < 0.9
+  - `major_predicted_ancestry_hist.pdf`; histogram of major (predicted) ancestry probability
+  - `plot_group_ancestry_ct_enr_heatmap.pdf`; 
+  - `plot_group_ancestry_enrichment_heatmap.pdf`
+  - `plot_group_by_ancestry.pdf`; plot group count by predicted ancestry 
+  - `plot_group_by_ancestry_unk_race.pdf`; plot group count for only those patients of unknown race
+  - `predicted_ancestry_counts_by_ethnicity.pdf`
+  - `predicted_ancestry_counts_by_race.pdf`
+  - `predicted_ancestry_percent_by_ethnicity.pdf`
+  - `predicted_ancestry_percent_by_race.pdf`
+
