@@ -4,6 +4,8 @@ LABEL maintainer = "Ryan Corbett (corbettr@chop.edu)"
 
 COPY scripts/install_github.r .
 
+COPY scripts/install_bioc.r .
+
 ### Install apt-getable packages to start
 #########################################
 RUN apt-get update && apt-get install -y --no-install-recommends apt-utils dialog
@@ -26,6 +28,7 @@ RUN apt-get -y --no-install-recommends install \
 # install R packages from CRAN
 RUN install2.r \
 	BiocManager \
+	circlize \
   data.table \
   ggalluvial \
   ggpubr \
@@ -37,6 +40,10 @@ RUN install2.r \
   survMisc \
   survminer \
   tidytext
+  
+  # install R packages from Bioconductor 
+RUN ./install_bioc.r \
+  ComplexHeatmap 
   
 RUN ./install_github.r \
 	clauswilke/colorblindr
