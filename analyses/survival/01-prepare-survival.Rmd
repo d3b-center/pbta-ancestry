@@ -39,6 +39,7 @@ results_dir <- file.path(analysis_dir, "results")
 if (!dir.exists(results_dir)) {
   dir.create(results_dir)
 }
+```
 
 Declare input file paths and useful variables
 
@@ -53,14 +54,13 @@ output_file <- file.path(results_dir, "merged_ancestry_histology_survival.tsv")
 ## Import the metadata and append updated EFS data from base histologies
 
 ```{r Read in metadata}
-ancestry <- readr::read_tsv(ancestry_file) %>%
-  dplyr::select(-EFS_days, -OS_days, -OS_status)
+ancestry <- readr::read_tsv(ancestry_file)
 
-survival <- read_tsv(survival_file)
+# survival <- read_tsv(survival_file)
 
 ancestry <- ancestry %>%
-  left_join(survival[,c("Kids_First_Participant_ID", "OS_days", "OS_status", "EFS_days", "EFS_event_type")]) %>%
-  distinct(Kids_First_Participant_ID, .keep_all = T) %>%
+  # left_join(survival[,c("Kids_First_Participant_ID", "OS_days", "OS_status", "EFS_days", "EFS_event_type")]) %>%
+  # distinct(Kids_First_Participant_ID, .keep_all = T) %>%
   dplyr::mutate(EFS_days = as.numeric(EFS_days),
                 OS_days = as.numeric(OS_days)) %>%
   dplyr::mutate(OS_years = OS_days/365.25,
