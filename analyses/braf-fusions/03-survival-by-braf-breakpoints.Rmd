@@ -1,0 +1,256 @@
+---
+title: 'Assess pLGG survival by BRAF fusion breakpoint fusion type in PBTA ancestry cohort'
+output: 
+  html_document:
+  toc: TRUE
+toc_float: TRUE
+author: Ryan Corbett
+date: "2024"
+---
+  
+Load libraries and set directories
+  
+```{r load libraries and set directories}
+library(data.table)
+library(tidyverse)
+library(survival)
+library(patchwork)
+
+root_dir <- rprojroot::find_root(rprojroot::has_dir(".git"))
+
+data_dir <- file.path(root_dir, "data")
+analysis_dir <- file.path(root_dir, "analyses", "braf-fusions")
+results_dir <- file.path(analysis_dir, "results")
+input_dir <- file.path(analysis_dir, "input")
+plot_dir <- file.path(analysis_dir, "plots")
+
+source(file.path(root_dir, "analyses", "survival", "util", "survival_models.R"))
+```
+
+Define file paths
+
+```{r}
+
+hist_file <- file.path(results_dir, "lgg-braf-fusion-breakpoint-annotation.tsv")
+
+```
+
+Load hist file with breakpoint data, and define `breakpoint_type` and `breakpoint_group` columns
+
+```{r}
+braf_hist <- read_tsv(hist_file)
+
+braf_hist <- braf_hist %>%
+  # Because we noticed different breakpoint frequencies in Asian vs. other ancestries, we will define a column that merges asian ancestries and retain other predicted ancestries
+  dplyr::mutate(AS_ancestry = case_when(
+    predicted_ancestry %in% c("EAS", "SAS") ~ "AS",
+    TRUE ~ predicted_ancestry
+  )) 
+```
+
+Run Kaplan-Meier analysis of event-free survival by breakpoint type (common vs. rare)
+
+```{r}
+kap_efs_type <- survival_analysis(
+  metadata  = braf_hist,
+  ind_var = "breakpoint_type",
+  test = "kap.meier",
+  metadata_sample_col = "Kids_First_Biospecimen_ID",
+  days_col = "EFS_days",
+  status_col = "EFS_status"
+  )
+
+km_plot_type <- plotKM(model = kap_efs_type,
+                    variable = "breakpoint_type",
+                    combined = F,
+                    title = "LGG, BRAF fusion")
+
+km_plot_type
+
+ggsave(file.path(plot_dir, "pbta_ancestry_km_efs_breakpoint_type.pdf"),
+       width = 10, height = 5)
+```
+
+Run Kaplan-Meier analysis of event-free survival by breakpoint group
+
+```{r}
+kap_efs_group <- survival_analysis(
+  metadata  = braf_hist,
+  ind_var = "breakpoint_group",
+  test = "kap.meier",
+  metadata_sample_col = "Kids_First_Biospecimen_ID", 
+  days_col = "EFS_days",
+  status_col = "EFS_status"
+  )
+
+km_plot_group <- plotKM(model = kap_efs_group,
+                    variable = "breakpoint_group",
+                    combined = F, 
+                    title = "LGG, BRAF fusion")
+
+km_plot_group
+
+ggsave(file.path(plot_dir, "pbta_ancestry_km_efs_breakpoint_group.pdf"),
+       width = 9, height = 5)
+```
+
+Run Kaplan-Meier analysis of event-free survival by predicted ancestry among 16:9 breakpoint pts
+
+```{r}
+kap_efs_group <- survival_analysis(
+  metadata  = braf_hist[braf_hist$breakpoint_group == "16:9" & !braf_hist$predicted_ancestry %in% c("EAS", "SAS"),],
+  ind_var = "predicted_ancestry",
+  test = "kap.meier",
+  metadata_sample_col = "Kids_First_Biospecimen_ID", 
+  days_col = "EFS_days",
+  status_col = "EFS_status"
+  )
+
+km_plot_group <- plotKM(model = kap_efs_group,
+                    variable = "predicted_ancestry",
+                    combined = F, 
+                    title = "LGG, BRAF fusion, breakpoint 16:09")
+
+km_plot_group
+
+ggsave(file.path(plot_dir, "pbta_ancestry_km_efs_16_9_predicted_ancestry.pdf"),
+       width = 9, height = 5)
+```
+
+Run Kaplan-Meier analysis of event-free survival by predicted ancestry among 15:9 breakpoint pts (combine asian ancestries here)
+
+```{r}
+kap_efs_group <- survival_analysis(
+  metadata  = braf_hist[braf_hist$breakpoint_group == "15:9",],
+  ind_var = "AS_ancestry",
+  test = "kap.meier",
+  metadata_sample_col = "Kids_First_Biospecimen_ID", 
+  days_col = "EFS_days",
+  status_col = "EFS_status"
+  )
+
+km_plot_group <- plotKM(model = kap_efs_group,
+                    variable = "AS_ancestry",
+                    combined = F, 
+                    title = "LGG, BRAF fusion, breakpoint 16:09")
+
+km_plot_group
+
+ggsave(file.path(plot_dir, "pbta_ancestry_km_efs_15_9_predicted_ancestry.pdf"),
+       width = 9, height = 5)
+
+```
+
+Run and plot cox proportional hazards model of EFS including tumor resection and breakpoint type as covariates
+
+```{r}
+braf_model_efs <- fit_save_model(braf_hist[braf_hist$extent_of_tumor_resection != "Not Reported",],
+                                    terms = "extent_of_tumor_resection+breakpoint_type",
+               file.path(results_dir, "coxph_braf_efs_resection_breakpoint_type.RDS"),
+               "multivariate",
+               years_col = "EFS_years", status_col = "EFS_status"
+              )
+
+plotForest(readRDS(file.path(results_dir, "coxph_braf_efs_resection_breakpoint_type.RDS")))
+
+ggsave(file.path(plot_dir, "pbta_ancestry_forest_efs_resection_breakpoint_type.pdf"),
+       width = 8, height = 3)
+```
+
+Re-run including predicted ancestry as covariate
+
+```{r}
+braf_hist <- braf_hist %>%
+  dplyr::mutate(predicted_ancestry = fct_relevel(predicted_ancestry,
+                                                 c("EUR", "AFR", "AMR", "EAS", "SAS"))) %>%
+  dplyr::mutate(AS_ancestry = fct_relevel(AS_ancestry,
+                                                 c("EUR", "AFR", "AMR", "AS")))
+
+braf_model_efs <- fit_save_model(braf_hist[braf_hist$extent_of_tumor_resection != "Not Reported",],
+                                    terms = "extent_of_tumor_resection+predicted_ancestry+breakpoint_type",
+               file.path(results_dir, "coxph_braf_efs_resection_ancestry_breakpoint_type.RDS"),
+               "multivariate",
+               years_col = "EFS_years", status_col = "EFS_status"
+              )
+
+plotForest(readRDS(file.path(results_dir, "coxph_braf_efs_resection_ancestry_breakpoint_type.RDS")))
+
+ggsave(file.path(plot_dir, "pbta_ancestry_forest_efs_resection_ancestry_breakpoint_type.pdf"),
+       width = 8, height = 4)
+
+```
+
+Run and plot cox proportional hazards model of EFS including tumor resection and breakpoint group as covariates
+
+```{r}
+braf_model_efs <- fit_save_model(braf_hist[braf_hist$extent_of_tumor_resection != "Not Reported",],
+                                    terms = "extent_of_tumor_resection+breakpoint_group",
+               file.path(results_dir, "coxph_braf_efs_resection_breakpoint_group.RDS"),
+               "multivariate",
+               years_col = "EFS_years", status_col = "EFS_status"
+              )
+
+plotForest(readRDS(file.path(results_dir, "coxph_braf_efs_resection_breakpoint_group.RDS")))
+
+ggsave(file.path(plot_dir, "pbta_ancestry_forest_efs_resection_breakpoint_group.pdf"),
+       width = 8, height = 3)
+
+```
+
+Re-run with predicted ancestry as covariate
+
+```{r}
+braf_model_efs <- fit_save_model(braf_hist[braf_hist$extent_of_tumor_resection != "Not Reported",],
+                                    terms = "extent_of_tumor_resection+predicted_ancestry+breakpoint_group",
+               file.path(results_dir, "coxph_braf_efs_resection_ancestry_breakpoint_group.RDS"),
+               "multivariate",
+               years_col = "EFS_years", status_col = "EFS_status"
+              )
+
+plotForest(readRDS(file.path(results_dir, "coxph_braf_efs_resection_ancestry_breakpoint_group.RDS")))
+
+ggsave(file.path(plot_dir, "pbta_ancestry_forest_efs_resection_ancestry_breakpoint_group.pdf"),
+       width = 8, height = 4)
+
+```
+
+Run and plot cox proportional hazards model of EFS in 16:09 breakpoint patients, including tumor resection and predicted ancestry as covariates
+
+```{r}
+braf_model_efs <- fit_save_model(braf_hist[braf_hist$extent_of_tumor_resection != "Not Reported" & braf_hist$breakpoint_group == "16:9",],
+                                    terms = "extent_of_tumor_resection+predicted_ancestry",
+               file.path(results_dir, "coxph_braf_efs_16_9_resection_ancestry_breakpoint.RDS"),
+               "multivariate",
+               years_col = "EFS_years", status_col = "EFS_status"
+              )
+
+plotForest(readRDS(file.path(results_dir, "coxph_braf_efs_16_9_resection_ancestry_breakpoint.RDS")))
+
+ggsave(file.path(plot_dir, "pbta_ancestry_forest_efs_breakpoint16_9_resection_ancestry.pdf"),
+       width = 8, height = 3)
+
+```
+
+Run and plot cox proportional hazards model of EFS in 15:09 breakpoint patients, including tumor resection and predicted ancestry as covariates
+
+```{r}
+braf_model_efs <- fit_save_model(braf_hist[braf_hist$extent_of_tumor_resection != "Not Reported" & braf_hist$breakpoint_group == "15:9",],
+                                    terms = "extent_of_tumor_resection+AS_ancestry",
+               file.path(results_dir, "coxph_braf_efs_15_9_resection_ancestry_breakpoint.RDS"),
+               "multivariate",
+               years_col = "EFS_years", status_col = "EFS_status"
+              )
+
+plotForest(readRDS(file.path(results_dir, "coxph_braf_efs_15_9_resection_ancestry_breakpoint.RDS")))
+
+ggsave(file.path(plot_dir, "pbta_ancestry_forest_efs_breakpoint15_9_resection_ancestry.pdf"),
+       width = 8, height = 3)
+
+```
+
+Print session info
+
+```{r}
+sessionInfo()
+
+```
