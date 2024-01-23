@@ -1,0 +1,252 @@
+---
+title: 'Assess BRAF fusion breakpoints in PBTA ancestry cohort'
+output: 
+  html_document:
+  toc: TRUE
+toc_float: TRUE
+author: Ryan Corbett
+date: "2024"
+---
+
+This script calculates frequency of BRAF fusion breakpoint types by predicted ancestry in pLGG, BRAF fusion subtype patients in the PBTA ancestry cohort 
+  
+Load libraries and set directories
+  
+```{r load libraries and set directories}
+library(data.table)
+library(tidyverse)
+
+root_dir <- rprojroot::find_root(rprojroot::has_dir(".git"))
+
+data_dir <- file.path(root_dir, "data")
+analysis_dir <- file.path(root_dir, "analyses", "braf-fusions")
+results_dir <- file.path(analysis_dir, "results")
+input_dir <- file.path(analysis_dir, "input")
+plot_dir <- file.path(analysis_dir, "plots")
+
+```
+
+Set file paths
+
+```{r}
+fusion_file <- file.path(results_dir, "braf-fusions-exon-annotation.tsv")
+
+fusion_dgd_file <- file.path(data_dir, "fusion-dgd.tsv.gz")
+
+cohort_hist_file <- file.path(root_dir, "analyses", "survival", "results", "merged_ancestry_histology_survival.tsv")
+
+hist_file <- file.path(data_dir, "histologies.tsv")
+
+```
+
+Load data
+
+```{r}
+braf_hist <- read_tsv(cohort_hist_file)%>%
+  dplyr::filter(plot_group == "Low-grade glioma" & grepl("-BRAF", molecular_subtype)) %>%
+  dplyr::mutate(predicted_ancestry = factor(predicted_ancestry))
+
+hist <- read_tsv(hist_file)
+
+# filter fusion file for in-frame fusions and duplications, and determine whether BRAF kinase domain is retained
+braf_fusions <- read_tsv(fusion_file) %>%
+  dplyr::filter(Kids_First_Participant_ID %in% braf_hist$Kids_First_Participant_ID) %>%
+  dplyr::filter(Fusion_Type == "in-frame",
+         grepl("duplication", annots)) %>%
+  mutate(keep = case_when(FusionName == "KIAA1549--BRAF" & DomainRetainedGene1B %in% c("Partial", "Yes") ~ "yes",
+                          FusionName == "BRAF--KIAA1549" & DomainRetainedGene1A %in% c("Partial", "Yes") ~ "yes",
+                          TRUE ~ "no"))
+
+braf_fusions_dgd <- read_tsv(fusion_dgd_file) %>%
+  dplyr::filter(FusionName == "KIAA1549--BRAF" & !grepl("Tier 3|Tier 4", variant_tier)) %>%
+  dplyr::rename(Kids_First_Biospecimen_ID = Sample) %>%
+  dplyr::select(Kids_First_Biospecimen_ID, FusionName, `5_prime_region`, `3_prime_region`) %>%
+  dplyr::mutate(`5_prime_region` = gsub("^Exon |^exon ", "", `5_prime_region`),
+         `3_prime_region` = gsub("^Exon |^exon ", "", `3_prime_region`),                        
+         breakpoint_exons = paste(`5_prime_region`, `3_prime_region`, sep = ":"),
+         breakpoint_type = case_when(breakpoint_exons %in% c("16:9", "15:9", "16:11", "18:10") ~ "common",
+                                     TRUE ~ "rare/novel"),
+         keep = "yes") %>%
+  left_join(hist[,c("Kids_First_Participant_ID", "Kids_First_Biospecimen_ID")])
+
+```
+
+Consolidate all common and rare exon breakpoints per patient
+
+```{r}
+common_fusions_pbta <- braf_fusions %>%
+  dplyr::filter(breakpoint_exons %in% c("16:9", "15:9", "16:11", "18:10") & keep == "yes") %>%
+  distinct(Kids_First_Participant_ID, breakpoint_exons, .keep_all = T) %>%
+  group_by(Kids_First_Participant_ID) %>%
+  summarise(breakpoint_exons_common = str_c(breakpoint_exons, collapse = ";"))
+
+common_fusions <- braf_fusions_dgd %>%
+  dplyr::filter(breakpoint_exons %in% c("16:9", "15:9", "16:11", "18:10") & keep == "yes") %>%
+  distinct(Kids_First_Participant_ID, breakpoint_exons, .keep_all = T) %>%
+  group_by(Kids_First_Participant_ID) %>%
+  summarise(breakpoint_exons_common = str_c(breakpoint_exons, collapse = ";")) %>%
+  bind_rows(common_fusions_pbta) %>%
+  distinct(Kids_First_Participant_ID, breakpoint_exons_common, .keep_all = T) %>%
+  group_by(Kids_First_Participant_ID) %>%
+  summarise(breakpoint_exons_common = str_c(breakpoint_exons_common, collapse = ";"))
+  
+
+rare_novel_fusions_pbta <- braf_fusions %>%
+  dplyr::filter(!breakpoint_exons %in% c("16:9", "15:9", "16:11", "18:10") & keep == "yes") %>%
+  distinct(Kids_First_Participant_ID, breakpoint_exons, .keep_all = T) %>%
+  group_by(Kids_First_Participant_ID) %>%
+  summarise(breakpoint_exons_rare = str_c(breakpoint_exons, collapse = ";"))
+
+rare_novel_fusions <- braf_fusions_dgd %>%
+  dplyr::filter(!breakpoint_exons %in% c("16:9", "15:9", "16:11", "18:10") & keep == "yes") %>%
+  distinct(Kids_First_Participant_ID, breakpoint_exons, .keep_all = T) %>%
+  group_by(Kids_First_Participant_ID) %>%
+  summarise(breakpoint_exons_rare = str_c(breakpoint_exons, collapse = ";")) %>%
+  bind_rows(rare_novel_fusions_pbta) %>%
+  distinct(Kids_First_Participant_ID, breakpoint_exons_rare, .keep_all = T) %>%
+  group_by(Kids_First_Participant_ID) %>%
+  summarise(breakpoint_exons_rare = str_c(breakpoint_exons_rare, collapse = ";"))
+
+```
+
+Merge breakpoint data to braf hist
+
+```{r}
+braf_hist <- braf_hist %>%
+  left_join(common_fusions) %>%
+  left_join(rare_novel_fusions) %>%
+  dplyr::filter(!is.na(breakpoint_exons_common) | !is.na(breakpoint_exons_rare))
+
+```
+
+Add breakpoint_type column (common vs rare) and breakpoint_group column (common breakpoint type and rare merged)
+```{r}
+braf_hist <- braf_hist %>%
+  dplyr::mutate(breakpoint_type = case_when(
+    !is.na(breakpoint_exons_common) & !is.na(breakpoint_exons_rare) ~ NA_character_,
+    !is.na(breakpoint_exons_rare) ~ "rare",
+    !is.na(breakpoint_exons_common) ~ "common",
+    TRUE ~ NA_character_
+  )) %>%
+  # Assigne breakpoint group (unique common breakpoint or broad rare group)
+  dplyr::mutate(breakpoint_group = case_when(
+    !is.na(breakpoint_exons_common) & !is.na(breakpoint_exons_rare) ~ NA_character_,
+    breakpoint_exons_common == "16:9" ~ "16:9",
+    breakpoint_exons_common == "15:9" ~ "15:9",
+    breakpoint_exons_common == "16:11" ~ "16:11",
+    breakpoint_exons_common == "18:10" ~ "18:10",
+    !is.na(breakpoint_exons_rare) ~ "rare",
+    TRUE ~ NA_character_
+  )) %>%
+  dplyr::mutate(breakpoint_group = fct_relevel(breakpoint_group,
+                                               c("18:10", "16:9", "15:9", "16:11", "rare")
+                                               ))
+
+
+
+```
+
+
+How many patients do we have breakpoint data for? 
+
+```{r}
+nrow(braf_hist)
+
+```
+
+## Common breakpoint summary
+
+What is the distribution of common breakpoints by ancestry? 
+
+```{r}
+table(braf_hist$breakpoint_exons_common, braf_hist$predicted_ancestry)
+
+```
+
+Calculate fusion breakpoint frequency by predicted ancestry and Fisher's exact test p-value 
+
+```{r}
+common_breakpoints <- c("16:9", "15:9", "16:11", "18:10")
+
+common_df <- braf_hist %>%
+  dplyr::filter(breakpoint_exons_common %in% common_breakpoints) %>%
+  group_by(breakpoint_exons_common, predicted_ancestry) %>%
+  summarise(count = n()) %>%
+  group_by(predicted_ancestry) %>%
+  mutate(total_count = sum(count),
+         percentage = round(count / total_count * 100, 1)) %>%
+  dplyr::mutate(ct_perc = glue::glue("{count} ({percentage}%)")) %>%
+  dplyr::select(breakpoint_exons_common, predicted_ancestry, ct_perc) %>%
+  spread(predicted_ancestry, ct_perc, fill = 0)
+
+common_df <- common_df %>%
+  mutate(
+    p = map_dbl(breakpoint_exons_common, ~round(fisher.test(table(grepl(.x, braf_hist$breakpoint_exons_common), braf_hist$predicted_ancestry))$p.value, 4))
+  )
+
+write_tsv(common_df, 
+          file.path(results_dir, "lgg-braf-fusion-common-breakpoint-freq.tsv"))
+
+```
+
+Print rare/novel fusion breakpoint count by predicted ancestry
+
+```{r}
+table(braf_hist$breakpoint_exons_rare, braf_hist$predicted_ancestry)
+
+```
+
+```{r}
+round(table(braf_hist$breakpoint_type, braf_hist$extent_of_tumor_resection)/as.vector(table(braf_hist$breakpoint_type)), 2)
+
+fisher.test(table(braf_hist$breakpoint_type, braf_hist$extent_of_tumor_resection))
+
+```
+
+```{r}
+round(table(braf_hist$breakpoint_group, braf_hist$extent_of_tumor_resection)/as.vector(table(braf_hist$breakpoint_group)), 2)
+
+fisher.test(table(braf_hist$breakpoint_group, braf_hist$extent_of_tumor_resection), simulate.p.value = T)
+
+```
+
+
+```{r}
+round(table(braf_hist$breakpoint_type, braf_hist$CNS_region)/as.vector(table(braf_hist$breakpoint_type)), 3) * 100
+
+fisher.test(table(braf_hist$breakpoint_type, braf_hist$CNS_region))
+
+```
+
+
+```{r}
+round(table(braf_hist$breakpoint_group, braf_hist$CNS_region)/as.vector(table(braf_hist$breakpoint_group)), 3) * 100
+
+fisher.test(table(braf_hist$breakpoint_group, braf_hist$CNS_region), simulate.p.value = T)
+
+```
+
+
+```{r}
+round(table(braf_hist$CNS_region, braf_hist$extent_of_tumor_resection)/as.vector(table(braf_hist$CNS_region)), 3) * 100
+
+fisher.test(table(braf_hist$CNS_region, braf_hist$extent_of_tumor_resection), simulate.p.value= T)
+
+```
+
+
+
+Save braf-specific hist file with breakpoint annotation 
+
+```{r}
+write_tsv(braf_hist,
+          file.path(results_dir, "lgg-braf-fusion-breakpoint-annotation.tsv"))
+
+```
+
+Print session info
+
+```{r}
+sessionInfo()
+
+```
