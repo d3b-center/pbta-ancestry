@@ -5,8 +5,9 @@
 # load libraries and set directories
 library(data.table)
 library(tidyverse)
-library(pheatmap)
+library(ComplexHeatmap)
 library(RColorBrewer)
+library(circlize)
 library(colorblindr)
 library(ggpubr)
 library(ggalluvial)
@@ -356,28 +357,28 @@ ancestry %>%
 
 dev.off()
 
-# create heatmap of cancer group count by predicted ancestry
+# create heatmap of plot group group count by predicted ancestry
 pdf(file.path(plots_dir, "plot_group_by_ancestry.pdf"),
-    height = 5, width = 4)
+    height = 6, width = 5)
 
-ancestry %>%
-  filter(!is.na(plot_group)) %>%
-  mutate(predicted_ancestry = factor(predicted_ancestry, levels = unique(predicted_ancestry)),
-         plot_group = factor(plot_group, levels = rev(unique(plot_group)[order(unique(plot_group))]))) %>%
-  count(predicted_ancestry, plot_group, name = "count", .drop = FALSE) %>%
-  ggplot(aes(x = predicted_ancestry, y = plot_group, fill = count)) +
-  geom_tile(color = "black",
-            lwd = 1,
-            linetype = 1, show.legend = FALSE) +
-  scale_fill_gradient(low="white", high="orangered") +
-  geom_text(aes(label = count), color = "black", size = 3) +
-  labs(x = NULL, y = NULL) + 
-  theme_minimal()
+count_mat <- table(ancestry$plot_group, ancestry$predicted_ancestry)
+
+col_fun = colorRamp2(c(0, 300), c("white", "orangered"))
+
+Heatmap(count_mat,
+        name = "Count",
+        cluster_rows = F,
+        cluster_columns = F,
+        rect_gp = gpar(col = "black", lwd = 2),
+        col = col_fun,
+        cell_fun = function(j, i, x, y, width, height, fill) {
+          grid.text(sprintf("%s", count_mat[i, j]), x, y, gp = gpar(fontsize = 12))
+        })
 
 dev.off()
 
 
-# calculate enrichment and pvalues of ancestries within cancer groups
+# calculate enrichment and pvalues of ancestries within plot groups
 enr <- matrix(0, length(unique(ancestry$predicted_ancestry)),
               length(unique(ancestry$plot_group[!is.na(ancestry$plot_group)])),
               dimnames = list(c("AFR", "AMR", "EAS", "EUR", "SAS"),
@@ -400,25 +401,50 @@ for (i in 1:nrow(enr)){
 # calcualte FDRs
 fdr <- t(apply(pval, 1, function(x) p.adjust(x, "fdr")))
 
+enr <- t(enr[,order(colnames(enr))])
+fdr <- t(fdr[,order(colnames(fdr))])
+
+sig_mat <- ifelse(fdr < 0.05 & enr > 1, "*", "")
+
+fill_mat <- matrix(glue::glue("{round(enr, 1)}{sig_mat}"), 
+                   nrow(enr), ncol(enr))
+
+# Plot enrichment heatmap
+
+col_fun = colorRamp2(c(0, 6), c("white", "orangered"))
+
 # plot enrichment results
 pdf(file.path(plots_dir, "plot_group_ancestry_enrichment_heatmap.pdf"),
-    height = 6, width = 4)
+    height = 6, width = 6)
 
-enr <- enr[,order(colnames(enr))]
-fdr <- fdr[,order(colnames(fdr))]
-
-pheatmap(t(enr),
+Heatmap(enr,
+         name = "Odds ratio",
          cluster_rows = F,
-         cluster_cols = F,
-         treeheight_row = 0,
-         treeheight_col = 0,
-         scale = "none",
-         display_numbers = ifelse(t(fdr) < 0.05, paste0(t(round(enr,2)), "\n**"), paste0(t(round(enr,2)), "\n")),
-         number_color = ifelse(t(enr) > 2.5, "white", "black"),
-         fontsize_number = 8,
-         col = colors,
-         cex = 0.95
-)
+         cluster_columns = F,
+         rect_gp = gpar(col = "black", lwd = 2),
+         col = col_fun,
+         cell_fun = function(j, i, x, y, width, height, fill) {
+           grid.text(sprintf("%s", fill_mat[i, j]), x, y, gp = gpar(fontsize = 12))
+         })
+
+dev.off()
+
+# create heatmap of plot group count and enrichment by ancestry
+ct_enr_mat <- matrix(glue::glue("{count_mat}\n({fill_mat})"),
+                     nrow(count_mat), ncol(count_mat))
+
+pdf(file.path(plots_dir, "plot_group_ancestry_ct_enr_heatmap.pdf"),
+    height = 8, width = 6)
+
+Heatmap(enr,
+        name = "Odds ratio",
+        cluster_rows = F,
+        cluster_columns = F,
+        rect_gp = gpar(col = "black", lwd = 2),
+        col = col_fun,
+        cell_fun = function(j, i, x, y, width, height, fill) {
+          grid.text(sprintf("%s", ct_enr_mat[i, j]), x, y, gp = gpar(fontsize = 12))
+        })
 
 dev.off()
 
