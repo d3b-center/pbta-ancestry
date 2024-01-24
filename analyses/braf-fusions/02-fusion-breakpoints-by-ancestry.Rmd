@@ -53,8 +53,8 @@ braf_fusions <- read_tsv(fusion_file) %>%
   dplyr::filter(Kids_First_Participant_ID %in% braf_hist$Kids_First_Participant_ID) %>%
   dplyr::filter(Fusion_Type == "in-frame",
          grepl("duplication", annots)) %>%
-  mutate(keep = case_when(FusionName == "KIAA1549--BRAF" & DomainRetainedGene1B %in% c("Partial", "Yes") ~ "yes",
-                          FusionName == "BRAF--KIAA1549" & DomainRetainedGene1A %in% c("Partial", "Yes") ~ "yes",
+  mutate(keep = case_when(FusionName == "KIAA1549--BRAF" & DomainRetainedGene1B == "Yes" ~ "yes",
+                          FusionName == "BRAF--KIAA1549" & DomainRetainedGene1A == "Yes" ~ "yes",
                           TRUE ~ "no"))
 
 braf_fusions_dgd <- read_tsv(fusion_dgd_file) %>%

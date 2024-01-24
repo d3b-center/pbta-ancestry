@@ -434,13 +434,13 @@ ancestry cohort</p>
 <p>Load libraries and set directories</p>
 <pre class="r"><code>library(data.table)
 library(tidyverse)</code></pre>
-<pre><code>## ── Attaching core tidyverse packages ────────────────────────────────────────────────────────────── tidyverse 2.0.0 ──
+<pre><code>## ── Attaching core tidyverse packages ──────────────────────────────────────────────── tidyverse 2.0.0 ──
 ## ✔ dplyr     1.1.1     ✔ readr     2.1.4
 ## ✔ forcats   1.0.0     ✔ stringr   1.5.0
 ## ✔ ggplot2   3.4.2     ✔ tibble    3.2.1
 ## ✔ lubridate 1.9.2     ✔ tidyr     1.3.0
 ## ✔ purrr     1.0.1     
-## ── Conflicts ──────────────────────────────────────────────────────────────────────────────── tidyverse_conflicts() ──
+## ── Conflicts ────────────────────────────────────────────────────────────────── tidyverse_conflicts() ──
 ## ✖ dplyr::between()     masks data.table::between()
 ## ✖ dplyr::filter()      masks stats::filter()
 ## ✖ dplyr::first()       masks data.table::first()
@@ -479,7 +479,7 @@ hist_file &lt;- file.path(data_dir, &quot;histologies.tsv&quot;)</code></pre>
   dplyr::filter(plot_group == &quot;Low-grade glioma&quot; &amp; grepl(&quot;-BRAF&quot;, molecular_subtype)) %&gt;%
   dplyr::mutate(predicted_ancestry = factor(predicted_ancestry))</code></pre>
 <pre><code>## Rows: 1485 Columns: 41
-## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────
+## ── Column specification ────────────────────────────────────────────────────────────────────────────────
 ## Delimiter: &quot;\t&quot;
 ## chr (22): Kids_First_Biospecimen_ID, predicted_ancestry, Kids_First_Particip...
 ## dbl (18): EAS_prob, AFR_prob, AMR_prob, SAS_prob, EUR_prob, PC1, PC2, PC3, P...
@@ -489,7 +489,7 @@ hist_file &lt;- file.path(data_dir, &quot;histologies.tsv&quot;)</code></pre>
 ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
 <pre class="r"><code>hist &lt;- read_tsv(hist_file)</code></pre>
 <pre><code>## Rows: 47633 Columns: 58
-## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────
+## ── Column specification ────────────────────────────────────────────────────────────────────────────────
 ## Delimiter: &quot;\t&quot;
 ## chr (41): Kids_First_Participant_ID, Kids_First_Biospecimen_ID, sample_id, a...
 ## dbl (17): cell_line_passage, OS_days, EFS_days, age_at_diagnosis_days, age_a...
@@ -501,14 +501,14 @@ braf_fusions &lt;- read_tsv(fusion_file) %&gt;%
   dplyr::filter(Kids_First_Participant_ID %in% braf_hist$Kids_First_Participant_ID) %&gt;%
   dplyr::filter(Fusion_Type == &quot;in-frame&quot;,
          grepl(&quot;duplication&quot;, annots)) %&gt;%
-  mutate(keep = case_when(FusionName == &quot;KIAA1549--BRAF&quot; &amp; DomainRetainedGene1B %in% c(&quot;Partial&quot;, &quot;Yes&quot;) ~ &quot;yes&quot;,
-                          FusionName == &quot;BRAF--KIAA1549&quot; &amp; DomainRetainedGene1A %in% c(&quot;Partial&quot;, &quot;Yes&quot;) ~ &quot;yes&quot;,
+  mutate(keep = case_when(FusionName == &quot;KIAA1549--BRAF&quot; &amp; DomainRetainedGene1B == &quot;Yes&quot; ~ &quot;yes&quot;,
+                          FusionName == &quot;BRAF--KIAA1549&quot; &amp; DomainRetainedGene1A == &quot;Yes&quot; ~ &quot;yes&quot;,
                           TRUE ~ &quot;no&quot;))</code></pre>
 <pre><code>## Warning: One or more parsing issues, call `problems()` on your data frame for details, e.g.:
 ##   dat &lt;- vroom(...)
 ##   problems(dat)</code></pre>
 <pre><code>## Rows: 260 Columns: 31
-## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────
+## ── Column specification ────────────────────────────────────────────────────────────────────────────────
 ## Delimiter: &quot;\t&quot;
 ## chr  (18): Sample, FusionName, DomainRetainedGene1A, DomainRetainedGene1B, G...
 ## dbl   (6): caller.count, Chromosome, LeftBreakpoint_position, RightBreakpoin...
@@ -529,7 +529,7 @@ braf_fusions &lt;- read_tsv(fusion_file) %&gt;%
          keep = &quot;yes&quot;) %&gt;%
   left_join(hist[,c(&quot;Kids_First_Participant_ID&quot;, &quot;Kids_First_Biospecimen_ID&quot;)])</code></pre>
 <pre><code>## Rows: 533 Columns: 22
-## ── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────
+## ── Column specification ────────────────────────────────────────────────────────────────────────────────
 ## Delimiter: &quot;\t&quot;
 ## chr (14): Sample, FusionName, Fusion_Type, Gene1A, Gene1B, 5_prime_transcrip...
 ## dbl  (2): JunctionReadCount, SpanningFragCount
@@ -628,8 +628,8 @@ common_df &lt;- braf_hist %&gt;%
   dplyr::mutate(ct_perc = glue::glue(&quot;{count} ({percentage}%)&quot;)) %&gt;%
   dplyr::select(breakpoint_exons_common, predicted_ancestry, ct_perc) %&gt;%
   spread(predicted_ancestry, ct_perc, fill = 0)</code></pre>
-<pre><code>## `summarise()` has grouped output by &#39;breakpoint_exons_common&#39;. You can override
-## using the `.groups` argument.</code></pre>
+<pre><code>## `summarise()` has grouped output by &#39;breakpoint_exons_common&#39;. You can override using the `.groups`
+## argument.</code></pre>
 <pre class="r"><code>common_df &lt;- common_df %&gt;%
   mutate(
     p = map_dbl(breakpoint_exons_common, ~round(fisher.test(table(grepl(.x, braf_hist$breakpoint_exons_common), braf_hist$predicted_ancestry))$p.value, 4))
@@ -646,7 +646,6 @@ write_tsv(common_df,
 ##   13:9    0   2   0   0   0
 ##   14:8    1   0   0   0   0
 ##   15:11   0   0   0   4   0
-##   15:16   0   0   0   1   0
 ##   16:10   0   0   0   1   0
 ##   19:9    0   1   0   0   0</code></pre>
 <p>Assess distribution of resection level in patients by breakpoint type
@@ -654,14 +653,14 @@ write_tsv(common_df,
 <pre class="r"><code>round(table(braf_hist$breakpoint_type, braf_hist$extent_of_tumor_resection)/as.vector(table(braf_hist$breakpoint_type)), 2)</code></pre>
 <pre><code>##         
 ##          Biopsy only Gross/Near total resection Not Reported Partial resection
-##   common        0.04                       0.69         0.01              0.26
+##   common        0.04                       0.69         0.01              0.27
 ##   rare          0.09                       0.18         0.00              0.73</code></pre>
 <pre class="r"><code>fisher.test(table(braf_hist$breakpoint_type, braf_hist$extent_of_tumor_resection))</code></pre>
 <pre><code>## 
 ##  Fisher&#39;s Exact Test for Count Data
 ## 
 ## data:  table(braf_hist$breakpoint_type, braf_hist$extent_of_tumor_resection)
-## p-value = 0.002991
+## p-value = 0.00312
 ## alternative hypothesis: two.sided</code></pre>
 <p>Assess distribution of resection level in patients by breakpoint
 group</p>
@@ -670,7 +669,7 @@ group</p>
 ##         Biopsy only Gross/Near total resection Not Reported Partial resection
 ##   18:10        0.00                       0.67         0.00              0.33
 ##   16:9         0.00                       0.75         0.01              0.25
-##   15:9         0.07                       0.53         0.00              0.40
+##   15:9         0.06                       0.52         0.00              0.42
 ##   16:11        0.20                       0.65         0.00              0.15
 ##   rare         0.09                       0.18         0.00              0.73</code></pre>
 <pre class="r"><code>fisher.test(table(braf_hist$breakpoint_group, braf_hist$extent_of_tumor_resection), simulate.p.value = T)</code></pre>
@@ -686,7 +685,7 @@ type and group</p>
 <pre class="r"><code>round(table(braf_hist$breakpoint_type, braf_hist$CNS_region)/as.vector(table(braf_hist$breakpoint_type)), 3) * 100</code></pre>
 <pre><code>##         
 ##          Hemispheric Midline Mixed Optic pathway Posterior fossa Spine
-##   common         2.5     5.7   8.2           1.3            72.3   2.5
+##   common         2.5     5.6   8.8           1.3            71.9   2.5
 ##   rare           9.1     0.0  18.2          18.2             9.1   0.0
 ##         
 ##          Suprasellar Ventricles
@@ -697,21 +696,21 @@ type and group</p>
 ##  Fisher&#39;s Exact Test for Count Data
 ## 
 ## data:  table(braf_hist$breakpoint_type, braf_hist$CNS_region)
-## p-value = 1.837e-05
+## p-value = 1.982e-05
 ## alternative hypothesis: two.sided</code></pre>
 <pre class="r"><code>round(table(braf_hist$breakpoint_group, braf_hist$CNS_region)/as.vector(table(braf_hist$breakpoint_group)), 3) * 100</code></pre>
 <pre><code>##        
 ##         Hemispheric Midline Mixed Optic pathway Posterior fossa Spine
 ##   18:10         0.0     0.0  16.7           0.0            66.7   0.0
 ##   16:9          2.9     7.8   2.9           1.0            80.4   0.0
-##   15:9          3.3     3.3  16.7           0.0            46.7  13.3
+##   15:9          3.2     3.2  19.4           0.0            45.2  12.9
 ##   16:11         0.0     0.0  20.0           5.0            70.0   0.0
 ##   rare          9.1     0.0  18.2          18.2             9.1   0.0
 ##        
 ##         Suprasellar Ventricles
 ##   18:10        16.7        0.0
 ##   16:9          2.0        2.9
-##   15:9         13.3        3.3
+##   15:9         12.9        3.2
 ##   16:11         0.0        5.0
 ##   rare         36.4        9.1</code></pre>
 <pre class="r"><code>fisher.test(table(braf_hist$breakpoint_group, braf_hist$CNS_region), simulate.p.value = T)</code></pre>
