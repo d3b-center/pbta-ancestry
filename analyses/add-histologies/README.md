@@ -15,8 +15,6 @@ This analysis merges patient ancestry prediction data with OpenPedCan histologie
 - `02-summary_stats.R`; plots summary statistics including PCA plots, concordance between ancestry and reported race and ethnicity, plot group by ancestry, etc. 
 
 - `input/` files: 
-  - `all_pnoc_normal_wgs.tsv`; biospecimen and participant IDs of PNOC normal samples
-  - `Broad_to_BS.txt`; key for X01 patient biospecimen IDs
   - `plot-mapping.tsv` table of `plot_group` assignments by `broad histology` and `cancer_group`
 
 - `results/` files: 

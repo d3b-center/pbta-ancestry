@@ -7,5 +7,5 @@ set -o pipefail
 Rscript -e "rmarkdown::render('01-add_histologies.Rmd')"
 
 # Get summary stats
-Rscript 02-summary_stats.R
+Rscript --vanilla 02-summary_stats.R
 

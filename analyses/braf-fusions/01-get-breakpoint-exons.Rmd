@@ -28,7 +28,7 @@ input_dir <- file.path(analysis_dir, "input")
 
 Define file paths
 ```{r}
-fusion_file <- file.path(input_dir, "fusion-putative-oncogenic.tsv")
+fusion_file <- file.path(data_dir, "fusion-putative-oncogenic.tsv")
 
 ```
 
