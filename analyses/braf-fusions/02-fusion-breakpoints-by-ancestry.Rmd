@@ -120,6 +120,7 @@ braf_hist <- braf_hist %>%
 ```
 
 Add breakpoint_type column (common vs rare) and breakpoint_group column (common breakpoint type and rare merged)
+
 ```{r}
 braf_hist <- braf_hist %>%
   dplyr::mutate(breakpoint_type = case_when(
@@ -196,12 +197,16 @@ table(braf_hist$breakpoint_exons_rare, braf_hist$predicted_ancestry)
 
 ```
 
+Assess distribution of resection level in patients by breakpoint type (common vs. rare)
+
 ```{r}
 round(table(braf_hist$breakpoint_type, braf_hist$extent_of_tumor_resection)/as.vector(table(braf_hist$breakpoint_type)), 2)
 
 fisher.test(table(braf_hist$breakpoint_type, braf_hist$extent_of_tumor_resection))
 
 ```
+
+Assess distribution of resection level in patients by breakpoint group
 
 ```{r}
 round(table(braf_hist$breakpoint_group, braf_hist$extent_of_tumor_resection)/as.vector(table(braf_hist$breakpoint_group)), 2)
@@ -210,6 +215,7 @@ fisher.test(table(braf_hist$breakpoint_group, braf_hist$extent_of_tumor_resectio
 
 ```
 
+Assess distribution of tumor CNS region in patients by breakpoint type and group
 
 ```{r}
 round(table(braf_hist$breakpoint_type, braf_hist$CNS_region)/as.vector(table(braf_hist$breakpoint_type)), 3) * 100
@@ -226,6 +232,7 @@ fisher.test(table(braf_hist$breakpoint_group, braf_hist$CNS_region), simulate.p.
 
 ```
 
+Confirm that CNS region and degree of tumor resection are significantly associated: 
 
 ```{r}
 round(table(braf_hist$CNS_region, braf_hist$extent_of_tumor_resection)/as.vector(table(braf_hist$CNS_region)), 3) * 100
@@ -233,8 +240,6 @@ round(table(braf_hist$CNS_region, braf_hist$extent_of_tumor_resection)/as.vector
 fisher.test(table(braf_hist$CNS_region, braf_hist$extent_of_tumor_resection), simulate.p.value= T)
 
 ```
-
-
 
 Save braf-specific hist file with breakpoint annotation 
 
