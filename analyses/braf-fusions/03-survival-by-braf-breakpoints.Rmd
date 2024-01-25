@@ -134,7 +134,7 @@ kap_efs_group <- survival_analysis(
 km_plot_group <- plotKM(model = kap_efs_group,
                     variable = "AS_ancestry",
                     combined = F, 
-                    title = "LGG, BRAF fusion, breakpoint 16:09")
+                    title = "LGG, BRAF fusion, breakpoint 15:09")
 
 km_plot_group
 
