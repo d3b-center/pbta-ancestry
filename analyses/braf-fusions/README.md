@@ -32,15 +32,10 @@ This module assesses distribution of BRAF fusion breakpoint types across predict
 ├── 01-get-breakpoint-exons.html
 ├── 02-fusion-breakpoints-by-ancestry.Rmd
 ├── 02-fusion-breakpoints-by-ancestry.html
-├── 03-pbta-dgd-survival.R
 ├── 03-survival-by-braf-breakpoints.Rmd
 ├── 03-survival-by-braf-breakpoints.html
 ├── README.md
 ├── plots
-│   ├── opc_forest_efs_resection_breakpoint_group.pdf
-│   ├── opc_forest_efs_resection_breakpoint_type.pdf
-│   ├── opc_km_efs_breakpoint_group.pdf
-│   ├── opc_km_efs_breakpoint_type.pdf
 │   ├── pbta_ancestry_forest_efs_breakpoint15_9_resection_ancestry.pdf
 │   ├── pbta_ancestry_forest_efs_breakpoint16_9_resection_ancestry.pdf
 │   ├── pbta_ancestry_forest_efs_resection_ancestry_breakpoint_group.pdf
