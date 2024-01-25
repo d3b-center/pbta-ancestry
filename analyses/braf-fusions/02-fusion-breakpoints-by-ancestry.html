@@ -498,7 +498,6 @@ hist_file &lt;- file.path(data_dir, &quot;histologies.tsv&quot;)</code></pre>
 ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
 <pre class="r"><code># filter fusion file for in-frame fusions and duplications, and determine whether BRAF kinase domain is retained
 braf_fusions &lt;- read_tsv(fusion_file) %&gt;%
-  dplyr::filter(Kids_First_Participant_ID %in% braf_hist$Kids_First_Participant_ID) %&gt;%
   dplyr::filter(Fusion_Type == &quot;in-frame&quot;,
          grepl(&quot;duplication&quot;, annots)) %&gt;%
   mutate(keep = case_when(FusionName == &quot;KIAA1549--BRAF&quot; &amp; DomainRetainedGene1B == &quot;Yes&quot; ~ &quot;yes&quot;,
@@ -676,7 +675,7 @@ group</p>
 ##  2000 replicates)
 ## 
 ## data:  table(braf_hist$breakpoint_group, braf_hist$extent_of_tumor_resection)
-## p-value = 0.0004998
+## p-value = 0.0009995
 ## alternative hypothesis: two.sided</code></pre>
 <p>Assess distribution of tumor CNS region in patients by breakpoint
 type and group</p>

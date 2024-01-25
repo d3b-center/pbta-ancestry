@@ -50,7 +50,6 @@ hist <- read_tsv(hist_file)
 
 # filter fusion file for in-frame fusions and duplications, and determine whether BRAF kinase domain is retained
 braf_fusions <- read_tsv(fusion_file) %>%
-  dplyr::filter(Kids_First_Participant_ID %in% braf_hist$Kids_First_Participant_ID) %>%
   dplyr::filter(Fusion_Type == "in-frame",
          grepl("duplication", annots)) %>%
   mutate(keep = case_when(FusionName == "KIAA1549--BRAF" & DomainRetainedGene1B == "Yes" ~ "yes",
