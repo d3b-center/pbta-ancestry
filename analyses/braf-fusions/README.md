@@ -59,8 +59,6 @@ This module assesses distribution of BRAF fusion breakpoint types across predict
 │   ├── coxph_braf_efs_resection_ancestry_breakpoint_type.RDS
 │   ├── coxph_braf_efs_resection_breakpoint_group.RDS
 │   ├── coxph_braf_efs_resection_breakpoint_type.RDS
-│   ├── coxph_braf_os.RDS
-│   ├── coxph_opc_braf_efs.RDS
 │   ├── lgg-braf-fusion-breakpoint-annotation.tsv
 │   └── lgg-braf-fusion-common-breakpoint-freq.tsv
 └── run_module.sh
