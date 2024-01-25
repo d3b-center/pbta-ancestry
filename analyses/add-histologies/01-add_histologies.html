@@ -430,13 +430,13 @@ font-size: 0.95em;
 <p>Load libraries and set directories</p>
 <pre class="r"><code>library(data.table)
 library(tidyverse)</code></pre>
-<pre><code>## ── Attaching core tidyverse packages ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── tidyverse 2.0.0 ──
+<pre><code>## ── Attaching core tidyverse packages ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── tidyverse 2.0.0 ──
 ## ✔ dplyr     1.1.1     ✔ readr     2.1.4
 ## ✔ forcats   1.0.0     ✔ stringr   1.5.0
 ## ✔ ggplot2   3.4.2     ✔ tibble    3.2.1
 ## ✔ lubridate 1.9.2     ✔ tidyr     1.3.0
 ## ✔ purrr     1.0.1     
-## ── Conflicts ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── tidyverse_conflicts() ──
+## ── Conflicts ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── tidyverse_conflicts() ──
 ## ✖ dplyr::between()     masks data.table::between()
 ## ✖ dplyr::filter()      masks stats::filter()
 ## ✖ dplyr::first()       masks data.table::first()
@@ -465,15 +465,11 @@ input_dir &lt;- file.path(analysis_dir, &quot;input&quot;)</code></pre>
 <pre class="r"><code># Somalier results
 ancestry_file &lt;- file.path(data_dir, &quot;DEI_CBTN-PNOC_rerun_somalier_ancestry.tsv&quot;)
 
-# files for converting IDs and filtering EU patients
-pnoc_ids_file &lt;- file.path(input_dir, &quot;all_pnoc_normal_wgs.tsv&quot;)
+# histologies file
 hist_file &lt;- file.path(data_dir, &#39;histologies.tsv&#39;)
 
 ## plot group designation file
 plot_mapping_file &lt;- file.path(input_dir, &#39;plot-mapping.tsv&#39;)
-
-# hope project pathology review 
-hope_file &lt;- file.path(input_dir, &quot;hope-non-hgg_path_review.tsv&quot;)
 
 # output file
 output_file &lt;- file.path(results_dir, &#39;merged_ancestry_histology_data.tsv&#39;)</code></pre>
@@ -481,7 +477,7 @@ output_file &lt;- file.path(results_dir, &#39;merged_ancestry_histology_data.tsv
 <h2>Read in somalier results and histologies files</h2>
 <pre class="r"><code>ancestry &lt;- read_tsv(ancestry_file)</code></pre>
 <pre><code>## Rows: 1513 Columns: 13
-## ── Column specification ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+## ── Column specification ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 ## Delimiter: &quot;\t&quot;
 ## chr  (2): Kids_First_Biospecimen_ID, predicted_ancestry
 ## dbl (10): EAS_prob, AFR_prob, AMR_prob, SAS_prob, EUR_prob, PC1, PC2, PC3, P...
@@ -490,11 +486,11 @@ output_file &lt;- file.path(results_dir, &#39;merged_ancestry_histology_data.tsv
 ## ℹ Use `spec()` to retrieve the full column specification for this data.
 ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
 <pre class="r"><code>hist &lt;- read_tsv(hist_file, guess_max = 1000000)</code></pre>
-<pre><code>## Rows: 43729 Columns: 55
-## ── Column specification ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+<pre><code>## Rows: 47633 Columns: 58
+## ── Column specification ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 ## Delimiter: &quot;\t&quot;
-## chr (39): Kids_First_Biospecimen_ID, sample_id, aliquot_id, Kids_First_Parti...
-## dbl (16): age_at_diagnosis_days, OS_days, EFS_days, age_last_update_days, no...
+## chr (41): Kids_First_Participant_ID, Kids_First_Biospecimen_ID, sample_id, a...
+## dbl (17): cell_line_passage, OS_days, EFS_days, age_at_diagnosis_days, age_a...
 ## 
 ## ℹ Use `spec()` to retrieve the full column specification for this data.
 ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
@@ -502,21 +498,9 @@ output_file &lt;- file.path(results_dir, &#39;merged_ancestry_histology_data.tsv
 <div id="add-data-columns-from-histology-file" class="section level2">
 <h2>Add data columns from histology file</h2>
 <p>demographic data, pathology, and clinical data</p>
-<pre class="r"><code># match patient ID to BS ID in `res_all`
-pnoc_ids &lt;- read_tsv(pnoc_ids_file)</code></pre>
-<pre><code>## Rows: 52 Columns: 2
-## ── Column specification ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-## Delimiter: &quot;\t&quot;
-## chr (2): Kids_First_Biospecimen_ID, Kids_First_Participant_ID
-## 
-## ℹ Use `spec()` to retrieve the full column specification for this data.
-## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
 <pre class="r"><code># Add participant IDs to `ancestry`
 ancestry &lt;- ancestry %&gt;%
   left_join(hist[,c(&#39;Kids_First_Biospecimen_ID&#39;, &#39;Kids_First_Participant_ID&#39;, &#39;sample_type&#39;, &quot;cohort_participant_id&quot;)], by = &#39;Kids_First_Biospecimen_ID&#39;) %&gt;%
-  dplyr::mutate(sample_type = case_when(
-    is.na(sample_type) &amp; Kids_First_Biospecimen_ID %in% pnoc_ids$Kids_First_Biospecimen_ID ~ &#39;Normal&#39;, 
-    TRUE ~ sample_type)) %&gt;%
   dplyr::filter(sample_type != &#39;Tumor&#39;)
 
 # filter histologies file to exclude Normal samples
@@ -527,7 +511,7 @@ hist_tumor &lt;- hist %&gt;%
 # read in plot_mapping file to add plot group to results
 plot_mapping &lt;- read_tsv(plot_mapping_file)</code></pre>
 <pre><code>## Rows: 79 Columns: 9
-## ── Column specification ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+## ── Column specification ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 ## Delimiter: &quot;\t&quot;
 ## chr (8): broad_histology, cancer_group, broad_histology_display, plot_group,...
 ## dbl (1): broad_histology_order
@@ -539,17 +523,13 @@ ancestry &lt;- ancestry %&gt;%
   dplyr::left_join(hist_tumor[, c(&#39;Kids_First_Participant_ID&#39;, &#39;Kids_First_Biospecimen_ID_tumor&#39;, &#39;sample_id&#39;,
                               &#39;reported_gender&#39;, &#39;race&#39;, &#39;ethnicity&#39;, &#39;broad_histology&#39;, &#39;cancer_group&#39;,
                               &#39;molecular_subtype&#39;, &#39;tumor_descriptor&#39;, &quot;CNS_region&quot;, &#39;extent_of_tumor_resection&#39;, 
-                              &#39;age_at_diagnosis_days&#39;, &#39;OS_days&#39;, &#39;OS_status&#39;, &#39;EFS_days&#39;,
+                              &#39;age_at_diagnosis_days&#39;, &#39;OS_days&#39;, &#39;OS_status&#39;, &#39;EFS_days&#39;, &quot;EFS_event_type&quot;,
                      &#39;age_at_chemo_start&#39;, &#39;age_at_radiation_start&#39;)], 
             by = &#39;Kids_First_Participant_ID&#39;) %&gt;%
-  dplyr::left_join(plot_mapping[,c(&#39;cancer_group&#39;, &#39;plot_group&#39;)], by = &#39;cancer_group&#39;)</code></pre>
+  dplyr::left_join(plot_mapping[,c(&#39;broad_histology&#39;, &#39;cancer_group&#39;, &#39;plot_group&#39;)], by = c(&#39;broad_histology&#39;, &#39;cancer_group&#39;))</code></pre>
 <pre><code>## Warning in dplyr::left_join(., hist_tumor[, c(&quot;Kids_First_Participant_ID&quot;, : Detected an unexpected many-to-many relationship between `x` and `y`.
 ## ℹ Row 14 of `x` matches multiple rows in `y`.
-## ℹ Row 315 of `y` matches multiple rows in `x`.
-## ℹ If a many-to-many relationship is expected, set `relationship = &quot;many-to-many&quot;` to silence this warning.</code></pre>
-<pre><code>## Warning in dplyr::left_join(., plot_mapping[, c(&quot;cancer_group&quot;, &quot;plot_group&quot;)], : Detected an unexpected many-to-many relationship between `x` and `y`.
-## ℹ Row 154 of `x` matches multiple rows in `y`.
-## ℹ Row 3 of `y` matches multiple rows in `x`.
+## ℹ Row 61 of `y` matches multiple rows in `x`.
 ## ℹ If a many-to-many relationship is expected, set `relationship = &quot;many-to-many&quot;` to silence this warning.</code></pre>
 <p>To select one normal-tumor pair per patient, select matched tumors in
 the following prioritization order: intial CNS tumor, recurrent, other.
@@ -569,29 +549,6 @@ other_tumors &lt;- ancestry %&gt;%
 <p>Merge data to obtain one row per patient</p>
 <pre class="r"><code>ancestry_unique &lt;- initial_tumors %&gt;%
   bind_rows(recurrent_tumors, other_tumors)</code></pre>
-<p>Use molecular subtyping from HOPE project, replacing OPC plot_group
-and subtypes for included patients</p>
-<pre class="r"><code>hope &lt;- read_tsv(hope_file) </code></pre>
-<pre><code>## Rows: 6 Columns: 4
-## ── Column specification ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-## Delimiter: &quot;\t&quot;
-## chr (4): sample_id, updated_diagnosis, plot_group, molecular_subtype
-## 
-## ℹ Use `spec()` to retrieve the full column specification for this data.
-## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
-<pre class="r"><code>ancestry_unique &lt;- ancestry_unique %&gt;%
-  left_join(hope[,c(&quot;sample_id&quot;, &quot;plot_group&quot;, &quot;molecular_subtype&quot;)], 
-            by = &quot;sample_id&quot;, suffix = c(&quot;.opc&quot;, &quot;.hope&quot;)) %&gt;%
-  dplyr::mutate(molecular_subtype = case_when(
-    sample_id %in% hope$sample_id ~ molecular_subtype.hope,
-    TRUE ~ molecular_subtype.opc
-  ),
-  plot_group = case_when(
-    sample_id %in% hope$sample_id ~ plot_group.hope,
-    TRUE ~ plot_group.opc
-  )) %&gt;%
-  dplyr::select(-plot_group.opc, -plot_group.hope,
-                -molecular_subtype.opc, -molecular_subtype.hope)</code></pre>
 </div>
 <div id="write-merged-data-to-file" class="section level1">
 <h1>Write merged data to file</h1>

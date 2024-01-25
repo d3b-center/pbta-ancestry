@@ -61,6 +61,8 @@ group_df <- subtype_df %>%
 # define variables
 variables <- c("predicted_ancestry", "race", "ethnicity", "EUR_status")
 
+pdf(NULL)
+
 # Loop through variables and histologies/subtypes to plot KM survival curves and hazard ratios
 for (var in variables){
   

@@ -89,7 +89,7 @@ pc12 <- ancestry %>%
              show.legend = FALSE) +
   scale_fill_manual(values = okabe_palette,
                     labels=c("AFR (n=155)", "AMR (n=224)", "EAS (n=67)",
-                             "EUR (n=998)", "SAS (n=43)")) +
+                             "EUR (n=996)", "SAS (n=43)")) +
   theme_Publication()
 
 
@@ -99,7 +99,7 @@ pc34 <- ancestry %>%
   labs(fill = "predicted ancestry") +
   scale_fill_manual(values = okabe_palette,
                     labels=c("AFR (n=155)", "AMR (n=224)", "EAS (n=67)",
-                             "EUR (n=998)", "SAS (n=43)")) +
+                             "EUR (n=996)", "SAS (n=43)")) +
   theme_Publication()
 
 ggarrange(pc12, pc34,

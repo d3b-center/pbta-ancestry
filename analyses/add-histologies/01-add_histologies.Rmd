@@ -28,15 +28,11 @@ Define input and output file paths
 # Somalier results
 ancestry_file <- file.path(data_dir, "DEI_CBTN-PNOC_rerun_somalier_ancestry.tsv")
 
-# files for converting IDs and filtering EU patients
-pnoc_ids_file <- file.path(input_dir, "all_pnoc_normal_wgs.tsv")
+# histologies file
 hist_file <- file.path(data_dir, 'histologies.tsv')
 
 ## plot group designation file
 plot_mapping_file <- file.path(input_dir, 'plot-mapping.tsv')
-
-# hope project pathology review 
-hope_file <- file.path(input_dir, "hope-non-hgg_path_review.tsv")
 
 # output file
 output_file <- file.path(results_dir, 'merged_ancestry_histology_data.tsv')
@@ -55,15 +51,10 @@ hist <- read_tsv(hist_file, guess_max = 1000000)
 
 demographic data, pathology, and clinical data 
 ```{r add histology}
-# match patient ID to BS ID in `res_all`
-pnoc_ids <- read_tsv(pnoc_ids_file)
 
 # Add participant IDs to `ancestry`
 ancestry <- ancestry %>%
   left_join(hist[,c('Kids_First_Biospecimen_ID', 'Kids_First_Participant_ID', 'sample_type', "cohort_participant_id")], by = 'Kids_First_Biospecimen_ID') %>%
-  dplyr::mutate(sample_type = case_when(
-    is.na(sample_type) & Kids_First_Biospecimen_ID %in% pnoc_ids$Kids_First_Biospecimen_ID ~ 'Normal', 
-    TRUE ~ sample_type)) %>%
   dplyr::filter(sample_type != 'Tumor')
 
 # filter histologies file to exclude Normal samples
@@ -79,10 +70,10 @@ ancestry <- ancestry %>%
   dplyr::left_join(hist_tumor[, c('Kids_First_Participant_ID', 'Kids_First_Biospecimen_ID_tumor', 'sample_id',
                               'reported_gender', 'race', 'ethnicity', 'broad_histology', 'cancer_group',
                               'molecular_subtype', 'tumor_descriptor', "CNS_region", 'extent_of_tumor_resection', 
-                              'age_at_diagnosis_days', 'OS_days', 'OS_status', 'EFS_days',
+                              'age_at_diagnosis_days', 'OS_days', 'OS_status', 'EFS_days', "EFS_event_type",
                      'age_at_chemo_start', 'age_at_radiation_start')], 
             by = 'Kids_First_Participant_ID') %>%
-  dplyr::left_join(plot_mapping[,c('cancer_group', 'plot_group')], by = 'cancer_group')
+  dplyr::left_join(plot_mapping[,c('broad_histology', 'cancer_group', 'plot_group')], by = c('broad_histology', 'cancer_group'))
 ```
 
 
@@ -109,25 +100,6 @@ ancestry_unique <- initial_tumors %>%
   bind_rows(recurrent_tumors, other_tumors)
 ```
 
-Use molecular subtyping from HOPE project, replacing OPC plot_group and subtypes for included patients
-```{r}
-hope <- read_tsv(hope_file) 
-
-ancestry_unique <- ancestry_unique %>%
-  left_join(hope[,c("sample_id", "plot_group", "molecular_subtype")], 
-            by = "sample_id", suffix = c(".opc", ".hope")) %>%
-  dplyr::mutate(molecular_subtype = case_when(
-    sample_id %in% hope$sample_id ~ molecular_subtype.hope,
-    TRUE ~ molecular_subtype.opc
-  ),
-  plot_group = case_when(
-    sample_id %in% hope$sample_id ~ plot_group.hope,
-    TRUE ~ plot_group.opc
-  )) %>%
-  dplyr::select(-plot_group.opc, -plot_group.hope,
-                -molecular_subtype.opc, -molecular_subtype.hope)
-
-```
 
 # Write merged data to file
 
