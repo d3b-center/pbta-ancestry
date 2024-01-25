@@ -42,7 +42,7 @@ hist_file <- file.path(data_dir, "histologies.tsv")
 Load data
 
 ```{r}
-braf_hist <- read_tsv(cohort_hist_file)%>%
+braf_hist <- read_tsv(cohort_hist_file) %>%
   dplyr::filter(plot_group == "Low-grade glioma" & grepl("-BRAF", molecular_subtype)) %>%
   dplyr::mutate(predicted_ancestry = factor(predicted_ancestry))
 
@@ -50,12 +50,14 @@ hist <- read_tsv(hist_file)
 
 # filter fusion file for in-frame fusions and duplications, and determine whether BRAF kinase domain is retained
 braf_fusions <- read_tsv(fusion_file) %>%
-  dplyr::filter(Kids_First_Participant_ID %in% braf_hist$Kids_First_Participant_ID) %>%
   dplyr::filter(Fusion_Type == "in-frame",
          grepl("duplication", annots)) %>%
   mutate(keep = case_when(FusionName == "KIAA1549--BRAF" & DomainRetainedGene1B == "Yes" ~ "yes",
                           FusionName == "BRAF--KIAA1549" & DomainRetainedGene1A == "Yes" ~ "yes",
-                          TRUE ~ "no"))
+                          TRUE ~ "no")) %>%
+  # The below sample has two different common breakpoints and one is low conf in arriba, so we will remove that one
+  mutate(keep = case_when(Sample == "BS_SDZY6RZ3" & LeftBreakpoint_position == 138867975 ~ "no",
+                            TRUE ~ keep))
 
 braf_fusions_dgd <- read_tsv(fusion_dgd_file) %>%
   dplyr::filter(FusionName == "KIAA1549--BRAF" & !grepl("Tier 3|Tier 4", variant_tier)) %>%
@@ -89,7 +91,6 @@ common_fusions <- braf_fusions_dgd %>%
   distinct(Kids_First_Participant_ID, breakpoint_exons_common, .keep_all = T) %>%
   group_by(Kids_First_Participant_ID) %>%
   summarise(breakpoint_exons_common = str_c(breakpoint_exons_common, collapse = ";"))
-  
 
 rare_novel_fusions_pbta <- braf_fusions %>%
   dplyr::filter(!breakpoint_exons %in% c("16:9", "15:9", "16:11", "18:10") & keep == "yes") %>%
@@ -107,29 +108,15 @@ rare_novel_fusions <- braf_fusions_dgd %>%
   group_by(Kids_First_Participant_ID) %>%
   summarise(breakpoint_exons_rare = str_c(breakpoint_exons_rare, collapse = ";"))
 
-```
-
-Merge breakpoint data to braf hist
-
-```{r}
-braf_hist <- braf_hist %>%
-  left_join(common_fusions) %>%
-  left_join(rare_novel_fusions) %>%
-  dplyr::filter(!is.na(breakpoint_exons_common) | !is.na(breakpoint_exons_rare))
-
-```
-
-Add breakpoint_type column (common vs rare) and breakpoint_group column (common breakpoint type and rare merged)
-
-```{r}
-braf_hist <- braf_hist %>%
+fusions_all <- common_fusions %>%
+  bind_rows(rare_novel_fusions) %>%
   dplyr::mutate(breakpoint_type = case_when(
     !is.na(breakpoint_exons_common) & !is.na(breakpoint_exons_rare) ~ NA_character_,
     !is.na(breakpoint_exons_rare) ~ "rare",
     !is.na(breakpoint_exons_common) ~ "common",
     TRUE ~ NA_character_
   )) %>%
-  # Assigne breakpoint group (unique common breakpoint or broad rare group)
+  # Assign breakpoint group (unique common breakpoint or broad rare group)
   dplyr::mutate(breakpoint_group = case_when(
     !is.na(breakpoint_exons_common) & !is.na(breakpoint_exons_rare) ~ NA_character_,
     breakpoint_exons_common == "16:9" ~ "16:9",
@@ -139,14 +126,20 @@ braf_hist <- braf_hist %>%
     !is.na(breakpoint_exons_rare) ~ "rare",
     TRUE ~ NA_character_
   )) %>%
-  dplyr::mutate(breakpoint_group = fct_relevel(breakpoint_group,
-                                               c("18:10", "16:9", "15:9", "16:11", "rare")
-                                               ))
+  write_tsv(file.path(results_dir, "braf-fusion-breakpoints-by-patient.tsv"))
 
 
 
 ```
 
+Merge breakpoint data to braf hist
+
+```{r}
+braf_hist <- braf_hist %>%
+  left_join(fusions_all) %>%
+  dplyr::filter(!is.na(breakpoint_type))
+
+```
 
 How many patients do we have breakpoint data for? 
 
