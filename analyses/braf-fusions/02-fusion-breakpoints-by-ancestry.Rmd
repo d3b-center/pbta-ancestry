@@ -55,7 +55,10 @@ braf_fusions <- read_tsv(fusion_file) %>%
          grepl("duplication", annots)) %>%
   mutate(keep = case_when(FusionName == "KIAA1549--BRAF" & DomainRetainedGene1B == "Yes" ~ "yes",
                           FusionName == "BRAF--KIAA1549" & DomainRetainedGene1A == "Yes" ~ "yes",
-                          TRUE ~ "no"))
+                          TRUE ~ "no")) %>%
+  # The below sample has two different common breakpoints and one is low conf in arriba, so we will remove that one
+  mutate(keep = case_when(Sample == "BS_SDZY6RZ3" & LeftBreakpoint_position == 138867975 ~ "no",
+                            TRUE ~ keep))
 
 braf_fusions_dgd <- read_tsv(fusion_dgd_file) %>%
   dplyr::filter(FusionName == "KIAA1549--BRAF" & !grepl("Tier 3|Tier 4", variant_tier)) %>%
