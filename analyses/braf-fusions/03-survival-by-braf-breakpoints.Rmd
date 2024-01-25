@@ -45,7 +45,9 @@ braf_hist <- braf_hist %>%
   dplyr::mutate(AS_ancestry = case_when(
     predicted_ancestry %in% c("EAS", "SAS") ~ "AS",
     TRUE ~ predicted_ancestry
-  )) 
+  )) %>%
+  dplyr::mutate(breakpoint_group = fct_relevel(breakpoint_group,
+                                               c("16:9", "15:9", "16:11", "18:10", "rare")))
 ```
 
 Run Kaplan-Meier analysis of event-free survival by breakpoint type (common vs. rare)
