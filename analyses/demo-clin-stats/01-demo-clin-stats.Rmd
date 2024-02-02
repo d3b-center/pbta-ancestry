@@ -10,6 +10,7 @@ params:
   plot_ci: TRUE
 ---
 
+This script generates demographic and clinical summary statistics tables in the PBTA ancestry cohort 
 
 ```{r load packges}
 library(data.table)
@@ -20,10 +21,10 @@ library(colorblindr)
 library(openxlsx)
 ```
 
+Set directory and file paths
 
 ```{r set paths}
 root_dir <- rprojroot::find_root(rprojroot::has_dir(".git"))
-setwd(root_dir)
 
 data_dir <- file.path(root_dir, "data")
 analysis_dir <- file.path(root_dir, "analyses", "demo-clin-stats")
@@ -35,13 +36,18 @@ ancestry_file <- file.path(root_dir, "analyses", "survival", "results", "merged_
 source(file.path(analysis_dir, "util", "summary_functions.R"))
 ```
 
+Wrangle data
+
 ```{r read ancestry}
 hist <- read_tsv(ancestry_file) %>%
   mutate(age_at_diagnosis_days = as.numeric(age_at_diagnosis_days))
 ```
 
+Consolidate unknown levels of factors, abbreviate long tumor histology
 
 ```{r}
+
+# Define unknown levels of factors
 unk_race <- c("Not Reported", "Other", "Reported Unknown", "Unknown")
 unk_ethnicity <- c("Not Available", "Unavailable")
 unk_resection <- c("Not Reported", "Unavailable")
@@ -76,6 +82,7 @@ hist <- hist %>%
   ))
 ```
 
+Generate summary table of demographic and clinical features by predicted ancestry (full cohort)
 
 ```{r}
 # Get count and percent of patients with and without P/LP variants
@@ -136,10 +143,12 @@ write_tsv(stats,
           file.path(results_dir, "demo-clin-stats-all.tsv"))
 ```
 
+Calculate corresponding Fisher's exact test p-values or ANOVA p-values for categorical and continuous variables, respectively. *NOTE: Fisher's exact test p-values are calculated using Monte Carlo simulation with N=10000 iterations due to tables sizes being larger than 2x2
 
 ```{r}
-terms = c("reported_gender", "race", "ethnicity", "cancer_group",
-          "extent_of_tumor_resection", "cancer_predisposition", "age", "Age at Chemo Start", "Age at Radiation Start")
+terms = c("Reported Gender", "Reported Race", "Reported Ethnicity", "Cancer Group",
+          "Extent of Tumor Resection", "Cancer Predisposition", "Age at Diagnosis", 
+          "Age at Chemo Start", "Age at Radiation Start")
 
 gender_p <- fisher.test(table(hist$reported_gender, hist$predicted_ancestry),
                        simulate.p.value=TRUE, B = 10000)$p.value
@@ -177,100 +186,20 @@ write_tsv(pvals, file.path(results_dir, "demo-clin-pvals-all.tsv"))
 
 ```
 
-
+Generate summary statistics tables within tumor histologies. Here we will include variables `mol_sub_group` and `CNS_region`, and exclude `plot_group`
 
 ```{r}
+
 groups <- hist %>%
   filter(!is.na(plot_group) & !grepl("Other CNS embryonal tumor|Choroid plexus tumor", plot_group)) %>%
   pull(plot_group) %>%
   unique()
 
-pvalue_list <- list()
-
-terms = c("age", "reported_gender", "race", "ethnicity",
-          "mol_sub_group", "CNS region", "extent_of_tumor_resection", 
+terms = c("Age at Diagnosis", "Reported Gender", "Reported Race", "Reported Ethnicity",
+          "Molecular Subgroup", "CNS region", "Extent of Tumor Resection", 
           "Cancer predisposition syndrome", "Age at Chemo Start", "Age at Radiation Start")
 
-unk_race <- c("Not Reported", "Other", "Reported Unknown")
-unk_ethnicity <- c("Not Available", "Not Reported", "Unavailable/Not Reported")
-
-for (group in groups) {
-  
-  group_hist <- hist %>%
-    filter(plot_group == group)
-  
-  sex_p <- fisher.test(table(group_hist$reported_gender, group_hist$predicted_ancestry),
-                       simulate.p.value=TRUE, B = 10000)$p.value
-  
-  race_p <- fisher.test(table(group_hist$race, group_hist$predicted_ancestry),
-                       simulate.p.value=TRUE, B = 10000)$p.value
-  
-  ethnicity_p <- fisher.test(table(group_hist$ethnicity, group_hist$predicted_ancestry),
-                       simulate.p.value=TRUE, B = 10000)$p.value
-  
-  if (group %in% c("ATRT", "Low-grade glioma", "Mixed neuronal-glial tumor", "Ependymoma", "Medulloblastoma", "Other high-grade glioma")) {
-    
-    subgroup_p <- fisher.test(table(group_hist$mol_sub_group, group_hist$predicted_ancestry),
-                       simulate.p.value=TRUE, B = 10000)$p.value
-    
-  }
-  
-  region_p <- fisher.test(table(group_hist$CNS_region, group_hist$predicted_ancestry),
-                       simulate.p.value=TRUE, B = 10000)$p.value
-  
-  resection_p <- fisher.test(table(group_hist$extent_of_tumor_resection, group_hist$predicted_ancestry),
-                       simulate.p.value=TRUE, B = 10000)$p.value
-  
-  predisposition_p <- try(fisher.test(table(group_hist$cancer_predispositions, group_hist$predicted_ancestry),
-                       simulate.p.value=TRUE, B = 10000)$p.value)
-  predisposition_p <- ifelse(is.character(predisposition_p), NA, predisposition_p)
-  
-  age_p <- anova(lm(age_at_diagnosis_days ~ predicted_ancestry, 
-                    data = group_hist))$`Pr(>F)`[1]
-  
-  chemo_p <- try(anova(lm(age_at_chemo_start/365.25 ~ predicted_ancestry, 
-                    data = group_hist))$`Pr(>F)`[1])
-  chemo_p <- ifelse(is.character(chemo_p), NA, chemo_p)
-  
-  radiation_p <- try(anova(lm(age_at_radiation_start/365.25 ~ predicted_ancestry, 
-                    data = group_hist))$`Pr(>F)`[1])
-  radiation_p <- ifelse(is.character(radiation_p), NA, radiation_p)
-    
-  
-  if (group %in% c("ATRT", "Low-grade glioma", "Mixed neuronal-glial tumor", "Ependymoma", "Medulloblastoma", "Other high-grade glioma")) {
-    
-    pvalue_list[[group]] <- data.frame(term = terms,
-                                    pvalue = c(age_p, sex_p, race_p, 
-                                               ethnicity_p, subgroup_p, 
-                                               region_p, resection_p,
-                                               predisposition_p,
-                                               chemo_p, radiation_p))
-    
-  } else {
-  
-    pvalue_list[[group]] <- data.frame(term = terms[terms != "mol_sub_group"],
-                                    pvalue = c(age_p, sex_p, race_p, 
-                                               ethnicity_p,
-                                               region_p, resection_p,
-                                               predisposition_p,
-                                               chemo_p, radiation_p))
-  }
-  
-}
-
-write.xlsx(pvalue_list,
-           file.path(results_dir, "demo-clin-pvalues-by-histology.xlsx"),
-           overwrite = TRUE,
-           keepNA = TRUE,
-           rowNames = TRUE)
-                    
-```
-
-
-```{r}
-
 stats_list <- list()
-
 
 for (group in groups) {
   
@@ -337,6 +266,7 @@ for (group in groups) {
   
 }
 
+# save df list to excel file
 write.xlsx(stats_list,
            file.path(results_dir, "demo-clin-stats-by-histology.xlsx"),
            overwrite = TRUE,
@@ -347,3 +277,86 @@ write.xlsx(stats_list,
 
 ```
 
+Calculate corresponding p-values using same statistical test for each variable as was applied in tests with full cohort. 
+
+```{r}
+
+pvalue_list <- list()
+
+for (group in groups) {
+  
+  group_hist <- hist %>%
+    filter(plot_group == group)
+  
+  sex_p <- fisher.test(table(group_hist$reported_gender, group_hist$predicted_ancestry),
+                       simulate.p.value=TRUE, B = 10000)$p.value
+  
+  race_p <- fisher.test(table(group_hist$race, group_hist$predicted_ancestry),
+                       simulate.p.value=TRUE, B = 10000)$p.value
+  
+  ethnicity_p <- fisher.test(table(group_hist$ethnicity, group_hist$predicted_ancestry),
+                       simulate.p.value=TRUE, B = 10000)$p.value
+  
+  if (group %in% c("ATRT", "Low-grade glioma", "Mixed neuronal-glial tumor", "Ependymoma", "Medulloblastoma", "Other high-grade glioma")) {
+    
+    subgroup_p <- fisher.test(table(group_hist$mol_sub_group, group_hist$predicted_ancestry),
+                       simulate.p.value=TRUE, B = 10000)$p.value
+    
+  }
+  
+  region_p <- fisher.test(table(group_hist$CNS_region, group_hist$predicted_ancestry),
+                       simulate.p.value=TRUE, B = 10000)$p.value
+  
+  resection_p <- fisher.test(table(group_hist$extent_of_tumor_resection, group_hist$predicted_ancestry),
+                       simulate.p.value=TRUE, B = 10000)$p.value
+  
+  predisposition_p <- try(fisher.test(table(group_hist$cancer_predispositions, group_hist$predicted_ancestry),
+                       simulate.p.value=TRUE, B = 10000)$p.value)
+  predisposition_p <- ifelse(is.character(predisposition_p), NA, predisposition_p)
+  
+  age_p <- anova(lm(age_at_diagnosis_days ~ predicted_ancestry, 
+                    data = group_hist))$`Pr(>F)`[1]
+  
+  chemo_p <- try(anova(lm(age_at_chemo_start/365.25 ~ predicted_ancestry, 
+                    data = group_hist))$`Pr(>F)`[1])
+  chemo_p <- ifelse(is.character(chemo_p), NA, chemo_p)
+  
+  radiation_p <- try(anova(lm(age_at_radiation_start/365.25 ~ predicted_ancestry, 
+                    data = group_hist))$`Pr(>F)`[1])
+  radiation_p <- ifelse(is.character(radiation_p), NA, radiation_p)
+    
+  
+  if (group %in% c("ATRT", "Low-grade glioma", "Mixed neuronal-glial tumor", "Ependymoma", "Medulloblastoma", "Other high-grade glioma")) {
+    
+    pvalue_list[[group]] <- data.frame(term = terms,
+                                    pvalue = c(age_p, sex_p, race_p, 
+                                               ethnicity_p, subgroup_p, 
+                                               region_p, resection_p,
+                                               predisposition_p,
+                                               chemo_p, radiation_p))
+    
+  } else {
+  
+    pvalue_list[[group]] <- data.frame(term = terms[terms != "Molecular Subgroup"],
+                                    pvalue = c(age_p, sex_p, race_p, 
+                                               ethnicity_p,
+                                               region_p, resection_p,
+                                               predisposition_p,
+                                               chemo_p, radiation_p))
+  }
+  
+}
+
+write.xlsx(pvalue_list,
+           file.path(results_dir, "demo-clin-pvalues-by-histology.xlsx"),
+           overwrite = TRUE,
+           keepNA = TRUE,
+           rowNames = TRUE)
+                    
+```
+
+Print session info
+```{r session info}
+sessionInfo()
+
+```

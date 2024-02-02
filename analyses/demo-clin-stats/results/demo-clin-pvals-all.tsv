@@ -1,10 +1,10 @@
 term	pvalue
-reported_gender	0.5377462253774623
-race	9.999000099990002e-5
-ethnicity	9.999000099990002e-5
-cancer_group	1.9998000199980003e-4
-extent_of_tumor_resection	0.08209179082091791
-cancer_predisposition	0.32116788321167883
-age	0.0014512340002309897
-Age at Chemo Start	0.23471681303647662
-Age at Radiation Start	0.5839063030218943
+Reported Gender	0.5465453454654534
+Reported Race	9.999000099990002e-5
+Reported Ethnicity	9.999000099990002e-5
+Cancer Group	9.999000099990002e-5
+Extent of Tumor Resection	0.08759124087591241
+Cancer Predisposition	0.3261673832616738
+Age at Diagnosis	0.001451234000230885
+Age at Chemo Start	0.2347168130364729
+Age at Radiation Start	0.5839063030218928
