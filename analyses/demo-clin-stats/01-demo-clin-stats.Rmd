@@ -1,0 +1,349 @@
+---
+title: "PBTA-ancestry demographic & clinical stats"
+output: 
+  html_notebook:
+    toc: TRUE
+    toc_float: TRUE
+author: Ryan Corbett
+date: 2023
+params:
+  plot_ci: TRUE
+---
+
+
+```{r load packges}
+library(data.table)
+library(tidyverse)
+library(pheatmap)
+library(RColorBrewer)
+library(colorblindr)
+library(openxlsx)
+```
+
+
+```{r set paths}
+root_dir <- rprojroot::find_root(rprojroot::has_dir(".git"))
+setwd(root_dir)
+
+data_dir <- file.path(root_dir, "data")
+analysis_dir <- file.path(root_dir, "analyses", "demo-clin-stats")
+results_dir <- file.path(analysis_dir, "results")
+
+# set file paths
+ancestry_file <- file.path(root_dir, "analyses", "survival", "results", "merged_ancestry_histology_survival.tsv")
+
+source(file.path(analysis_dir, "util", "summary_functions.R"))
+```
+
+```{r read ancestry}
+hist <- read_tsv(ancestry_file) %>%
+  mutate(age_at_diagnosis_days = as.numeric(age_at_diagnosis_days))
+```
+
+
+```{r}
+unk_race <- c("Not Reported", "Other", "Reported Unknown", "Unknown")
+unk_ethnicity <- c("Not Available", "Unavailable")
+unk_resection <- c("Not Reported", "Unavailable")
+
+hist <- hist %>%
+    mutate(race = case_when(
+      race %in% unk_race | is.na(race) ~ "Other/Unknown Race",
+      grepl("White", race) ~ "White",
+      TRUE ~ race
+    )) %>%
+    mutate(ethnicity = case_when(
+      ethnicity %in% unk_ethnicity | is.na(ethnicity) ~ "Unknown",
+      grepl("Not|Non", ethnicity) ~ "Not Hispanic or Latino",
+      TRUE ~ ethnicity
+    )) %>%
+  mutate(reported_gender = case_when(
+    is.na(reported_gender) | reported_gender %in% c("Not Reported", "Unknown") ~ "Unknown",
+    TRUE ~ reported_gender
+  )) %>%
+  mutate(plot_group = case_when(
+    plot_group == "Atypical Teratoid Rhabdoid Tumor" ~ "ATRT",
+    TRUE ~ plot_group
+  )) %>%
+  mutate(extent_of_tumor_resection = case_when(
+    extent_of_tumor_resection %in% unk_resection | is.na(extent_of_tumor_resection) ~ "Unavailable",
+    grepl("Gross/Near", extent_of_tumor_resection) ~ "Gross/Near total resection",
+    TRUE ~ extent_of_tumor_resection
+  )) %>%
+  mutate(cancer_predispositions = case_when(
+    cancer_predispositions %in% c("None documented", "Not Reported") ~ "None documented",
+    TRUE~ cancer_predispositions
+  ))
+```
+
+
+```{r}
+# Get count and percent of patients with and without P/LP variants
+freq <- summarize_freq(hist, "predicted_ancestry")
+
+# Look at distribution of following variables among patients with and without P/LP variants: sex, reported race, predicted ancestry, reported ethnicity, and histology group
+gender <- summarize_count(hist, "predicted_ancestry", "reported_gender")
+
+race <- summarize_count(hist, "predicted_ancestry", "race") %>%
+  dplyr::select(-predicted_ancestry)
+
+ethnicity <- summarize_count(hist, "predicted_ancestry", "ethnicity") %>%
+  dplyr::select(-predicted_ancestry)
+
+group <- summarize_count(hist, "predicted_ancestry", "plot_group") %>%
+  dplyr::select(-predicted_ancestry)
+
+resection <- summarize_count(hist, "predicted_ancestry", "extent_of_tumor_resection") %>%
+  dplyr::select(-predicted_ancestry)
+
+predisposition <- summarize_count(hist, "predicted_ancestry", "cancer_predispositions") %>%
+  dplyr::select(-predicted_ancestry)
+
+# merge stats and add %
+merged <- gender %>%
+  bind_cols(race, ethnicity, group, resection, predisposition) %>%
+  column_to_rownames("predicted_ancestry") %>%
+#  t() %>%
+  as.data.frame()
+
+perc <- round(merged / table(hist$predicted_ancestry) * 100, 1)
+demo_path <- matrix(paste0(as.matrix(merged), " (", as.matrix(perc), "%)"),
+               nrow = nrow(merged), ncol = ncol(merged),
+               dimnames = list(rownames(merged), colnames(merged)))
+demo_path <- ifelse(demo_path == "NA (NA%)", "--", demo_path)
+
+demo_path <- demo_path %>%
+  t() %>%
+  as.data.frame()
+  
+# Calculate median survival and tmb for each group
+clin <- hist %>%
+  group_by(predicted_ancestry) %>%
+  summarise(median_age = round(median(as.numeric(age_at_diagnosis_days)/365.25, na.rm = T), 2),
+            median_age_at_chemo = round(median(age_at_chemo_start/365.25, na.rm = T), 2),
+            median_age_at_radiation = round(median(age_at_radiation_start/365.25, na.rm = T), 2)) %>%
+  column_to_rownames("predicted_ancestry") %>%
+  t() %>%
+  as.data.frame() %>%
+  mutate_all(as.character)
+
+# Merge stats and save
+stats <- freq %>%
+  bind_rows(demo_path, clin) %>%
+  rownames_to_column("Term")
+
+write_tsv(stats, 
+          file.path(results_dir, "demo-clin-stats-all.tsv"))
+```
+
+
+```{r}
+terms = c("reported_gender", "race", "ethnicity", "cancer_group",
+          "extent_of_tumor_resection", "cancer_predisposition", "age", "Age at Chemo Start", "Age at Radiation Start")
+
+gender_p <- fisher.test(table(hist$reported_gender, hist$predicted_ancestry),
+                       simulate.p.value=TRUE, B = 10000)$p.value
+
+race_p <- fisher.test(table(hist$race, hist$predicted_ancestry),
+                       simulate.p.value=TRUE, B = 10000)$p.value
+
+ethnicity_p <- fisher.test(table(hist$ethnicity, hist$predicted_ancestry),
+                       simulate.p.value=TRUE, B = 10000)$p.value
+
+group_p <- fisher.test(table(hist$plot_group, hist$predicted_ancestry),
+                       simulate.p.value=TRUE, B = 10000)$p.value
+
+resection_p <- fisher.test(table(hist$extent_of_tumor_resection, hist$predicted_ancestry),
+                       simulate.p.value=TRUE, B = 10000)$p.value
+
+predisposition_p <- fisher.test(table(hist$cancer_predispositions, hist$predicted_ancestry),
+                       simulate.p.value=TRUE, B = 10000)$p.value
+
+age_p <- anova(lm(age_at_diagnosis_days ~ predicted_ancestry, 
+                  data = hist))$`Pr(>F)`[1]
+
+chemo_p <- anova(lm(age_at_chemo_start/365.25 ~ predicted_ancestry, 
+                  data = hist))$`Pr(>F)`[1]
+
+radiation_p <- anova(lm(age_at_radiation_start/365.25 ~ predicted_ancestry, 
+                  data = hist))$`Pr(>F)`[1]
+
+pvals <- data.frame(term = terms,
+                    pvalue = c(gender_p, race_p, ethnicity_p, 
+                               group_p, resection_p, predisposition_p,
+                               age_p, chemo_p, radiation_p))
+
+write_tsv(pvals, file.path(results_dir, "demo-clin-pvals-all.tsv"))
+
+```
+
+
+
+```{r}
+groups <- hist %>%
+  filter(!is.na(plot_group) & !grepl("Other CNS embryonal tumor|Choroid plexus tumor", plot_group)) %>%
+  pull(plot_group) %>%
+  unique()
+
+pvalue_list <- list()
+
+terms = c("age", "reported_gender", "race", "ethnicity",
+          "mol_sub_group", "CNS region", "extent_of_tumor_resection", 
+          "Cancer predisposition syndrome", "Age at Chemo Start", "Age at Radiation Start")
+
+unk_race <- c("Not Reported", "Other", "Reported Unknown")
+unk_ethnicity <- c("Not Available", "Not Reported", "Unavailable/Not Reported")
+
+for (group in groups) {
+  
+  group_hist <- hist %>%
+    filter(plot_group == group)
+  
+  sex_p <- fisher.test(table(group_hist$reported_gender, group_hist$predicted_ancestry),
+                       simulate.p.value=TRUE, B = 10000)$p.value
+  
+  race_p <- fisher.test(table(group_hist$race, group_hist$predicted_ancestry),
+                       simulate.p.value=TRUE, B = 10000)$p.value
+  
+  ethnicity_p <- fisher.test(table(group_hist$ethnicity, group_hist$predicted_ancestry),
+                       simulate.p.value=TRUE, B = 10000)$p.value
+  
+  if (group %in% c("ATRT", "Low-grade glioma", "Mixed neuronal-glial tumor", "Ependymoma", "Medulloblastoma", "Other high-grade glioma")) {
+    
+    subgroup_p <- fisher.test(table(group_hist$mol_sub_group, group_hist$predicted_ancestry),
+                       simulate.p.value=TRUE, B = 10000)$p.value
+    
+  }
+  
+  region_p <- fisher.test(table(group_hist$CNS_region, group_hist$predicted_ancestry),
+                       simulate.p.value=TRUE, B = 10000)$p.value
+  
+  resection_p <- fisher.test(table(group_hist$extent_of_tumor_resection, group_hist$predicted_ancestry),
+                       simulate.p.value=TRUE, B = 10000)$p.value
+  
+  predisposition_p <- try(fisher.test(table(group_hist$cancer_predispositions, group_hist$predicted_ancestry),
+                       simulate.p.value=TRUE, B = 10000)$p.value)
+  predisposition_p <- ifelse(is.character(predisposition_p), NA, predisposition_p)
+  
+  age_p <- anova(lm(age_at_diagnosis_days ~ predicted_ancestry, 
+                    data = group_hist))$`Pr(>F)`[1]
+  
+  chemo_p <- try(anova(lm(age_at_chemo_start/365.25 ~ predicted_ancestry, 
+                    data = group_hist))$`Pr(>F)`[1])
+  chemo_p <- ifelse(is.character(chemo_p), NA, chemo_p)
+  
+  radiation_p <- try(anova(lm(age_at_radiation_start/365.25 ~ predicted_ancestry, 
+                    data = group_hist))$`Pr(>F)`[1])
+  radiation_p <- ifelse(is.character(radiation_p), NA, radiation_p)
+    
+  
+  if (group %in% c("ATRT", "Low-grade glioma", "Mixed neuronal-glial tumor", "Ependymoma", "Medulloblastoma", "Other high-grade glioma")) {
+    
+    pvalue_list[[group]] <- data.frame(term = terms,
+                                    pvalue = c(age_p, sex_p, race_p, 
+                                               ethnicity_p, subgroup_p, 
+                                               region_p, resection_p,
+                                               predisposition_p,
+                                               chemo_p, radiation_p))
+    
+  } else {
+  
+    pvalue_list[[group]] <- data.frame(term = terms[terms != "mol_sub_group"],
+                                    pvalue = c(age_p, sex_p, race_p, 
+                                               ethnicity_p,
+                                               region_p, resection_p,
+                                               predisposition_p,
+                                               chemo_p, radiation_p))
+  }
+  
+}
+
+write.xlsx(pvalue_list,
+           file.path(results_dir, "demo-clin-pvalues-by-histology.xlsx"),
+           overwrite = TRUE,
+           keepNA = TRUE,
+           rowNames = TRUE)
+                    
+```
+
+
+```{r}
+
+stats_list <- list()
+
+
+for (group in groups) {
+  
+  group_hist <- hist %>%
+    filter(plot_group == group)
+
+  # Get count and percent of patients with and without P/LP variants
+  freq <- summarize_freq(group_hist, "predicted_ancestry")
+  
+  # Look at distribution of following variables among patients with and without P/LP variants: sex, reported race, predicted ancestry, reported ethnicity, and histology group
+  gender <- summarize_count(group_hist, "predicted_ancestry", "reported_gender")
+  
+  race <- summarize_count(group_hist, "predicted_ancestry", "race") %>%
+    dplyr::select(-predicted_ancestry)
+  
+  ethnicity <- summarize_count(group_hist, "predicted_ancestry", "ethnicity") %>%
+    dplyr::select(-predicted_ancestry)
+  
+  subgroup <- summarize_count(group_hist, "predicted_ancestry", "mol_sub_group") %>%
+    dplyr::select(-predicted_ancestry)
+  
+  region <- summarize_count(group_hist, "predicted_ancestry", "CNS_region") %>%
+    dplyr::select(-predicted_ancestry)
+
+  resection <- summarize_count(group_hist, "predicted_ancestry", "extent_of_tumor_resection") %>%
+    dplyr::select(-predicted_ancestry)
+  
+  predisposition <- summarize_count(group_hist, "predicted_ancestry", "cancer_predispositions") %>%
+    dplyr::select(-predicted_ancestry)
+  
+  # merge stats and add %
+  merged <- gender %>%
+    bind_cols(race, ethnicity, subgroup,
+              region, resection, predisposition) %>%
+    column_to_rownames("predicted_ancestry") %>%
+  #  t() %>%
+    as.data.frame()
+  
+  perc <- round(merged / table(group_hist$predicted_ancestry) * 100, 1)
+  demo_path <- matrix(paste0(as.matrix(merged), " (", as.matrix(perc), "%)"),
+                 nrow = nrow(merged), ncol = ncol(merged),
+                 dimnames = list(rownames(merged), colnames(merged)))
+  demo_path <- ifelse(demo_path == "NA (NA%)", "--", demo_path)
+  
+  demo_path <- demo_path %>%
+    t() %>%
+    as.data.frame()
+    
+  # Calculate median survival and tmb for each group
+  clin <- group_hist %>%
+    group_by(predicted_ancestry) %>%
+    summarise(median_age = round(median(as.numeric(age_at_diagnosis_days)/365.25, na.rm = T), 2),
+              median_age_chemo = round(median(age_at_chemo_start/365.25, na.rm = T), 2),
+              median_age_radiation = round(median(age_at_radiation_start/365.25, na.rm = T), 2)) %>%
+    column_to_rownames("predicted_ancestry") %>%
+    t() %>%
+    as.data.frame() %>%
+    mutate_all(as.character)
+  
+  # Merge stats and save
+  stats_list[[group]] <- freq %>%
+    bind_rows(demo_path, clin) %>%
+    rownames_to_column("Term")
+  
+}
+
+write.xlsx(stats_list,
+           file.path(results_dir, "demo-clin-stats-by-histology.xlsx"),
+           overwrite = TRUE,
+           keepNA = TRUE,
+           rowNames = FALSE)
+
+
+
+```
+
