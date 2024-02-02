@@ -33,6 +33,7 @@ RUN install2.r \
   ggalluvial \
   ggpubr \
   ggthemes \
+  openxlsx \
 	optparse \
 	pheatmap \
 	RColorBrewer \
