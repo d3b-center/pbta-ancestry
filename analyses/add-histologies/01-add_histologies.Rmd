@@ -71,7 +71,7 @@ ancestry <- ancestry %>%
                               'reported_gender', 'race', 'ethnicity', 'broad_histology', 'cancer_group',
                               'molecular_subtype', 'tumor_descriptor', "CNS_region", 'extent_of_tumor_resection', 
                               'age_at_diagnosis_days', 'OS_days', 'OS_status', 'EFS_days', "EFS_event_type",
-                     'age_at_chemo_start', 'age_at_radiation_start')], 
+                     'age_at_chemo_start', 'age_at_radiation_start', 'cancer_predispositions')], 
             by = 'Kids_First_Participant_ID') %>%
   dplyr::left_join(plot_mapping[,c('broad_histology', 'cancer_group', 'plot_group')], by = c('broad_histology', 'cancer_group'))
 ```
