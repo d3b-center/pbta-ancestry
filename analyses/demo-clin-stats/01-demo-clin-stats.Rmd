@@ -16,9 +16,6 @@ This script generates demographic and clinical summary statistics tables in the 
 
 library(data.table)
 library(tidyverse)
-library(pheatmap)
-library(RColorBrewer)
-library(colorblindr)
 library(openxlsx)
 
 ```
@@ -81,10 +78,6 @@ hist <- hist %>%
     extent_of_tumor_resection %in% unk_resection | is.na(extent_of_tumor_resection) ~ "Unavailable",
     grepl("Gross/Near", extent_of_tumor_resection) ~ "Gross/Near total resection",
     TRUE ~ extent_of_tumor_resection
-  )) %>%
-  mutate(cancer_predispositions = case_when(
-    cancer_predispositions %in% c("None documented", "Not Reported") ~ "None documented",
-    TRUE~ cancer_predispositions
   ))
 
 ```
@@ -110,12 +103,9 @@ group <- summarize_count(hist, "predicted_ancestry", "plot_group") %>%
 resection <- summarize_count(hist, "predicted_ancestry", "extent_of_tumor_resection") %>%
   dplyr::select(-predicted_ancestry)
 
-predisposition <- summarize_count(hist, "predicted_ancestry", "cancer_predispositions") %>%
-  dplyr::select(-predicted_ancestry)
-
 # merge stats and add %
 merged <- gender %>%
-  bind_cols(race, ethnicity, group, resection, predisposition) %>%
+  bind_cols(race, ethnicity, group, resection) %>%
   column_to_rownames("predicted_ancestry") %>%
 #  t() %>%
   as.data.frame()
@@ -155,7 +145,7 @@ Calculate corresponding Fisher's exact test p-values or ANOVA p-values for categ
 
 ```{r}
 terms = c("Reported Gender", "Reported Race", "Reported Ethnicity", "Cancer Group",
-          "Extent of Tumor Resection", "Cancer Predisposition", "Age at Diagnosis", 
+          "Extent of Tumor Resection", "Age at Diagnosis", 
           "Age at Chemo Start", "Age at Radiation Start")
 
 gender_p <- fisher.test(table(hist$reported_gender, hist$predicted_ancestry),
@@ -173,9 +163,6 @@ group_p <- fisher.test(table(hist$plot_group, hist$predicted_ancestry),
 resection_p <- fisher.test(table(hist$extent_of_tumor_resection, hist$predicted_ancestry),
                        simulate.p.value=TRUE, B = 10000)$p.value
 
-predisposition_p <- fisher.test(table(hist$cancer_predispositions, hist$predicted_ancestry),
-                       simulate.p.value=TRUE, B = 10000)$p.value
-
 age_p <- anova(lm(age_at_diagnosis_days ~ predicted_ancestry, 
                   data = hist))$`Pr(>F)`[1]
 
@@ -187,7 +174,7 @@ radiation_p <- anova(lm(age_at_radiation_start/365.25 ~ predicted_ancestry,
 
 pvals <- data.frame(term = terms,
                     pvalue = c(gender_p, race_p, ethnicity_p, 
-                               group_p, resection_p, predisposition_p,
+                               group_p, resection_p,
                                age_p, chemo_p, radiation_p))
 
 write_tsv(pvals, file.path(results_dir, "demo-clin-pvals-all.tsv"))
@@ -205,7 +192,7 @@ groups <- hist %>%
 
 terms = c("Age at Diagnosis", "Reported Gender", "Reported Race", "Reported Ethnicity",
           "Molecular Subgroup", "CNS region", "Extent of Tumor Resection", 
-          "Cancer predisposition syndrome", "Age at Chemo Start", "Age at Radiation Start")
+          "Age at Chemo Start", "Age at Radiation Start")
 
 stats_list <- list()
 
@@ -235,13 +222,10 @@ for (group in groups) {
   resection <- summarize_count(group_hist, "predicted_ancestry", "extent_of_tumor_resection") %>%
     dplyr::select(-predicted_ancestry)
   
-  predisposition <- summarize_count(group_hist, "predicted_ancestry", "cancer_predispositions") %>%
-    dplyr::select(-predicted_ancestry)
-  
   # merge stats and add %
   merged <- gender %>%
     bind_cols(race, ethnicity, subgroup,
-              region, resection, predisposition) %>%
+              region, resection) %>%
     column_to_rownames("predicted_ancestry") %>%
   #  t() %>%
     as.data.frame()
@@ -316,10 +300,6 @@ for (group in groups) {
   resection_p <- fisher.test(table(group_hist$extent_of_tumor_resection, group_hist$predicted_ancestry),
                        simulate.p.value=TRUE, B = 10000)$p.value
   
-  predisposition_p <- try(fisher.test(table(group_hist$cancer_predispositions, group_hist$predicted_ancestry),
-                       simulate.p.value=TRUE, B = 10000)$p.value)
-  predisposition_p <- ifelse(is.character(predisposition_p), NA, predisposition_p)
-  
   age_p <- anova(lm(age_at_diagnosis_days ~ predicted_ancestry, 
                     data = group_hist))$`Pr(>F)`[1]
   
@@ -338,7 +318,6 @@ for (group in groups) {
                                     pvalue = c(age_p, sex_p, race_p, 
                                                ethnicity_p, subgroup_p, 
                                                region_p, resection_p,
-                                               predisposition_p,
                                                chemo_p, radiation_p))
     
   } else {
@@ -347,7 +326,6 @@ for (group in groups) {
                                     pvalue = c(age_p, sex_p, race_p, 
                                                ethnicity_p,
                                                region_p, resection_p,
-                                               predisposition_p,
                                                chemo_p, radiation_p))
   }
   
