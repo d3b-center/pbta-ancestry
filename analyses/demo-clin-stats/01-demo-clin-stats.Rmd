@@ -13,17 +13,20 @@ params:
 This script generates demographic and clinical summary statistics tables in the PBTA ancestry cohort 
 
 ```{r load packges}
+
 library(data.table)
 library(tidyverse)
 library(pheatmap)
 library(RColorBrewer)
 library(colorblindr)
 library(openxlsx)
+
 ```
 
 Set directory and file paths
 
 ```{r set paths}
+
 root_dir <- rprojroot::find_root(rprojroot::has_dir(".git"))
 
 data_dir <- file.path(root_dir, "data")
@@ -34,13 +37,16 @@ results_dir <- file.path(analysis_dir, "results")
 ancestry_file <- file.path(root_dir, "analyses", "survival", "results", "merged_ancestry_histology_survival.tsv")
 
 source(file.path(analysis_dir, "util", "summary_functions.R"))
+
 ```
 
 Wrangle data
 
 ```{r read ancestry}
+
 hist <- read_tsv(ancestry_file) %>%
   mutate(age_at_diagnosis_days = as.numeric(age_at_diagnosis_days))
+
 ```
 
 Consolidate unknown levels of factors, abbreviate long tumor histology
@@ -80,6 +86,7 @@ hist <- hist %>%
     cancer_predispositions %in% c("None documented", "Not Reported") ~ "None documented",
     TRUE~ cancer_predispositions
   ))
+
 ```
 
 Generate summary table of demographic and clinical features by predicted ancestry (full cohort)
@@ -141,6 +148,7 @@ stats <- freq %>%
 
 write_tsv(stats, 
           file.path(results_dir, "demo-clin-stats-all.tsv"))
+
 ```
 
 Calculate corresponding Fisher's exact test p-values or ANOVA p-values for categorical and continuous variables, respectively. *NOTE: Fisher's exact test p-values are calculated using Monte Carlo simulation with N=10000 iterations due to tables sizes being larger than 2x2
@@ -272,8 +280,6 @@ write.xlsx(stats_list,
            overwrite = TRUE,
            keepNA = TRUE,
            rowNames = FALSE)
-
-
 
 ```
 
