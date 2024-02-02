@@ -430,13 +430,13 @@ font-size: 0.95em;
 <p>Load libraries and set directories</p>
 <pre class="r"><code>library(data.table)
 library(tidyverse)</code></pre>
-<pre><code>## ── Attaching core tidyverse packages ─────────────────────────────────────────────────────────────────────────────────────────────── tidyverse 2.0.0 ──
+<pre><code>## ── Attaching core tidyverse packages ──────────────────────────────────────────────────────────────────── tidyverse 2.0.0 ──
 ## ✔ dplyr     1.1.1     ✔ readr     2.1.4
 ## ✔ forcats   1.0.0     ✔ stringr   1.5.0
 ## ✔ ggplot2   3.4.2     ✔ tibble    3.2.1
 ## ✔ lubridate 1.9.2     ✔ tidyr     1.3.0
 ## ✔ purrr     1.0.1     
-## ── Conflicts ───────────────────────────────────────────────────────────────────────────────────────────────────────────────── tidyverse_conflicts() ──
+## ── Conflicts ────────────────────────────────────────────────────────────────────────────────────── tidyverse_conflicts() ──
 ## ✖ dplyr::between()     masks data.table::between()
 ## ✖ dplyr::filter()      masks stats::filter()
 ## ✖ dplyr::first()       masks data.table::first()
@@ -477,7 +477,7 @@ output_file &lt;- file.path(results_dir, &#39;merged_ancestry_histology_data.tsv
 <h2>Read in somalier results and histologies files</h2>
 <pre class="r"><code>ancestry &lt;- read_tsv(ancestry_file)</code></pre>
 <pre><code>## Rows: 1513 Columns: 13
-## ── Column specification ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+## ── Column specification ────────────────────────────────────────────────────────────────────────────────────────────────────
 ## Delimiter: &quot;\t&quot;
 ## chr  (2): Kids_First_Biospecimen_ID, predicted_ancestry
 ## dbl (10): EAS_prob, AFR_prob, AMR_prob, SAS_prob, EUR_prob, PC1, PC2, PC3, P...
@@ -487,7 +487,7 @@ output_file &lt;- file.path(results_dir, &#39;merged_ancestry_histology_data.tsv
 ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
 <pre class="r"><code>hist &lt;- read_tsv(hist_file, guess_max = 1000000)</code></pre>
 <pre><code>## Rows: 47633 Columns: 58
-## ── Column specification ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+## ── Column specification ────────────────────────────────────────────────────────────────────────────────────────────────────
 ## Delimiter: &quot;\t&quot;
 ## chr (41): Kids_First_Participant_ID, Kids_First_Biospecimen_ID, sample_id, a...
 ## dbl (17): cell_line_passage, OS_days, EFS_days, age_at_diagnosis_days, age_a...
@@ -511,7 +511,7 @@ hist_tumor &lt;- hist %&gt;%
 # read in plot_mapping file to add plot group to results
 plot_mapping &lt;- read_tsv(plot_mapping_file)</code></pre>
 <pre><code>## Rows: 79 Columns: 9
-## ── Column specification ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+## ── Column specification ────────────────────────────────────────────────────────────────────────────────────────────────────
 ## Delimiter: &quot;\t&quot;
 ## chr (8): broad_histology, cancer_group, broad_histology_display, plot_group,...
 ## dbl (1): broad_histology_order
@@ -524,7 +524,7 @@ ancestry &lt;- ancestry %&gt;%
                               &#39;reported_gender&#39;, &#39;race&#39;, &#39;ethnicity&#39;, &#39;broad_histology&#39;, &#39;cancer_group&#39;,
                               &#39;molecular_subtype&#39;, &#39;tumor_descriptor&#39;, &quot;CNS_region&quot;, &#39;extent_of_tumor_resection&#39;, 
                               &#39;age_at_diagnosis_days&#39;, &#39;OS_days&#39;, &#39;OS_status&#39;, &#39;EFS_days&#39;, &quot;EFS_event_type&quot;,
-                     &#39;age_at_chemo_start&#39;, &#39;age_at_radiation_start&#39;, &#39;cancer_predispositions&#39;)], 
+                     &#39;age_at_chemo_start&#39;, &#39;age_at_radiation_start&#39;)], 
             by = &#39;Kids_First_Participant_ID&#39;) %&gt;%
   dplyr::left_join(plot_mapping[,c(&#39;broad_histology&#39;, &#39;cancer_group&#39;, &#39;plot_group&#39;)], by = c(&#39;broad_histology&#39;, &#39;cancer_group&#39;))</code></pre>
 <pre><code>## Warning in dplyr::left_join(., hist_tumor[, c(&quot;Kids_First_Participant_ID&quot;, : Detected an unexpected many-to-many relationship between `x` and `y`.
