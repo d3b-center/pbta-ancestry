@@ -191,7 +191,7 @@ groups <- hist %>%
   unique()
 
 terms = c("Age at Diagnosis", "Reported Gender", "Reported Race", "Reported Ethnicity",
-          "Molecular Subgroup", "CNS region", "Extent of Tumor Resection", 
+          "Cancer Group", "Molecular Subgroup", "CNS region", "Extent of Tumor Resection", 
           "Age at Chemo Start", "Age at Radiation Start")
 
 stats_list <- list()
@@ -213,6 +213,9 @@ for (group in groups) {
   ethnicity <- summarize_count(group_hist, "predicted_ancestry", "ethnicity") %>%
     dplyr::select(-predicted_ancestry)
   
+  cancer_group <- summarize_count(group_hist, "predicted_ancestry", "cancer_group") %>%
+    dplyr::select(-predicted_ancestry)
+  
   subgroup <- summarize_count(group_hist, "predicted_ancestry", "mol_sub_group") %>%
     dplyr::select(-predicted_ancestry)
   
@@ -223,12 +226,36 @@ for (group in groups) {
     dplyr::select(-predicted_ancestry)
   
   # merge stats and add %
-  merged <- gender %>%
-    bind_cols(race, ethnicity, subgroup,
-              region, resection) %>%
-    column_to_rownames("predicted_ancestry") %>%
-  #  t() %>%
-    as.data.frame()
+  if (group %in% c("ATRT", "Low-grade glioma", "Mixed neuronal-glial tumor", "Ependymoma", "Medulloblastoma", "Other high-grade glioma")) {
+    
+    merged <- gender %>%
+      bind_cols(race, ethnicity, 
+                subgroup,
+                region, resection) %>%
+      column_to_rownames("predicted_ancestry") %>%
+    #  t() %>%
+      as.data.frame()
+    
+  } else if (group %in% c("Mesenchymal tumor", "Germ cell tumor")){
+    
+    merged <- gender %>%
+      bind_cols(race, ethnicity, 
+                cancer_group,
+                region, resection) %>%
+      column_to_rownames("predicted_ancestry") %>%
+    #  t() %>%
+      as.data.frame()
+    
+  } else {
+    
+    merged <- gender %>%
+      bind_cols(race, ethnicity, 
+                region, resection) %>%
+      column_to_rownames("predicted_ancestry") %>%
+    #  t() %>%
+      as.data.frame()
+    
+  }
   
   perc <- round(merged / table(group_hist$predicted_ancestry) * 100, 1)
   demo_path <- matrix(paste0(as.matrix(merged), " (", as.matrix(perc), "%)"),
@@ -294,6 +321,13 @@ for (group in groups) {
     
   }
   
+  if (group %in% c("Mesenchymal tumor", "Germ cell tumor")) {
+    
+    group_p <- fisher.test(table(group_hist$cancer_group, group_hist$predicted_ancestry),
+                       simulate.p.value=TRUE, B = 10000)$p.value
+    
+  }
+  
   region_p <- fisher.test(table(group_hist$CNS_region, group_hist$predicted_ancestry),
                        simulate.p.value=TRUE, B = 10000)$p.value
   
@@ -314,15 +348,23 @@ for (group in groups) {
   
   if (group %in% c("ATRT", "Low-grade glioma", "Mixed neuronal-glial tumor", "Ependymoma", "Medulloblastoma", "Other high-grade glioma")) {
     
-    pvalue_list[[group]] <- data.frame(term = terms,
+    pvalue_list[[group]] <- data.frame(term = terms[terms != "Cancer Group"],
                                     pvalue = c(age_p, sex_p, race_p, 
                                                ethnicity_p, subgroup_p, 
                                                region_p, resection_p,
                                                chemo_p, radiation_p))
     
+  } else if (group %in% c("Mesenchymal tumor", "Germ cell tumor")) {
+    
+    pvalue_list[[group]] <- data.frame(term = terms[terms != "Molecular Subgroup"],
+                                    pvalue = c(age_p, sex_p, race_p, 
+                                               ethnicity_p, group_p, 
+                                               region_p, resection_p,
+                                               chemo_p, radiation_p))
+    
   } else {
   
-    pvalue_list[[group]] <- data.frame(term = terms[terms != "Molecular Subgroup"],
+    pvalue_list[[group]] <- data.frame(term = terms[!terms %in% c("Molecular Subgroup", "Cancer Group")],
                                     pvalue = c(age_p, sex_p, race_p, 
                                                ethnicity_p,
                                                region_p, resection_p,
