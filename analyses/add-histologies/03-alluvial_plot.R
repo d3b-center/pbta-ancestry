@@ -174,7 +174,7 @@ final_p <- plot_grid(p1, leg,
                      nrow = 1,
                      align = "none",
                      axis = "t",
-                     rel_widths = c(1,0.65))
+                     rel_widths = c(1,0.45))
 
 pdf(file.path(plots_dir, "ancestry-race-ethnicity-alluvial.pdf"),
     width = 10, height = 6)
