@@ -43,7 +43,7 @@ Load data
 
 ```{r}
 braf_hist <- read_tsv(cohort_hist_file) %>%
-  dplyr::filter(plot_group == "Low-grade glioma" & grepl("-BRAF", molecular_subtype)) %>%
+  dplyr::filter(plot_group == "Low-grade glioma" & (grepl("-BRAF|wildtype|classified", molecular_subtype) | is.na(molecular_subtype))) %>%
   dplyr::mutate(predicted_ancestry = factor(predicted_ancestry))
 
 hist <- read_tsv(hist_file)
@@ -148,11 +148,18 @@ nrow(braf_hist)
 
 ```
 
+```{r}
+
+round(table(braf_hist$predicted_ancestry, braf_hist$breakpoint_type)/as.vector(table(braf_hist$predicted_ancestry)) * 100, 2)
+
+```
+
 ## Common breakpoint summary
 
 What is the distribution of common breakpoints by ancestry? 
 
 ```{r}
+
 table(braf_hist$breakpoint_exons_common, braf_hist$predicted_ancestry)
 
 ```
@@ -180,6 +187,37 @@ common_df <- common_df %>%
 
 write_tsv(common_df, 
           file.path(results_dir, "lgg-braf-fusion-common-breakpoint-freq.tsv"))
+
+```
+
+Calcualte breakpoint group odds ratios and p-values across predicted ancestries
+```{r}
+braf_hist <- braf_hist %>%
+  dplyr::mutate(AS_ancestry = case_when(
+    predicted_ancestry %in% c("EAS", "SAS") ~ "AS",
+    TRUE ~ predicted_ancestry
+  ))
+
+enr <- matrix(0, length(unique(braf_hist$AS_ancestry)),
+              length(unique(braf_hist$breakpoint_group[!is.na(braf_hist$breakpoint_group)])),
+              dimnames = list(c("AFR", "AMR", "AS", "EUR"),
+                              c(unique(braf_hist$breakpoint_group[!is.na(braf_hist$breakpoint_group)]))))
+pval <- enr
+
+# loop through cancer groups to calculate enrichment 
+for (i in 1:nrow(enr)){
+  no_ancestry <- sum(grepl(rownames(enr)[i], braf_hist$AS_ancestry))
+  for (j in 1:ncol(enr)){
+    no_group <- sum(braf_hist$breakpoint_group == colnames(enr)[j] & !is.na(braf_hist$breakpoint_group))
+    no_anc_group <- sum(braf_hist$AS_ancestry == rownames(enr)[i] & braf_hist$breakpoint_group == colnames(enr)[j])
+    enr[i,j] <- (no_anc_group/no_group)/(no_ancestry/nrow(braf_hist))
+    pval[i,j] <- phyper(no_anc_group, no_ancestry, nrow(braf_hist) - no_ancestry, no_group, lower.tail = F)
+  }
+}
+
+enr
+
+pval
 
 ```
 
