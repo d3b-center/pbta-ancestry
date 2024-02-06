@@ -432,13 +432,13 @@ in canonical transcripts</p>
 <p>Load libraries and set directories</p>
 <pre class="r"><code>library(data.table)
 library(tidyverse)</code></pre>
-<pre><code>## ── Attaching core tidyverse packages ─────────────────────────────────────────────────────────── tidyverse 2.0.0 ──
+<pre><code>## ── Attaching core tidyverse packages ──────────────────────────────────────────────────────────────────────────────────── tidyverse 2.0.0 ──
 ## ✔ dplyr     1.1.1     ✔ readr     2.1.4
 ## ✔ forcats   1.0.0     ✔ stringr   1.5.0
 ## ✔ ggplot2   3.4.2     ✔ tibble    3.2.1
 ## ✔ lubridate 1.9.2     ✔ tidyr     1.3.0
 ## ✔ purrr     1.0.1     
-## ── Conflicts ───────────────────────────────────────────────────────────────────────────── tidyverse_conflicts() ──
+## ── Conflicts ────────────────────────────────────────────────────────────────────────────────────────────────────── tidyverse_conflicts() ──
 ## ✖ dplyr::between()     masks data.table::between()
 ## ✖ dplyr::filter()      masks stats::filter()
 ## ✖ dplyr::first()       masks data.table::first()
@@ -538,14 +538,12 @@ analysis_dir &lt;- file.path(root_dir, &quot;analyses&quot;, &quot;braf-fusions&
 results_dir &lt;- file.path(analysis_dir, &quot;results&quot;)
 input_dir &lt;- file.path(analysis_dir, &quot;input&quot;)</code></pre>
 <p>Define file paths</p>
-<pre class="r"><code>fusion_file &lt;- file.path(input_dir, &quot;fusion-putative-oncogenic.tsv&quot;)
-
-hist_file &lt;- file.path(root_dir, &quot;analyses&quot;, &quot;add-histologies&quot;, &quot;results&quot;, &quot;merged_ancestry_histology_data.tsv&quot;)</code></pre>
+<pre class="r"><code>fusion_file &lt;- file.path(data_dir, &quot;fusion-putative-oncogenic.tsv&quot;)</code></pre>
 <p>Load oncogenic fusion file and filter for KIAA1549–BRAF fusions</p>
 <pre class="r"><code>braf_fusions &lt;- read_tsv(fusion_file) %&gt;%
   dplyr::filter(FusionName %in% c(&quot;KIAA1549--BRAF&quot;, &quot;BRAF--KIAA1549&quot;))</code></pre>
 <pre><code>## Rows: 81348 Columns: 22
-## ── Column specification ───────────────────────────────────────────────────────────────────────────────────────────
+## ── Column specification ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 ## Delimiter: &quot;\t&quot;
 ## chr (20): Sample, FusionName, LeftBreakpoint, RightBreakpoint, DomainRetaine...
 ## dbl  (1): caller.count

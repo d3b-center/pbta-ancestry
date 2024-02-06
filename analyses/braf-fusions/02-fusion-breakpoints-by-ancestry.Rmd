@@ -15,6 +15,8 @@ Load libraries and set directories
 ```{r load libraries and set directories}
 library(data.table)
 library(tidyverse)
+library(ComplexHeatmap)
+library(circlize)
 
 root_dir <- rprojroot::find_root(rprojroot::has_dir(".git"))
 
@@ -190,7 +192,8 @@ write_tsv(common_df,
 
 ```
 
-Calcualte breakpoint group odds ratios and p-values across predicted ancestries
+Calculate breakpoint group odds ratios and p-values across predicted ancestries, and plot
+
 ```{r}
 braf_hist <- braf_hist %>%
   dplyr::mutate(AS_ancestry = case_when(
@@ -215,9 +218,39 @@ for (i in 1:nrow(enr)){
   }
 }
 
-enr
+enr <- t(enr[,order(colnames(enr))])
+pval <- t(pval[,order(colnames(pval))])
 
-pval
+sig_mat <- ifelse(pval < 0.05 & enr > 1, "*", "")
+
+fill_mat <- matrix(glue::glue("{round(enr, 1)}{sig_mat}"), 
+                   nrow(enr), ncol(enr))
+
+count_mat <- table(braf_hist$breakpoint_group, braf_hist$AS_ancestry)
+ct_enr_mat <- matrix(glue::glue("{count_mat}\n({fill_mat})"),
+                     nrow(count_mat), ncol(count_mat))
+
+col_fun = colorRamp2(c(0, 6), c("white", "orangered"))
+
+# plot enrichment results
+pdf(file.path(plot_dir, "breakpoint_group_ancestry_ct_enr_heatmap.pdf"),
+    height = 3, width = 6)
+
+ht <- Heatmap(enr,
+        name = "Odds ratio",
+        cluster_rows = F,
+        cluster_columns = F,
+        rect_gp = gpar(col = "black", lwd = 2),
+        col = col_fun,
+        cell_fun = function(j, i, x, y, width, height, fill) {
+          grid.text(sprintf("%s", ct_enr_mat[i, j]), x, y, gp = gpar(fontsize = 12))
+        })
+
+draw(ht)
+
+invisible(dev.off())
+
+draw(ht)
 
 ```
 
