@@ -119,144 +119,10 @@ ancestry <- ancestry %>%
     TRUE ~ race
   )) %>%
   mutate(ethnicity = case_when(
-    grepl("Reported|Available|Unavailable", ethnicity) | is.na(ethnicity) ~ "Unknown",
+    grepl("Reported|Available|Unavailable", ethnicity) | is.na(ethnicity) ~ "Ethnicity Unknown",
     grepl("Non-Hispanic|Not Hispanic", ethnicity) ~ "Not Hispanic/Latino",
     TRUE ~ "Hispanic/Latino"
   ))
-
-# Create data frame for alluvial plots, including only predicted_ancestry, race, and ethnicity columns
-alluvial_df <- as.data.frame(table(ancestry$predicted_ancestry, ancestry$race, ancestry$ethnicity)) %>% 
-  # format for alluvial plot
-  dplyr::rename(predicted_ancestry = Var1, 
-                race = Var2,
-                ethnicity = Var3) %>%
-  to_lodes_form(axes = 1:3) %>% 
-  dplyr::rename(Group = stratum) %>% 
-  mutate(Group = factor(Group, levels = c("EAS", "SAS", "AFR", "AMR", "EUR",
-                                          "Asian", "Black/Afr. Am.", "AI/AN", 
-                                          "NHPI", "White", ">1 Race",
-                                          "Race Unknown", 
-                                          "Hispanic/Latino",
-                                          "Not Hispanic/Latino",
-                                          "Unknown"))) %>% 
-  mutate(race = case_when(Group %in% c("Asian", "Black/Afr. Am.", "AI/AN", 
-                                       "NHPI", "White", ">1 Race",
-                                       "Race Unknown") ~ Group, 
-                          TRUE ~ NA), 
-         predicted_ancestry = case_when(Group %in% c("EAS", "SAS", "AFR", "EUR", "AMR") ~ Group, 
-                                        TRUE ~ NA),
-         ethnicity = case_when(Group %in% c("Hispanic/Latino",
-                                            "Not Hispanic/Latino",
-                                            "Unknown") ~ Group,
-                               TRUE ~ NA))
-
-# Generate alluvial plot
-p1 <- ggplot(alluvial_df, aes(y = Freq, stratum = Group, alluvium = alluvium, x = x, fill = Group)) + 
-  geom_alluvium(show.legend = F) + 
-  geom_stratum(show.legend = F) +
-  scale_fill_manual(values = c("Asian" = "#009E73", "SAS" = "#D55E00", "EAS" = "#009E73",
-                               "White" = "#0072B2", "EUR" = "#0072B2",
-                               "Black/Afr. Am." = "#E69F00", "AFR" = "#E69F00",
-                               "NHPI" = "skyblue", "AMR" = "#56B4E9",
-                               "AI/AN" = "#56B4E9",
-                               "Race Unknown" = "grey", ">1 Race" = "brown",
-                               "Hispanic/Latino" = "#56B4E9",
-                               "Not Hispanic/Latino" = "#0072B2",
-                               "Unknown" = "grey")) +
-  xlab("") + 
-  ylab("Number of Patients") +
-  scale_x_discrete(labels = c("predicted ancestry", "reported race", "reported ethnicity")) + 
-  theme_Publication()
-
-# Create separate ancestry, race, and ethnicity dfs for legend generation
-race_df <- data.frame(race = c("Asian", "Black/Afr. Am.", "AI/AN", 
-                               "NHPI", "White", ">1 Race",
-                               "Race Unknown"), 
-                      value = 1)
-ancestry_df <- data.frame(predicted_ancestry = c("EAS", "SAS", "AFR", "EUR", "AMR"), 
-                          value = 1)
-ethnicity_df <- data.frame(ethnicity = c("Hispanic/Latino",
-                                                  "Not Hispanic/Latino",
-                                                  "Unknown"), 
-                          value = 1)
-
-# plot race legend
-lgd_race <- ggplot(race_df, aes(x = value, y = factor(race, levels = c("Race Unknown", 
-                                                                   ">1 Race", "White", 
-                                                                   "AI/AN",
-                                                                   "NHPI", 
-                                                                   "Black/Afr. Am.", "Asian")), 
-                            fill = race)) + 
-  geom_tile(show.legend = T, color = "black",
-            lwd = 0.5, linetype = 1) + 
-  scale_fill_manual(values = c("Asian" = "#009E73",  
-                               "White" = "#0072B2", 
-                               "Black/Afr. Am." = "#E69F00", 
-                               "AI/AN" = "#56B4E9",
-                               "NHPI" = "skyblue", 
-                               ">1 Race" = "brown",
-                               "Race Unknown" = "grey"),
-                    breaks = c("Asian",  
-                               "Black/Afr. Am.", 
-                               "AI/AN",
-                               "NHPI", 
-                               "White", 
-                               ">1 Race",
-                               "Race Unknown")) +
-  labs(fill = "Reported Race") +
-  theme_Publication()
-leg_race <- get_legend(lgd_race)
-
-# Plot ancestry legend
-lgd_anc <- ggplot(ancestry_df, aes(x = value, y = factor(predicted_ancestry, 
-                                                      levels = c("SAS","EAS","EUR","AMR","AFR")), 
-                                fill = predicted_ancestry)) + 
-  geom_tile(show.legend = T, col = "black",
-            lwd = 0.5, linetype = 1) + 
-  #xlim() + 
-  scale_fill_manual(values = c("SAS" = "#D55E00", 
-                               "EAS" = "#009E73",
-                               "EUR" = "#0072B2", 
-                               "AFR" = "#E69F00", 
-                               "AMR" = "#56B4E9"), breaks = c("EAS", "SAS", "AFR", "AMR", "EUR")) +
-  labs(fill = "Predicted Ancestry") +
-  theme_Publication()
-leg_anc <- get_legend(lgd_anc)
-
-# Plot ethnicity legend
-lgd_ethn <- ggplot(ethnicity_df, aes(x = value, y = factor(ethnicity, 
-                                                      levels = c("Hispanic/Latino",
-                                                                 "Not Hispanic/Latino",
-                                                                 "Unknown")), 
-                                fill = ethnicity)) + 
-  geom_tile(show.legend = T, col = "black",
-            lwd = 0.5, linetype = 1) + 
-  #xlim() + 
-  scale_fill_manual(values = c("Hispanic/Latino" = "#56B4E9",
-                               "Not Hispanic/Latino" = "#0072B2",
-                               "Unknown" = "grey")) +
-  labs(fill = "Reported Ethnicity") +
-  theme_Publication()
-leg_ethn <- get_legend(lgd_ethn)
-
-leg <- plot_grid(leg_anc, leg_race, leg_ethn,
-                 nrow = 3,
-                 align = "v",
-                 rel_heights = c(1.5, 0.4, 1.5))
-
-
-final_p <- plot_grid(p1, leg,
-                     nrow = 1,
-                     align = "none",
-                     axis = "t",
-                     rel_widths = c(1,0.65))
-
-pdf(file.path(plots_dir, "ancestry-race-ethnicity-alluvial.pdf"),
-    width = 10, height = 6)
-
-final_p
-
-dev.off()
 
 # calculate reported race sums across cohort 
 race_total <- ancestry %>%
@@ -367,6 +233,114 @@ ancestry %>%
   theme_Publication()
 
 dev.off()
+
+
+race_enr <- matrix(0, length(unique(ancestry$predicted_ancestry)),
+                   length(unique(ancestry$race[!is.na(ancestry$race)])),
+                   dimnames = list(c("AFR", "AMR", "EAS", "EUR", "SAS"),
+                                   c("AI/AN", "Asian", "Black/Afr. Am.", "NHPI", 
+                                     "White", ">1 Race", "Race Unknown")))
+race_pval <- race_enr
+
+# loop through cancer groups to calculate enrichment 
+for (i in 1:nrow(race_enr)){
+  no_ancestry <- sum(grepl(rownames(race_enr)[i], ancestry$predicted_ancestry))
+  for (j in 1:ncol(race_enr)){
+    no_race <- sum(ancestry$race == colnames(race_enr)[j] & !is.na(ancestry$race))
+    no_anc_race <- sum(ancestry$predicted_ancestry == rownames(race_enr)[i] & ancestry$race == colnames(race_enr)[j])
+    race_enr[i,j] <- (no_anc_race/no_race)/(no_ancestry/nrow(ancestry))
+    race_pval[i,j] <- phyper(no_anc_race, no_ancestry, nrow(ancestry) - no_ancestry, no_race, lower.tail = F)
+  }
+}
+
+race_enr <- t(race_enr)
+race_pval <- t(race_pval)
+
+sig_mat <- ifelse(race_pval < 0.05 & race_enr > 1, "*", "")
+
+fill_mat <- matrix(glue::glue("{round(race_enr, 2)}{sig_mat}"), 
+                   nrow(race_enr), ncol(race_enr))
+
+count_mat <- table(ancestry$race, ancestry$predicted_ancestry)
+count_mat <- count_mat[rownames(race_enr), colnames(race_enr)]
+race_ct_enr_mat <- matrix(glue::glue("{count_mat}\n({fill_mat})"),
+                     nrow(count_mat), ncol(count_mat))
+
+col_fun = colorRamp2(c(0, 20), c("white", "orangered"))
+
+# plot enrichment results
+pdf(file.path(plots_dir, "race_ancestry_ct_enr_heatmap.pdf"),
+    height = 3.5, width = 6)
+
+race_ht <- Heatmap(race_enr,
+              name = "Odds ratio",
+              cluster_rows = F,
+              cluster_columns = F,
+              rect_gp = gpar(col = "black", lwd = 2),
+              col = col_fun,
+              cell_fun = function(j, i, x, y, width, height, fill) {
+                grid.text(sprintf("%s", race_ct_enr_mat[i, j]), x, y, gp = gpar(fontsize = 12))
+              })
+
+draw(race_ht)
+
+invisible(dev.off())
+
+
+
+ethn_enr <- matrix(0, length(unique(ancestry$predicted_ancestry)),
+                   length(unique(ancestry$ethnicity[!is.na(ancestry$ethnicity)])),
+                   dimnames = list(c("AFR", "AMR", "EAS", "EUR", "SAS"),
+                                   c("Hispanic/Latino", "Not Hispanic/Latino",
+                                     "Ethnicity Unknown")))
+ethn_pval <- ethn_enr
+
+# loop through cancer groups to calculate enrichment 
+for (i in 1:nrow(ethn_enr)){
+  no_ancestry <- sum(grepl(rownames(ethn_enr)[i], ancestry$predicted_ancestry))
+  for (j in 1:ncol(ethn_enr)){
+    no_ethn <- sum(ancestry$ethnicity == colnames(ethn_enr)[j] & !is.na(ancestry$ethnicity))
+    no_anc_ethn <- sum(ancestry$predicted_ancestry == rownames(ethn_enr)[i] & ancestry$ethnicity == colnames(ethn_enr)[j])
+    ethn_enr[i,j] <- (no_anc_ethn/no_ethn)/(no_ancestry/nrow(ancestry))
+    ethn_pval[i,j] <- phyper(no_anc_ethn, no_ancestry, nrow(ancestry) - no_ancestry, no_ethn, lower.tail = F)
+  }
+}
+
+ethn_enr <- t(ethn_enr)
+ethn_pval <- t(ethn_pval)
+
+sig_mat <- ifelse(ethn_pval < 0.05 & ethn_enr > 1, "*", "")
+
+fill_mat <- matrix(glue::glue("{round(ethn_enr, 2)}{sig_mat}"), 
+                   nrow(ethn_enr), ncol(ethn_enr))
+
+count_mat <- table(ancestry$ethnicity, ancestry$predicted_ancestry)
+count_mat <- count_mat[rownames(ethn_enr), colnames(ethn_enr)]
+ethn_ct_enr_mat <- matrix(glue::glue("{count_mat}\n({fill_mat})"),
+                          nrow(count_mat), ncol(count_mat))
+
+col_fun = colorRamp2(c(0, 6), c("white", "orangered"))
+
+# plot enrichment results
+pdf(file.path(plots_dir, "ethnicity_ancestry_ct_enr_heatmap.pdf"),
+    height = 2, width = 6)
+
+ethnicity_ht <- Heatmap(ethn_enr,
+                   name = "Odds ratio",
+                   cluster_rows = F,
+                   cluster_columns = F,
+                   rect_gp = gpar(col = "black", lwd = 2),
+                   col = col_fun,
+                   cell_fun = function(j, i, x, y, width, height, fill) {
+                     grid.text(sprintf("%s", ethn_ct_enr_mat[i, j]), x, y, gp = gpar(fontsize = 12))
+                   })
+
+draw(ethnicity_ht)
+
+invisible(dev.off())
+
+
+
 
 # create heatmap of plot group group count by predicted ancestry
 pdf(file.path(plots_dir, "plot_group_by_ancestry.pdf"),
