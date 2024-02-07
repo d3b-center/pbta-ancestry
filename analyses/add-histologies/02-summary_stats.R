@@ -24,6 +24,7 @@ plots_dir <- file.path(analysis_dir, "plots")
 
 # call plot theme 
 source(file.path(root_dir, "figures", "theme.R"))
+source(file.path(analysis_dir, "util", "heatmap_function.R"))
 
 # set file paths
 ancestry_file <- file.path(results_dir, "merged_ancestry_histology_data.tsv")
@@ -234,204 +235,47 @@ ancestry %>%
 
 dev.off()
 
-
-race_enr <- matrix(0, length(unique(ancestry$predicted_ancestry)),
-                   length(unique(ancestry$race[!is.na(ancestry$race)])),
-                   dimnames = list(c("AFR", "AMR", "EAS", "EUR", "SAS"),
-                                   c("AI/AN", "Asian", "Black/Afr. Am.", "NHPI", 
-                                     "White", ">1 Race", "Race Unknown")))
-race_pval <- race_enr
-
-# loop through cancer groups to calculate enrichment 
-for (i in 1:nrow(race_enr)){
-  no_ancestry <- sum(grepl(rownames(race_enr)[i], ancestry$predicted_ancestry))
-  for (j in 1:ncol(race_enr)){
-    no_race <- sum(ancestry$race == colnames(race_enr)[j] & !is.na(ancestry$race))
-    no_anc_race <- sum(ancestry$predicted_ancestry == rownames(race_enr)[i] & ancestry$race == colnames(race_enr)[j])
-    race_enr[i,j] <- (no_anc_race/no_race)/(no_ancestry/nrow(ancestry))
-    race_pval[i,j] <- phyper(no_anc_race, no_ancestry, nrow(ancestry) - no_ancestry, no_race, lower.tail = F)
-  }
-}
-
-race_enr <- t(race_enr)
-race_pval <- t(race_pval)
-
-sig_mat <- ifelse(race_pval < 0.05 & race_enr > 1, "*", "")
-
-fill_mat <- matrix(glue::glue("{round(race_enr, 2)}{sig_mat}"), 
-                   nrow(race_enr), ncol(race_enr))
-
-count_mat <- table(ancestry$race, ancestry$predicted_ancestry)
-count_mat <- count_mat[rownames(race_enr), colnames(race_enr)]
-race_ct_enr_mat <- matrix(glue::glue("{count_mat}\n({fill_mat})"),
-                     nrow(count_mat), ncol(count_mat))
-
-col_fun = colorRamp2(c(0, 20), c("white", "orangered"))
-
-# plot enrichment results
+# plot race-ancestry enrichment
 pdf(file.path(plots_dir, "race_ancestry_ct_enr_heatmap.pdf"),
     height = 3.5, width = 6)
 
-race_ht <- Heatmap(race_enr,
-              name = "Odds ratio",
-              cluster_rows = F,
-              cluster_columns = F,
-              rect_gp = gpar(col = "black", lwd = 2),
-              col = col_fun,
-              cell_fun = function(j, i, x, y, width, height, fill) {
-                grid.text(sprintf("%s", race_ct_enr_mat[i, j]), x, y, gp = gpar(fontsize = 12))
-              })
+race_ht <- plot_enr(ancestry, "race", "predicted_ancestry",
+                 var1_names = c("AI/AN", "Asian", "Black/Afr. Am.",
+                                "NHPI", "White", ">1 Race",
+                                "Race Unknown"),
+                 var2_names = c("AFR", "AMR", "EAS", "EUR", "SAS"))
 
 draw(race_ht)
 
 invisible(dev.off())
 
-
-
-ethn_enr <- matrix(0, length(unique(ancestry$predicted_ancestry)),
-                   length(unique(ancestry$ethnicity[!is.na(ancestry$ethnicity)])),
-                   dimnames = list(c("AFR", "AMR", "EAS", "EUR", "SAS"),
-                                   c("Hispanic/Latino", "Not Hispanic/Latino",
-                                     "Ethnicity Unknown")))
-ethn_pval <- ethn_enr
-
-# loop through cancer groups to calculate enrichment 
-for (i in 1:nrow(ethn_enr)){
-  no_ancestry <- sum(grepl(rownames(ethn_enr)[i], ancestry$predicted_ancestry))
-  for (j in 1:ncol(ethn_enr)){
-    no_ethn <- sum(ancestry$ethnicity == colnames(ethn_enr)[j] & !is.na(ancestry$ethnicity))
-    no_anc_ethn <- sum(ancestry$predicted_ancestry == rownames(ethn_enr)[i] & ancestry$ethnicity == colnames(ethn_enr)[j])
-    ethn_enr[i,j] <- (no_anc_ethn/no_ethn)/(no_ancestry/nrow(ancestry))
-    ethn_pval[i,j] <- phyper(no_anc_ethn, no_ancestry, nrow(ancestry) - no_ancestry, no_ethn, lower.tail = F)
-  }
-}
-
-ethn_enr <- t(ethn_enr)
-ethn_pval <- t(ethn_pval)
-
-sig_mat <- ifelse(ethn_pval < 0.05 & ethn_enr > 1, "*", "")
-
-fill_mat <- matrix(glue::glue("{round(ethn_enr, 2)}{sig_mat}"), 
-                   nrow(ethn_enr), ncol(ethn_enr))
-
-count_mat <- table(ancestry$ethnicity, ancestry$predicted_ancestry)
-count_mat <- count_mat[rownames(ethn_enr), colnames(ethn_enr)]
-ethn_ct_enr_mat <- matrix(glue::glue("{count_mat}\n({fill_mat})"),
-                          nrow(count_mat), ncol(count_mat))
-
-col_fun = colorRamp2(c(0, 6), c("white", "orangered"))
-
-# plot enrichment results
+# plot ethnicity-ancestry enrichment
 pdf(file.path(plots_dir, "ethnicity_ancestry_ct_enr_heatmap.pdf"),
     height = 2, width = 6)
 
-ethnicity_ht <- Heatmap(ethn_enr,
-                   name = "Odds ratio",
-                   cluster_rows = F,
-                   cluster_columns = F,
-                   rect_gp = gpar(col = "black", lwd = 2),
-                   col = col_fun,
-                   cell_fun = function(j, i, x, y, width, height, fill) {
-                     grid.text(sprintf("%s", ethn_ct_enr_mat[i, j]), x, y, gp = gpar(fontsize = 12))
-                   })
+ethn_ht <- plot_enr(ancestry, "ethnicity", "predicted_ancestry",
+                    var1_names = c("Hispanic/Latino", "Not Hispanic/Latino",
+                                   "Ethnicity Unknown"),
+                    var2_names = c("AFR", "AMR", "EAS", "EUR", "SAS"))
 
-draw(ethnicity_ht)
+draw(ethn_ht)
 
 invisible(dev.off())
 
-
-
-
-# create heatmap of plot group group count by predicted ancestry
-pdf(file.path(plots_dir, "plot_group_by_ancestry.pdf"),
-    height = 6, width = 5)
-
-count_mat <- table(ancestry$plot_group, ancestry$predicted_ancestry)
-
-col_fun = colorRamp2(c(0, 300), c("white", "orangered"))
-
-Heatmap(count_mat,
-        name = "Count",
-        cluster_rows = F,
-        cluster_columns = F,
-        rect_gp = gpar(col = "black", lwd = 2),
-        col = col_fun,
-        cell_fun = function(j, i, x, y, width, height, fill) {
-          grid.text(sprintf("%s", count_mat[i, j]), x, y, gp = gpar(fontsize = 12))
-        })
-
-dev.off()
-
-
-# calculate enrichment and pvalues of ancestries within plot groups
-enr <- matrix(0, length(unique(ancestry$predicted_ancestry)),
-              length(unique(ancestry$plot_group[!is.na(ancestry$plot_group)])),
-              dimnames = list(c("AFR", "AMR", "EAS", "EUR", "SAS"),
-                              c(unique(ancestry$plot_group[!is.na(ancestry$plot_group)]))))
-pval <- enr
-
-ancestry <- ancestry[!is.na(ancestry$plot_group),]
-
-# loop through cancer groups to calculate enrichment 
-for (i in 1:nrow(enr)){
-  no_ancestry <- sum(grepl(rownames(enr)[i], ancestry$predicted_ancestry))
-  for (j in 1:ncol(enr)){
-    no_plotGroup <- sum(ancestry$plot_group == colnames(enr)[j] & !is.na(ancestry$plot_group))
-    no_anc_plotGroup <- sum(ancestry$predicted_ancestry == rownames(enr)[i] & ancestry$plot_group == colnames(enr)[j])
-    enr[i,j] <- (no_anc_plotGroup/no_plotGroup)/(no_ancestry/nrow(ancestry))
-    pval[i,j] <- phyper(no_anc_plotGroup, no_ancestry, nrow(ancestry) - no_ancestry, no_plotGroup, lower.tail = F)
-  }
-}
-
-# calcualte FDRs
-fdr <- t(apply(pval, 1, function(x) p.adjust(x, "fdr")))
-
-enr <- t(enr[,order(colnames(enr))])
-fdr <- t(fdr[,order(colnames(fdr))])
-
-sig_mat <- ifelse(fdr < 0.05 & enr > 1, "*", "")
-
-fill_mat <- matrix(glue::glue("{round(enr, 1)}{sig_mat}"), 
-                   nrow(enr), ncol(enr))
-
-# Plot enrichment heatmap
-
-col_fun = colorRamp2(c(0, 6), c("white", "orangered"))
-
 # plot enrichment results
-pdf(file.path(plots_dir, "plot_group_ancestry_enrichment_heatmap.pdf"),
-    height = 6, width = 6)
-
-Heatmap(enr,
-         name = "Odds ratio",
-         cluster_rows = F,
-         cluster_columns = F,
-         rect_gp = gpar(col = "black", lwd = 2),
-         col = col_fun,
-         cell_fun = function(j, i, x, y, width, height, fill) {
-           grid.text(sprintf("%s", fill_mat[i, j]), x, y, gp = gpar(fontsize = 12))
-         })
-
-dev.off()
-
-# create heatmap of plot group count and enrichment by ancestry
-ct_enr_mat <- matrix(glue::glue("{count_mat}\n({fill_mat})"),
-                     nrow(count_mat), ncol(count_mat))
-
 pdf(file.path(plots_dir, "plot_group_ancestry_ct_enr_heatmap.pdf"),
     height = 8, width = 6)
 
-Heatmap(enr,
-        name = "Odds ratio",
-        cluster_rows = F,
-        cluster_columns = F,
-        rect_gp = gpar(col = "black", lwd = 2),
-        col = col_fun,
-        cell_fun = function(j, i, x, y, width, height, fill) {
-          grid.text(sprintf("%s", ct_enr_mat[i, j]), x, y, gp = gpar(fontsize = 12))
-        })
+# Plot plot_group - ancestry enrichment
+group_ht <- plot_enr(ancestry[!is.na(ancestry$plot_group),], "plot_group", "predicted_ancestry",
+                    var1_names = sort(unique(ancestry$plot_group[!is.na(ancestry$plot_group)])),
+                    var2_names = c("AFR", "AMR", "EAS", "EUR", "SAS"),
+                    padjust = TRUE)
 
-dev.off()
+draw(group_ht)
+
+invisible(dev.off())
+
 
 # Plot cancer group distribution by ancestry, subsetting for unknown/unreported race patients
 pdf(file.path(plots_dir, "plot_group_by_ancestry_unk_race.pdf"),
@@ -510,6 +354,18 @@ ancestry %>%
   theme_minimal()
 
 dev.off()
+
+# plot CNS region-ancestry heatmap in DIPG/DMG tumors
+pdf(file.path(plots_dir, "dmg_region_ancestry_ct_enr_heatmap.pdf"),
+    height = 3, width = 6)
+
+region_ht <- plot_enr(ancestry[grepl("DIPG or DMG", ancestry$plot_group) & !is.na(ancestry$CNS_region),], "CNS_region", "predicted_ancestry",
+                    var1_names = unique(ancestry$CNS_region[grepl("DIPG or DMG", ancestry$plot_group) & !is.na(ancestry$CNS_region)]),
+                    var2_names = c("AFR", "AMR", "EAS", "EUR", "SAS"))
+
+draw(region_ht)
+
+invisible(dev.off())
 
 
 # plot LGG molecular subtype by predicted ancestry
