@@ -298,60 +298,39 @@ ancestry %>%
 
 dev.off()
 
-# Get tumor resection type sums for LGG cohort
-lgg_anc_total <- ancestry %>%
-  filter(plot_group == "Low-grade glioma") %>%
-  count(predicted_ancestry) %>%
-  rename("total" = "n") %>%
-  arrange(desc(predicted_ancestry))
+# plot extent of tumor resection heatmap in pLGG
 
-# plot extent of tumor resection heatmap by ancestry (LGG only)
-pdf(file.path(plots_dir, "lgg_tumor_resection_by_predicted_ancestry.pdf"),
-    width = 5, height = 3)
-
-ancestry %>%
+lgg <- ancestry %>%
   filter(plot_group == "Low-grade glioma") %>%
   dplyr::mutate(extent_of_tumor_resection = case_when(
-    extent_of_tumor_resection %in% c("Unavailable", "Not Applicable", "Not Reported") ~ "Unavailable/Unreported/Not Applicable",
+    extent_of_tumor_resection %in% c("Unavailable", "Not Reported") ~ "Unavailable/Unreported",
     grepl("Gross/Near total resection", extent_of_tumor_resection) ~ "Gross/Near total resection",
     TRUE ~ extent_of_tumor_resection
-  )) %>%
-  dplyr::mutate(extent_of_tumor_resection = factor(extent_of_tumor_resection,
-                                                   rev(c("Gross/Near total resection", "Partial resection",
-                                                         "Biopsy only", "Unavailable/Unreported/Not Applicable")
-                                                   ))) %>%
-  count(predicted_ancestry, extent_of_tumor_resection, .drop = FALSE) %>%
-  left_join(lgg_anc_total, by = "predicted_ancestry") %>%
-  mutate(perc = round(n/total*100, 2)) %>%
-  ggplot(aes(x = predicted_ancestry, y = factor(extent_of_tumor_resection), fill = perc)) +
-  geom_tile(color = "black",
-            lwd = 1,
-            linetype = 1, show.legend = FALSE) +
-  scale_fill_gradient(low="white", high="orangered") +
-  geom_text(aes(label = perc), color = "black", size = 3) +
-  labs(x = NULL, y = NULL) +
-  theme_minimal()
+  ))
 
-dev.off()
+pdf(file.path(plots_dir, "lgg_tumor_resection_by_predicted_ancestry.pdf"),
+    width = 6, height = 3)
+
+resection_ht <- plot_enr(lgg[!is.na(lgg$extent_of_tumor_resection),], "extent_of_tumor_resection", "predicted_ancestry",
+                     var1_names = c("Gross/Near total resection", "Partial resection", "Biopsy only",
+                                    "Unavailable/Unreported"),
+                     var2_names = c("AFR", "AMR", "EAS", "EUR", "SAS"),
+                     padjust = FALSE)
+
+draw(resection_ht)
+
+invisible(dev.off())
 
 # Plot tumor location by predicted ancestry (LGG only)
 pdf(file.path(plots_dir, "lgg_tumor_location_by_predicted_ancestry.pdf"),
-    width = 3.5, height = 3)
+    width = 6, height = 4)
 
-ancestry %>%
-  filter(plot_group == "Low-grade glioma") %>%
-  dplyr::mutate(CNS_region = factor(CNS_region, levels = unique(CNS_region)[rev(order(unique(CNS_region)))])) %>%
-  count(predicted_ancestry, CNS_region, .drop = FALSE) %>%
-  left_join(lgg_anc_total, by = "predicted_ancestry") %>%
-  mutate(perc = round(n/total*100, 2)) %>%
-  ggplot(aes(x = predicted_ancestry, y = factor(CNS_region), fill = perc)) +
-  geom_tile(color = "black",
-            lwd = 1,
-            linetype = 1, show.legend = FALSE) +
-  scale_fill_gradient(low="white", high="orangered") +
-  geom_text(aes(label = perc), color = "black", size = 3) +
-  labs(x = NULL, y = "CNS region") +
-  theme_minimal()
+lgg_region_ht <- plot_enr(lgg[!is.na(lgg$CNS_region),], "CNS_region", "predicted_ancestry",
+                         var1_names = sort(unique(lgg$CNS_region[!is.na(lgg$CNS_region)])),
+                         var2_names = c("AFR", "AMR", "EAS", "EUR", "SAS"),
+                         padjust = FALSE)
+
+draw(lgg_region_ht)
 
 dev.off()
 
@@ -359,34 +338,24 @@ dev.off()
 pdf(file.path(plots_dir, "dmg_region_ancestry_ct_enr_heatmap.pdf"),
     height = 3, width = 6)
 
-region_ht <- plot_enr(ancestry[grepl("DIPG or DMG", ancestry$plot_group) & !is.na(ancestry$CNS_region),], "CNS_region", "predicted_ancestry",
+dmg_region_ht <- plot_enr(ancestry[grepl("DIPG or DMG", ancestry$plot_group) & !is.na(ancestry$CNS_region),], "CNS_region", "predicted_ancestry",
                     var1_names = unique(ancestry$CNS_region[grepl("DIPG or DMG", ancestry$plot_group) & !is.na(ancestry$CNS_region)]),
                     var2_names = c("AFR", "AMR", "EAS", "EUR", "SAS"))
 
-draw(region_ht)
+draw(dmg_region_ht)
 
 invisible(dev.off())
 
-
 # plot LGG molecular subtype by predicted ancestry
 pdf(file.path(plots_dir, "lgg_subtype_by_predicted_ancestry.pdf"),
-    width = 5, height = 6)
+    width = 5, height = 14)
 
-ancestry %>%
-  filter(plot_group == "Low-grade glioma") %>%
-  dplyr::mutate(molecular_subtype = factor(molecular_subtype,
-                                           levels = rev(unique(molecular_subtype[order(molecular_subtype)])))) %>%
-  count(predicted_ancestry, molecular_subtype, .drop = FALSE) %>%
-  left_join(lgg_anc_total, by = "predicted_ancestry") %>%
-  mutate(perc = round(n/total*100, 2)) %>%
-  ggplot(aes(x = predicted_ancestry, y = molecular_subtype, fill = n)) +
-  geom_tile(color = "black",
-            lwd = 1,
-            linetype = 1, show.legend = FALSE) +
-  scale_fill_gradient(low="white", high="orangered") +
-  geom_text(aes(label = n), color = "black", size = 3) +
-  labs(x = NULL, y = NULL) +
-  theme_minimal()
+lgg_subtype_ht <- plot_enr(lgg[!is.na(lgg$molecular_subtype),], "molecular_subtype", "predicted_ancestry",
+                          var1_names = sort(unique(lgg$molecular_subtype[!is.na(lgg$molecular_subtype)])),
+                          var2_names = c("AFR", "AMR", "EAS", "EUR", "SAS"),
+                          padjust = FALSE)
+
+draw(lgg_subtype_ht)
 
 dev.off()
 

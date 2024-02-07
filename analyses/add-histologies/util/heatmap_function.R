@@ -32,11 +32,11 @@ plot_enr <- function(df, var1, var2,
   if (padjust == TRUE) {
     
     fdr <- t(apply(pval, 1, function(x) p.adjust(x, "fdr")))
-    sig_mat <- ifelse(fdr < 0.05 & enr > 1, "*", "")
+    sig_mat <- ifelse(fdr < 0.05 & enr > 1 & ct > 1, "*", "")
     
   } else {
     
-    sig_mat <- ifelse(pval < 0.05 & enr > 1, "*", "")
+    sig_mat <- ifelse(pval < 0.05 & enr > 1 & ct > 1, "*", "")
     
   }
   
