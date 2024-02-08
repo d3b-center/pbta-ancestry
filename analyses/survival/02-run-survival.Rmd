@@ -22,6 +22,8 @@ Read in set up script.
 library(survival)
 library(ggpubr)
 library(tidyverse)
+library(ComplexHeatmap)
+library(circlize)
 
 # Set directories
 root_dir <- rprojroot::find_root(rprojroot::has_dir(".git"))
@@ -152,7 +154,8 @@ for (var in variable){
     
     # Subset histology
     group_hist <- metadata %>%
-      filter(grepl(group, plot_group))
+      filter(grepl(group, plot_group)) %>%
+      dplyr::mutate(mol_sub_group = factor(mol_sub_group))
     
     if (group == "DIPG or DMG|Other high-grade glioma"){
       group_hist <- group_hist %>%
@@ -208,29 +211,13 @@ for (var in variable){
 
     # create heatmap of subtype by predicted ancestry
     if (length(table(group_hist$mol_sub_group)) >= 2 & var == "predicted_ancestry") {
-        # subtype_plot <- group_hist %>%
-        #   dplyr::filter(!is.na(mol_sub_group)) %>%
-        #   dplyr::mutate(mol_sub_group = factor(mol_sub_group)) %>%
-        #   dplyr::count(predicted_ancestry, mol_sub_group, name = "count", .drop = FALSE) %>%
-        #   ggplot(aes(x = predicted_ancestry, y = mol_sub_group, fill = count)) +
-        #   geom_tile(color = "black",
-        #             lwd = 1,
-        #             linetype = 1, show.legend = FALSE) +
-        #   scale_fill_gradient(low="white", high="orangered") +
-        #   geom_text(aes(label = count), color = "black", size = 5) +
-        #   labs(x = NULL, y = NULL) +
-        #   coord_fixed() +
-        #   theme_minimal()
-        # 
-        # ggsave(subtype_plot_pdf, subtype_plot,
-        #        width = 4, height = 3)
       
         pdf(subtype_plot_pdf,
             height = length(unique(group_hist$predicted_ancestry[!is.na(group_hist$mol_sub_group) & !grepl("classified", group_hist$mol_sub_group)]))/1.5, 
             width = 6)
         
         group_ht <- plot_enr(group_hist[!is.na(group_hist$mol_sub_group) & !grepl("classified", group_hist$mol_sub_group),], "mol_sub_group", "predicted_ancestry",
-                       var1_names = unique(group_hist$mol_sub_group[!is.na(group_hist$mol_sub_group) & !grepl("classified", group_hist$mol_sub_group)]),
+                       var1_names = levels(group_hist$mol_sub_group)[!grepl("classified", levels(group_hist$mol_sub_group))],
                        var2_names = sort(unique(group_hist$predicted_ancestry[!is.na(group_hist$mol_sub_group) & !grepl("classified", group_hist$mol_sub_group)])))
         
         draw(group_ht)
