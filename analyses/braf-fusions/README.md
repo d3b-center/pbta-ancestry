@@ -11,7 +11,7 @@ This module assesses distribution of BRAF fusion breakpoint types across predict
 
 - `01-get-breakpoint-exons.Rmd`; annotates putative oncogenic BRAF fusions with exon id and rank in canonincal transcripts
 
-- `02-fusion-breakpoints-by-ancestry.Rmd`; assesses BRAF fusion breakpoint distribution by predicted ancestries, and identifies associations between breakpoint type and CNS region and degree of tumor resection
+- `02-fusion-breakpoints-by-ancestry.Rmd`; assesses BRAF fusion breakpoint distribution by predicted ancestries, methylation subtypes, and identifies associations between breakpoint type and CNS region and degree of tumor resection
 
 - `03-survival-by-braf-breakpoints.Rmd`; generate event-free survival models to determine affect of breakpoint type and predicted ancestry
 
