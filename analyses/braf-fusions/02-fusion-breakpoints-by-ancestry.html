@@ -9,7 +9,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
 
-<meta name="author" content="Ryan Corbett" />
+<meta name="author" content="Ryan Corbett, Jo Lynne Rokita" />
 
 <meta name="date" content="2024-01-01" />
 
@@ -422,7 +422,7 @@ font-size: 0.95em;
 
 <h1 class="title toc-ignore">Assess BRAF fusion breakpoints in PBTA
 ancestry cohort</h1>
-<h4 class="author">Ryan Corbett</h4>
+<h4 class="author">Ryan Corbett, Jo Lynne Rokita</h4>
 <h4 class="date">2024</h4>
 
 </div>
@@ -503,8 +503,8 @@ braf_fusions &lt;- read_tsv(fusion_file) %&gt;%
   mutate(keep = case_when(FusionName == &quot;KIAA1549--BRAF&quot; &amp; DomainRetainedGene1B == &quot;Yes&quot; ~ &quot;yes&quot;,
                           FusionName == &quot;BRAF--KIAA1549&quot; &amp; DomainRetainedGene1A == &quot;Yes&quot; ~ &quot;yes&quot;,
                           TRUE ~ &quot;no&quot;)) %&gt;%
-  # The below sample has two different common breakpoints and one is low conf in arriba, so we will remove that one
-  mutate(keep = case_when(Sample == &quot;BS_SDZY6RZ3&quot; &amp; LeftBreakpoint_position == 138867975 ~ &quot;no&quot;,
+  # The below samples have two different common breakpoints and one is low conf in arriba, so we will remove that one
+  mutate(keep = case_when(Sample %in% c(&quot;BS_SDZY6RZ3&quot;, &quot;BS_063ERW0R&quot;) &amp; LeftBreakpoint_position == 138867975 ~ &quot;no&quot;,
                             TRUE ~ keep))</code></pre>
 <pre><code>## Warning: One or more parsing issues, call `problems()` on your data frame for details,
 ## e.g.:
@@ -594,10 +594,26 @@ fusions_all &lt;- common_fusions %&gt;%
   )) %&gt;%
   write_tsv(file.path(results_dir, &quot;braf-fusion-breakpoints-by-patient.tsv&quot;))</code></pre>
 <p>Merge breakpoint data to braf hist</p>
-<pre class="r"><code>braf_hist &lt;- braf_hist %&gt;%
+<pre class="r"><code># add high conf methylation subtypes to the braf hist
+scores &lt;- hist %&gt;%
+  filter(dkfz_v12_methylation_subclass_score &gt;= 0.8,
+         # grab only PA subtypes
+         grepl(&quot;PA_&quot;, dkfz_v12_methylation_subclass)) %&gt;%
+  select(&quot;match_id&quot;, &quot;dkfz_v12_methylation_subclass&quot;) %&gt;%
+  group_by(match_id) %&gt;%
+  summarise(dkfz_v12_methylation_subclass = str_c(unique(dkfz_v12_methylation_subclass), collapse = &quot;;&quot;)) %&gt;%
+  unique()
+
+braf_hist &lt;- braf_hist %&gt;%
+  dplyr::rename(Kids_First_Biospecimen_ID_normal = Kids_First_Biospecimen_ID,
+                Kids_First_Biospecimen_ID = Kids_First_Biospecimen_ID_tumor) %&gt;%
   left_join(fusions_all) %&gt;%
-  dplyr::filter(!is.na(breakpoint_type))</code></pre>
-<pre><code>## Joining with `by = join_by(Kids_First_Participant_ID)`</code></pre>
+  dplyr::filter(!is.na(breakpoint_type)) %&gt;%
+  left_join(hist[,c(&quot;Kids_First_Biospecimen_ID&quot;, &quot;match_id&quot;)]) %&gt;%
+  left_join(scores)</code></pre>
+<pre><code>## Joining with `by = join_by(Kids_First_Participant_ID)`
+## Joining with `by = join_by(Kids_First_Biospecimen_ID)`
+## Joining with `by = join_by(match_id)`</code></pre>
 <p>How many patients do we have breakpoint data for?</p>
 <pre class="r"><code>nrow(braf_hist)</code></pre>
 <pre><code>## [1] 171</code></pre>
@@ -645,6 +661,51 @@ write_tsv(common_df,
 ##   15:11   0   0   0   4   0
 ##   16:10   0   0   0   1   0
 ##   19:9    0   1   0   0   0</code></pre>
+<p>Print breakpoint type by predicted ancestry</p>
+<pre class="r"><code>table(braf_hist$breakpoint_type, braf_hist$predicted_ancestry)</code></pre>
+<pre><code>##         
+##          AFR AMR EAS EUR SAS
+##   common  23  21   3 108   5
+##   rare     1   3   0   7   0</code></pre>
+<p>Print ancestry by methyl subtype</p>
+<pre class="r"><code>table(braf_hist$dkfz_v12_methylation_subclass, braf_hist$predicted_ancestry)</code></pre>
+<pre><code>##              
+##               AFR AMR EAS EUR SAS
+##   PA_CORT       0   0   0   1   0
+##   PA_INF        9   8   0  43   1
+##   PA_INF_FGFR   0   0   0   1   0
+##   PA_MID        1   2   1   8   1</code></pre>
+<p>Print breakpoint by methyl subtype</p>
+<pre class="r"><code>table(braf_hist$breakpoint_type, braf_hist$dkfz_v12_methylation_subclass)</code></pre>
+<pre><code>##         
+##          PA_CORT PA_INF PA_INF_FGFR PA_MID
+##   common       1     61           1     10
+##   rare         0      0           0      3</code></pre>
+<pre class="r"><code>fisher.test(table(braf_hist$breakpoint_type, braf_hist$dkfz_v12_methylation_subclass), simulate.p.value = T)</code></pre>
+<pre><code>## 
+##  Fisher&#39;s Exact Test for Count Data with simulated p-value (based on
+##  2000 replicates)
+## 
+## data:  table(braf_hist$breakpoint_type, braf_hist$dkfz_v12_methylation_subclass)
+## p-value = 0.004498
+## alternative hypothesis: two.sided</code></pre>
+<p>Print breakpoint by methyl subtype</p>
+<pre class="r"><code>table(braf_hist$breakpoint_group, braf_hist$dkfz_v12_methylation_subclass)</code></pre>
+<pre><code>##        
+##         PA_CORT PA_INF PA_INF_FGFR PA_MID
+##   15:9        1      6           0      7
+##   16:11       0      6           0      0
+##   16:9        0     45           1      3
+##   18:10       0      4           0      0
+##   rare        0      0           0      3</code></pre>
+<pre class="r"><code>fisher.test(table(braf_hist$breakpoint_group, braf_hist$dkfz_v12_methylation_subclass), simulate.p.value = T)</code></pre>
+<pre><code>## 
+##  Fisher&#39;s Exact Test for Count Data with simulated p-value (based on
+##  2000 replicates)
+## 
+## data:  table(braf_hist$breakpoint_group, braf_hist$dkfz_v12_methylation_subclass)
+## p-value = 0.0004998
+## alternative hypothesis: two.sided</code></pre>
 <p>Assess distribution of resection level in patients by breakpoint type
 (common vs. rare)</p>
 <pre class="r"><code>round(table(braf_hist$breakpoint_type, braf_hist$extent_of_tumor_resection)/as.vector(table(braf_hist$breakpoint_type)), 2)</code></pre>
@@ -675,7 +736,7 @@ group</p>
 ##  2000 replicates)
 ## 
 ## data:  table(braf_hist$breakpoint_group, braf_hist$extent_of_tumor_resection)
-## p-value = 0.0009995
+## p-value = 0.0004998
 ## alternative hypothesis: two.sided</code></pre>
 <p>Assess distribution of tumor CNS region in patients by breakpoint
 type and group</p>
@@ -688,12 +749,13 @@ type and group</p>
 ##          Suprasellar Ventricles
 ##   common         4.4        3.1
 ##   rare          36.4        9.1</code></pre>
-<pre class="r"><code>fisher.test(table(braf_hist$breakpoint_type, braf_hist$CNS_region))</code></pre>
+<pre class="r"><code>fisher.test(table(braf_hist$breakpoint_type, braf_hist$CNS_region), simulate.p.value = T)</code></pre>
 <pre><code>## 
-##  Fisher&#39;s Exact Test for Count Data
+##  Fisher&#39;s Exact Test for Count Data with simulated p-value (based on
+##  2000 replicates)
 ## 
 ## data:  table(braf_hist$breakpoint_type, braf_hist$CNS_region)
-## p-value = 1.982e-05
+## p-value = 0.0004998
 ## alternative hypothesis: two.sided</code></pre>
 <pre class="r"><code>round(table(braf_hist$breakpoint_group, braf_hist$CNS_region)/as.vector(table(braf_hist$breakpoint_group)), 3) * 100</code></pre>
 <pre><code>##        
