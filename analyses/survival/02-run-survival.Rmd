@@ -22,12 +22,15 @@ Read in set up script.
 library(survival)
 library(ggpubr)
 library(tidyverse)
+library(ComplexHeatmap)
+library(circlize)
 
 # Set directories
 root_dir <- rprojroot::find_root(rprojroot::has_dir(".git"))
 analysis_dir <- file.path(root_dir, "analyses", "survival")
 # Source this script, which contains a wrapper function that can conduct the survival analyses, from OpenPBTA
 source(file.path(analysis_dir, "util", "survival_models.R"))
+source(file.path(analysis_dir, "util", "heatmap_function.R"))
 # Magrittr pipe
 `%>%` <- dplyr::`%>%`
 ```
@@ -66,7 +69,8 @@ metadata <- metadata %>%
                                             levels = c("AFR", "AMR", "EAS", "EUR", "SAS")
                                             )) %>%
   dplyr::mutate(extent_of_tumor_resection = case_when(
-          extent_of_tumor_resection %in% c('Not Reported', "Unavailable", "Not Applicable") ~ "Unavailable/Unreported",
+          extent_of_tumor_resection %in% c('Not Reported', "Unavailable") ~ NA_character_,
+          extent_of_tumor_resection == "Not Applicable" ~ "No resection",
           TRUE ~ extent_of_tumor_resection
         ))
   
@@ -99,6 +103,7 @@ Define plot groups for which survival analyses should be run
 # Define groups for survival analyses
 groups <- c("Atypical Teratoid Rhabdoid Tumor", "Craniopharyngioma",
             "DIPG or DMG|Other high-grade glioma", "Ependymoma",
+            "Germ cell tumor",
             "Mixed neuronal-glial tumor", "Low-grade glioma",
             "Medulloblastoma", "Meningioma",
             "Mesenchymal tumor", "Neurofibroma plexiform", 
@@ -106,7 +111,7 @@ groups <- c("Atypical Teratoid Rhabdoid Tumor", "Craniopharyngioma",
 )
 
 # create names vector for output files
-plot_names <- c("ATRT", "CRANIO", "HGG", "EPN", "GNG", "LGG", "MB", "MNG", "MES", "NFP", "OLIGO", "SWN")
+plot_names <- c("ATRT", "CRANIO", "HGG", "EPN", "GERM", "GNG", "LGG", "MB", "MNG", "MES", "NFP", "OLIGO", "SWN")
 names(plot_names) <- groups
 ```
 
@@ -149,7 +154,8 @@ for (var in variable){
     
     # Subset histology
     group_hist <- metadata %>%
-      filter(grepl(group, plot_group))
+      filter(grepl(group, plot_group)) %>%
+      dplyr::mutate(mol_sub_group = factor(mol_sub_group))
     
     if (group == "DIPG or DMG|Other high-grade glioma"){
       group_hist <- group_hist %>%
@@ -184,6 +190,15 @@ for (var in variable){
                                                     "MB, Group 4", "MB, SHH")))
     }
     
+    if (group == "Mesenchymal tumor") {
+      group_hist <- group_hist %>%
+        dplyr::mutate(cancer_group = fct_relevel(cancer_group,
+                                                  c("Sarcoma", "Chordoma", "Chondromyxoid fibroma",
+                                                    "Ewing sarcoma", "Hemangioblastoma",
+                                                    "Inflammatory Myofibroblastic Tumor",
+                                                    "Mesenchymal tumor")))
+    }
+    
     if (group == "Mixed neuronal-glial tumor") {
       group_hist <- group_hist %>%
         dplyr::mutate(mol_sub_group = fct_relevel(mol_sub_group,
@@ -196,22 +211,19 @@ for (var in variable){
 
     # create heatmap of subtype by predicted ancestry
     if (length(table(group_hist$mol_sub_group)) >= 2 & var == "predicted_ancestry") {
-        subtype_plot <- group_hist %>%
-          dplyr::filter(!is.na(mol_sub_group)) %>%
-          dplyr::mutate(mol_sub_group = factor(mol_sub_group)) %>%
-          dplyr::count(predicted_ancestry, mol_sub_group, name = "count", .drop = FALSE) %>%
-          ggplot(aes(x = predicted_ancestry, y = mol_sub_group, fill = count)) +
-          geom_tile(color = "black",
-                    lwd = 1,
-                    linetype = 1, show.legend = FALSE) +
-          scale_fill_gradient(low="white", high="orangered") +
-          geom_text(aes(label = count), color = "black", size = 5) +
-          labs(x = NULL, y = NULL) +
-          coord_fixed() +
-          theme_minimal()
+      
+        pdf(subtype_plot_pdf,
+            height = length(unique(group_hist$predicted_ancestry[!is.na(group_hist$mol_sub_group) & !grepl("classified", group_hist$mol_sub_group)]))/1.5, 
+            width = 6)
         
-        ggsave(subtype_plot_pdf, subtype_plot,
-               width = 4, height = 3)
+        group_ht <- plot_enr(group_hist[!is.na(group_hist$mol_sub_group) & !grepl("classified", group_hist$mol_sub_group),], "mol_sub_group", "predicted_ancestry",
+                       var1_names = levels(group_hist$mol_sub_group)[!grepl("classified", levels(group_hist$mol_sub_group))],
+                       var2_names = sort(unique(group_hist$predicted_ancestry[!is.na(group_hist$mol_sub_group) & !grepl("classified", group_hist$mol_sub_group)])))
+        
+        draw(group_ht)
+        
+        invisible(dev.off())
+      
     }
 
     # Run kaplain-meier survival models
@@ -251,9 +263,13 @@ for (var in variable){
                                         group %in% c("Low-grade glioma"),
                                         glue::glue("extent_of_tumor_resection+mol_sub_group+age_at_diagnosis_years+{var}"),
                                         ifelse(
-                                            group %in% c("DIPG or DMG|Other high-grade glioma", "Ependymoma", "Medulloblastoma", "Mixed neuronal-glial tumor", "Atypical Teratoid Rhabdoid Tumor"), glue::glue("mol_sub_group+age_at_diagnosis_years+{var}"),
-                                            glue::glue("age_at_diagnosis_years+{var}")
-                                            )),
+                                            group %in% c("DIPG or DMG|Other high-grade glioma", "Ependymoma", "Medulloblastoma", "Mixed neuronal-glial tumor", "Atypical Teratoid Rhabdoid Tumor"),
+                                            glue::glue("mol_sub_group+age_at_diagnosis_years+{var}"),
+                                            ifelse(
+                                              group %in% c("Germ cell tumor", "Mesenchymal tumor"),
+                                              glue::glue("cancer_group+age_at_diagnosis_years+{var}"),
+                                              glue::glue("age_at_diagnosis_years+{var}")
+                                            ))),
                coxph_os_model_file,
                "multivariate",
                years_col = "OS_years", status_col = "OS_status"
@@ -264,9 +280,13 @@ for (var in variable){
                                         group %in% c("Low-grade glioma"),
                                         glue::glue("extent_of_tumor_resection+mol_sub_group+age_at_diagnosis_years+{var}"),
                                         ifelse(
-                                            group %in% c("DIPG or DMG|Other high-grade glioma", "Ependymoma", "Medulloblastoma", "Mixed neuronal-glial tumor", "Atypical Teratoid Rhabdoid Tumor"), glue::glue("mol_sub_group+age_at_diagnosis_years+{var}"),
-                                            glue::glue("age_at_diagnosis_years+{var}")
-                                            )),
+                                            group %in% c("DIPG or DMG|Other high-grade glioma", "Ependymoma", "Medulloblastoma", "Mixed neuronal-glial tumor", "Atypical Teratoid Rhabdoid Tumor"),
+                                            glue::glue("mol_sub_group+age_at_diagnosis_years+{var}"),
+                                            ifelse(
+                                              group %in% c("Germ cell tumor", "Mesenchymal tumor"),
+                                              glue::glue("cancer_group+age_at_diagnosis_years+{var}"),
+                                              glue::glue("age_at_diagnosis_years+{var}")
+                                            ))),
                coxph_efs_model_file,
                "multivariate",
                years_col = "EFS_years", status_col = "EFS_status"
