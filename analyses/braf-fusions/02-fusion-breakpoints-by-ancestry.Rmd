@@ -128,8 +128,6 @@ fusions_all <- common_fusions %>%
   )) %>%
   write_tsv(file.path(results_dir, "braf-fusion-breakpoints-by-patient.tsv"))
 
-
-
 ```
 
 Merge breakpoint data to braf hist
@@ -225,8 +223,8 @@ fisher.test(table(braf_hist$breakpoint_type, braf_hist$dkfz_v12_methylation_subc
 Print breakpoint by methyl subtype
 
 ```{r}
-table(braf_hist$breakpoint_exons_common, braf_hist$dkfz_v12_methylation_subclass)
-fisher.test(table(braf_hist$breakpoint_type, braf_hist$dkfz_v12_methylation_subclass), simulate.p.value = T)
+table(braf_hist$breakpoint_group, braf_hist$dkfz_v12_methylation_subclass)
+fisher.test(table(braf_hist$breakpoint_group, braf_hist$dkfz_v12_methylation_subclass), simulate.p.value = T)
 ```
 
 Assess distribution of resection level in patients by breakpoint type (common vs. rare)

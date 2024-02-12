@@ -434,13 +434,13 @@ ancestry cohort</p>
 <p>Load libraries and set directories</p>
 <pre class="r"><code>library(data.table)
 library(tidyverse)</code></pre>
-<pre><code>## ── Attaching core tidyverse packages ────────────────────────────────────────── tidyverse 2.0.0 ──
-## ✔ dplyr     1.1.1     ✔ readr     2.1.4
+<pre><code>## ── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
+## ✔ dplyr     1.1.2     ✔ readr     2.1.4
 ## ✔ forcats   1.0.0     ✔ stringr   1.5.0
 ## ✔ ggplot2   3.4.2     ✔ tibble    3.2.1
 ## ✔ lubridate 1.9.2     ✔ tidyr     1.3.0
 ## ✔ purrr     1.0.1     
-## ── Conflicts ──────────────────────────────────────────────────────────── tidyverse_conflicts() ──
+## ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
 ## ✖ dplyr::between()     masks data.table::between()
 ## ✖ dplyr::filter()      masks stats::filter()
 ## ✖ dplyr::first()       masks data.table::first()
@@ -479,7 +479,7 @@ hist_file &lt;- file.path(data_dir, &quot;histologies.tsv&quot;)</code></pre>
   dplyr::filter(plot_group == &quot;Low-grade glioma&quot; &amp; grepl(&quot;-BRAF&quot;, molecular_subtype)) %&gt;%
   dplyr::mutate(predicted_ancestry = factor(predicted_ancestry))</code></pre>
 <pre><code>## Rows: 1485 Columns: 41
-## ── Column specification ──────────────────────────────────────────────────────────────────────────
+## ── Column specification ────────────────────────────────────────────────────────
 ## Delimiter: &quot;\t&quot;
 ## chr (22): Kids_First_Biospecimen_ID, predicted_ancestry, Kids_First_Particip...
 ## dbl (18): EAS_prob, AFR_prob, AMR_prob, SAS_prob, EUR_prob, PC1, PC2, PC3, P...
@@ -489,7 +489,7 @@ hist_file &lt;- file.path(data_dir, &quot;histologies.tsv&quot;)</code></pre>
 ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
 <pre class="r"><code>hist &lt;- read_tsv(hist_file)</code></pre>
 <pre><code>## Rows: 47633 Columns: 58
-## ── Column specification ──────────────────────────────────────────────────────────────────────────
+## ── Column specification ────────────────────────────────────────────────────────
 ## Delimiter: &quot;\t&quot;
 ## chr (41): Kids_First_Participant_ID, Kids_First_Biospecimen_ID, sample_id, a...
 ## dbl (17): cell_line_passage, OS_days, EFS_days, age_at_diagnosis_days, age_a...
@@ -506,11 +506,12 @@ braf_fusions &lt;- read_tsv(fusion_file) %&gt;%
   # The below samples have two different common breakpoints and one is low conf in arriba, so we will remove that one
   mutate(keep = case_when(Sample %in% c(&quot;BS_SDZY6RZ3&quot;, &quot;BS_063ERW0R&quot;) &amp; LeftBreakpoint_position == 138867975 ~ &quot;no&quot;,
                             TRUE ~ keep))</code></pre>
-<pre><code>## Warning: One or more parsing issues, call `problems()` on your data frame for details, e.g.:
+<pre><code>## Warning: One or more parsing issues, call `problems()` on your data frame for details,
+## e.g.:
 ##   dat &lt;- vroom(...)
 ##   problems(dat)</code></pre>
 <pre><code>## Rows: 260 Columns: 31
-## ── Column specification ──────────────────────────────────────────────────────────────────────────
+## ── Column specification ────────────────────────────────────────────────────────
 ## Delimiter: &quot;\t&quot;
 ## chr  (18): Sample, FusionName, DomainRetainedGene1A, DomainRetainedGene1B, G...
 ## dbl   (6): caller.count, Chromosome, LeftBreakpoint_position, RightBreakpoin...
@@ -531,7 +532,7 @@ braf_fusions &lt;- read_tsv(fusion_file) %&gt;%
          keep = &quot;yes&quot;) %&gt;%
   left_join(hist[,c(&quot;Kids_First_Participant_ID&quot;, &quot;Kids_First_Biospecimen_ID&quot;)])</code></pre>
 <pre><code>## Rows: 533 Columns: 22
-## ── Column specification ──────────────────────────────────────────────────────────────────────────
+## ── Column specification ────────────────────────────────────────────────────────
 ## Delimiter: &quot;\t&quot;
 ## chr (14): Sample, FusionName, Fusion_Type, Gene1A, Gene1B, 5_prime_transcrip...
 ## dbl  (2): JunctionReadCount, SpanningFragCount
@@ -640,8 +641,8 @@ common_df &lt;- braf_hist %&gt;%
   dplyr::mutate(ct_perc = glue::glue(&quot;{count} ({percentage}%)&quot;)) %&gt;%
   dplyr::select(breakpoint_exons_common, predicted_ancestry, ct_perc) %&gt;%
   spread(predicted_ancestry, ct_perc, fill = 0)</code></pre>
-<pre><code>## `summarise()` has grouped output by &#39;breakpoint_exons_common&#39;. You can override using the
-## `.groups` argument.</code></pre>
+<pre><code>## `summarise()` has grouped output by &#39;breakpoint_exons_common&#39;. You can override
+## using the `.groups` argument.</code></pre>
 <pre class="r"><code>common_df &lt;- common_df %&gt;%
   mutate(
     p = map_dbl(breakpoint_exons_common, ~round(fisher.test(table(grepl(.x, braf_hist$breakpoint_exons_common), braf_hist$predicted_ancestry))$p.value, 4))
@@ -686,23 +687,24 @@ write_tsv(common_df,
 ##  2000 replicates)
 ## 
 ## data:  table(braf_hist$breakpoint_type, braf_hist$dkfz_v12_methylation_subclass)
-## p-value = 0.006497
+## p-value = 0.004498
 ## alternative hypothesis: two.sided</code></pre>
 <p>Print breakpoint by methyl subtype</p>
-<pre class="r"><code>table(braf_hist$breakpoint_exons_common, braf_hist$dkfz_v12_methylation_subclass)</code></pre>
+<pre class="r"><code>table(braf_hist$breakpoint_group, braf_hist$dkfz_v12_methylation_subclass)</code></pre>
 <pre><code>##        
 ##         PA_CORT PA_INF PA_INF_FGFR PA_MID
 ##   15:9        1      6           0      7
 ##   16:11       0      6           0      0
 ##   16:9        0     45           1      3
-##   18:10       0      4           0      0</code></pre>
-<pre class="r"><code>fisher.test(table(braf_hist$breakpoint_type, braf_hist$dkfz_v12_methylation_subclass), simulate.p.value = T)</code></pre>
+##   18:10       0      4           0      0
+##   rare        0      0           0      3</code></pre>
+<pre class="r"><code>fisher.test(table(braf_hist$breakpoint_group, braf_hist$dkfz_v12_methylation_subclass), simulate.p.value = T)</code></pre>
 <pre><code>## 
 ##  Fisher&#39;s Exact Test for Count Data with simulated p-value (based on
 ##  2000 replicates)
 ## 
-## data:  table(braf_hist$breakpoint_type, braf_hist$dkfz_v12_methylation_subclass)
-## p-value = 0.002999
+## data:  table(braf_hist$breakpoint_group, braf_hist$dkfz_v12_methylation_subclass)
+## p-value = 0.0004998
 ## alternative hypothesis: two.sided</code></pre>
 <p>Assess distribution of resection level in patients by breakpoint type
 (common vs. rare)</p>
@@ -814,42 +816,38 @@ significantly associated:</p>
           file.path(results_dir, &quot;lgg-braf-fusion-breakpoint-annotation.tsv&quot;))</code></pre>
 <p>Print session info</p>
 <pre class="r"><code>sessionInfo()</code></pre>
-<pre><code>## R version 4.2.3 (2023-03-15)
-## Platform: x86_64-pc-linux-gnu (64-bit)
-## Running under: Ubuntu 22.04.3 LTS
+<pre><code>## R version 4.2.2 (2022-10-31)
+## Platform: x86_64-apple-darwin17.0 (64-bit)
+## Running under: macOS Big Sur ... 10.16
 ## 
 ## Matrix products: default
-## BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3
-## LAPACK: /usr/lib/x86_64-linux-gnu/openblas-pthread/libopenblasp-r0.3.20.so
+## BLAS:   /Library/Frameworks/R.framework/Versions/4.2/Resources/lib/libRblas.0.dylib
+## LAPACK: /Library/Frameworks/R.framework/Versions/4.2/Resources/lib/libRlapack.dylib
 ## 
 ## locale:
-##  [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C              
-##  [3] LC_TIME=en_US.UTF-8        LC_COLLATE=en_US.UTF-8    
-##  [5] LC_MONETARY=en_US.UTF-8    LC_MESSAGES=en_US.UTF-8   
-##  [7] LC_PAPER=en_US.UTF-8       LC_NAME=C                 
-##  [9] LC_ADDRESS=C               LC_TELEPHONE=C            
-## [11] LC_MEASUREMENT=en_US.UTF-8 LC_IDENTIFICATION=C       
+## [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
 ## 
 ## attached base packages:
 ## [1] stats     graphics  grDevices utils     datasets  methods   base     
 ## 
 ## other attached packages:
-##  [1] lubridate_1.9.2   forcats_1.0.0     stringr_1.5.0     dplyr_1.1.1      
+##  [1] lubridate_1.9.2   forcats_1.0.0     stringr_1.5.0     dplyr_1.1.2      
 ##  [5] purrr_1.0.1       readr_2.1.4       tidyr_1.3.0       tibble_3.2.1     
 ##  [9] ggplot2_3.4.2     tidyverse_2.0.0   data.table_1.14.8
 ## 
 ## loaded via a namespace (and not attached):
-##  [1] bslib_0.4.2      compiler_4.2.3   pillar_1.9.0     jquerylib_0.1.4 
-##  [5] tools_4.2.3      bit_4.0.5        digest_0.6.31    timechange_0.2.0
+##  [1] bslib_0.4.2      compiler_4.2.2   pillar_1.9.0     jquerylib_0.1.4 
+##  [5] tools_4.2.2      bit_4.0.5        digest_0.6.31    timechange_0.2.0
 ##  [9] jsonlite_1.8.4   evaluate_0.20    lifecycle_1.0.3  gtable_0.3.3    
-## [13] pkgconfig_2.0.3  rlang_1.1.0      cli_3.6.1        parallel_4.2.3  
-## [17] yaml_2.3.7       xfun_0.38        fastmap_1.1.1    withr_2.5.0     
-## [21] knitr_1.42       hms_1.1.3        generics_0.1.3   vctrs_0.6.2     
-## [25] sass_0.4.5       bit64_4.0.5      rprojroot_2.0.3  grid_4.2.3      
-## [29] tidyselect_1.2.0 glue_1.6.2       R6_2.5.1         fansi_1.0.4     
-## [33] vroom_1.6.1      rmarkdown_2.21   tzdb_0.3.0       magrittr_2.0.3  
-## [37] scales_1.2.1     htmltools_0.5.5  colorspace_2.1-0 utf8_1.2.3      
-## [41] stringi_1.7.12   munsell_0.5.0    cachem_1.0.7     crayon_1.5.2</code></pre>
+## [13] pkgconfig_2.0.3  rlang_1.1.0      cli_3.6.1        rstudioapi_0.14 
+## [17] parallel_4.2.2   yaml_2.3.7       xfun_0.38        fastmap_1.1.1   
+## [21] withr_2.5.0      knitr_1.42       hms_1.1.3        generics_0.1.3  
+## [25] sass_0.4.5       vctrs_0.6.1      bit64_4.0.5      rprojroot_2.0.3 
+## [29] grid_4.2.2       tidyselect_1.2.0 glue_1.6.2       R6_2.5.1        
+## [33] fansi_1.0.4      vroom_1.6.1      rmarkdown_2.21   tzdb_0.3.0      
+## [37] magrittr_2.0.3   scales_1.2.1     htmltools_0.5.5  colorspace_2.1-1
+## [41] utf8_1.2.3       stringi_1.7.12   munsell_0.5.0    cachem_1.0.7    
+## [45] crayon_1.5.2</code></pre>
 </div>
 
 
