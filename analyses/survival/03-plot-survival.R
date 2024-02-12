@@ -48,7 +48,7 @@ subtype_df <- ancestry %>%
 
 # merge histology and subtype names 
 group_df <- subtype_df %>%
-  rename(group = mol_sub_group) %>%
+  dplyr::rename(group = mol_sub_group) %>%
   dplyr::mutate(subtype = glue::glue("{hist}_{subtype}")) %>%
   dplyr::select(group, hist, subtype) %>%
   bind_rows(hist_df) %>%

@@ -88,11 +88,13 @@ ancestry <- ancestry %>%
     plot_group %in% c("DIPG or DMG", "Other high-grade glioma") & grepl("IHG", molecular_subtype) ~ "IHG",
     plot_group %in% c("DIPG or DMG", "Other high-grade glioma") & grepl("IDH", molecular_subtype) ~ "HGG, IDH",
     plot_group %in% c("Low-grade glioma") & grepl("SEGA", molecular_subtype) ~ "SEGA",
+    plot_group %in% c("Low-grade glioma") & grepl("V600E", molecular_subtype) ~ "LGG, BRAF V600E",
     plot_group %in% c("Low-grade glioma") & grepl("-BRAF", molecular_subtype) ~ "LGG, BRAF fusion",
     plot_group %in% c("Low-grade glioma") & grepl("wildtype", molecular_subtype) ~ "LGG, WT",
     plot_group %in% c("Low-grade glioma") & grepl("To be classified", molecular_subtype) ~ "LGG, To be classified",
     plot_group %in% c("Low-grade glioma") ~ "LGG, Other alteration",
     plot_group %in% c("Mixed neuronal-glial tumor") & grepl("wildtype", molecular_subtype) ~ "GNG/GNT, WT",
+    plot_group %in% c("Mixed neuronal-glial tumor") & grepl("V600E", molecular_subtype) ~ "GNG/GNT, BRAF V600E",
     plot_group %in% c("Mixed neuronal-glial tumor") & grepl("-BRAF", molecular_subtype) ~ "GNG/GNT, BRAF fusion",
     plot_group %in% c("Mixed neuronal-glial tumor") & !grepl("To be classified", molecular_subtype) ~ "GNG/GNT, Other alteration",
     !is.na(molecular_subtype) ~ molecular_subtype
