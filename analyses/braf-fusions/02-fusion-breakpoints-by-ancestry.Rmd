@@ -204,7 +204,7 @@ braf_hist <- braf_hist %>%
 enr <- matrix(0, length(unique(braf_hist$AS_ancestry)),
               length(unique(braf_hist$breakpoint_group[!is.na(braf_hist$breakpoint_group)])),
               dimnames = list(c("AFR", "AMR", "AS", "EUR"),
-                              c(unique(braf_hist$breakpoint_group[!is.na(braf_hist$breakpoint_group)]))))
+                              c("15:9", "16:9", "16:11", "18:10", "rare")))
 pval <- enr
 
 # loop through cancer groups to calculate enrichment 
@@ -218,8 +218,8 @@ for (i in 1:nrow(enr)){
   }
 }
 
-enr <- t(enr[,order(colnames(enr))])
-pval <- t(pval[,order(colnames(pval))])
+enr <- t(enr)
+pval <- t(pval)
 
 sig_mat <- ifelse(pval < 0.05 & enr > 1, "*", "")
 
@@ -258,6 +258,33 @@ Print rare/novel fusion breakpoint count by predicted ancestry
 
 ```{r}
 table(braf_hist$breakpoint_exons_rare, braf_hist$predicted_ancestry)
+
+```
+
+Create heatmap of rare breakpoints by ancestry
+```{r}
+
+pdf(file.path(plot_dir, "rare_breakpoints_by_ancestry.pdf"),
+    height = 3, width = 4)
+
+rare_ct <- table(braf_hist$breakpoint_exons_rare[!is.na(braf_hist$breakpoint_exons_rare)],
+                 braf_hist$predicted_ancestry[!is.na(braf_hist$breakpoint_exons_rare)])
+
+rare_ht <- Heatmap(rare_ct,
+            name = "Count",
+            cluster_rows = F,
+            cluster_columns = F,
+            rect_gp = gpar(col = "black", lwd = 2),
+            col = col_fun,
+            cell_fun = function(j, i, x, y, width, height, fill) {
+              grid.text(sprintf("%s", rare_ct[i, j]), x, y, gp = gpar(fontsize = 12))
+            })
+
+rare_ht
+
+invisible(dev.off())
+
+rare_ht
 
 ```
 
