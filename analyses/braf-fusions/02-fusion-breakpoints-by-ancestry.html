@@ -9,7 +9,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
 
-<meta name="author" content="Ryan Corbett" />
+<meta name="author" content="Ryan Corbett, Jo Lynne Rokita" />
 
 <meta name="date" content="2024-01-01" />
 
@@ -422,7 +422,7 @@ font-size: 0.95em;
 
 <h1 class="title toc-ignore">Assess BRAF fusion breakpoints in PBTA
 ancestry cohort</h1>
-<h4 class="author">Ryan Corbett</h4>
+<h4 class="author">Ryan Corbett, Jo Lynne Rokita</h4>
 <h4 class="date">2024</h4>
 
 </div>
@@ -630,10 +630,26 @@ fusions_all &lt;- common_fusions %&gt;%
   )) %&gt;%
   write_tsv(file.path(results_dir, &quot;braf-fusion-breakpoints-by-patient.tsv&quot;))</code></pre>
 <p>Merge breakpoint data to braf hist</p>
-<pre class="r"><code>braf_hist &lt;- braf_hist %&gt;%
+<pre class="r"><code># add high conf methylation subtypes to the braf hist
+scores &lt;- hist %&gt;%
+  filter(dkfz_v12_methylation_subclass_score &gt;= 0.8,
+         # grab only PA subtypes
+         grepl(&quot;PA_&quot;, dkfz_v12_methylation_subclass)) %&gt;%
+  select(&quot;match_id&quot;, &quot;dkfz_v12_methylation_subclass&quot;) %&gt;%
+  group_by(match_id) %&gt;%
+  summarise(dkfz_v12_methylation_subclass = str_c(unique(dkfz_v12_methylation_subclass), collapse = &quot;;&quot;)) %&gt;%
+  unique()
+
+braf_hist &lt;- braf_hist %&gt;%
+  dplyr::rename(Kids_First_Biospecimen_ID_normal = Kids_First_Biospecimen_ID,
+                Kids_First_Biospecimen_ID = Kids_First_Biospecimen_ID_tumor) %&gt;%
   left_join(fusions_all) %&gt;%
-  dplyr::filter(!is.na(breakpoint_type))</code></pre>
-<pre><code>## Joining with `by = join_by(Kids_First_Participant_ID)`</code></pre>
+  dplyr::filter(!is.na(breakpoint_type)) %&gt;%
+  left_join(hist[,c(&quot;Kids_First_Biospecimen_ID&quot;, &quot;match_id&quot;)]) %&gt;%
+  left_join(scores)</code></pre>
+<pre><code>## Joining with `by = join_by(Kids_First_Participant_ID)`
+## Joining with `by = join_by(Kids_First_Biospecimen_ID)`
+## Joining with `by = join_by(match_id)`</code></pre>
 <p>How many patients do we have breakpoint data for?</p>
 <pre class="r"><code>nrow(braf_hist)</code></pre>
 <pre><code>## [1] 172</code></pre>
@@ -799,9 +815,10 @@ type and group</p>
 ##          Suprasellar Ventricles
 ##   common         4.3        3.1
 ##   rare          36.4        9.1</code></pre>
-<pre class="r"><code>fisher.test(table(braf_hist$breakpoint_type, braf_hist$CNS_region))</code></pre>
+<pre class="r"><code>fisher.test(table(braf_hist$breakpoint_type, braf_hist$CNS_region), simulate.p.value = T)</code></pre>
 <pre><code>## 
-##  Fisher&#39;s Exact Test for Count Data
+##  Fisher&#39;s Exact Test for Count Data with simulated p-value (based on
+##  2000 replicates)
 ## 
 ## data:  table(braf_hist$breakpoint_type, braf_hist$CNS_region)
 ## p-value = 1.868e-05

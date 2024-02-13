@@ -4,7 +4,7 @@ output:
   html_document:
   toc: TRUE
 toc_float: TRUE
-author: Ryan Corbett
+author: Ryan Corbett, Jo Lynne Rokita
 date: "2024"
 ---
 
@@ -133,24 +133,34 @@ fusions_all <- common_fusions %>%
   )) %>%
   write_tsv(file.path(results_dir, "braf-fusion-breakpoints-by-patient.tsv"))
 
-
-
 ```
 
 Merge breakpoint data to braf hist
 
 ```{r}
-braf_hist <- braf_hist %>%
-  left_join(fusions_all) %>%
-  dplyr::filter(!is.na(breakpoint_type))
+# add high conf methylation subtypes to the braf hist
+scores <- hist %>%
+  filter(dkfz_v12_methylation_subclass_score >= 0.8,
+         # grab only PA subtypes
+         grepl("PA_", dkfz_v12_methylation_subclass)) %>%
+  select("match_id", "dkfz_v12_methylation_subclass") %>%
+  group_by(match_id) %>%
+  summarise(dkfz_v12_methylation_subclass = str_c(unique(dkfz_v12_methylation_subclass), collapse = ";")) %>%
+  unique()
 
+braf_hist <- braf_hist %>%
+  dplyr::rename(Kids_First_Biospecimen_ID_normal = Kids_First_Biospecimen_ID,
+                Kids_First_Biospecimen_ID = Kids_First_Biospecimen_ID_tumor) %>%
+  left_join(fusions_all) %>%
+  dplyr::filter(!is.na(breakpoint_type)) %>%
+  left_join(hist[,c("Kids_First_Biospecimen_ID", "match_id")]) %>%
+  left_join(scores)
 ```
 
 How many patients do we have breakpoint data for? 
 
 ```{r}
 nrow(braf_hist)
-
 ```
 
 ```{r}
@@ -304,8 +314,7 @@ Assess distribution of tumor CNS region in patients by breakpoint type and group
 ```{r}
 
 round(table(braf_hist$breakpoint_type, braf_hist$CNS_region)/as.vector(table(braf_hist$breakpoint_type)), 3) * 100
-
-fisher.test(table(braf_hist$breakpoint_type, braf_hist$CNS_region))
+fisher.test(table(braf_hist$breakpoint_type, braf_hist$CNS_region), simulate.p.value = T)
 
 ```
 
