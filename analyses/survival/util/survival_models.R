@@ -96,7 +96,7 @@ survival_analysis <- function(metadata,
   # Pull out this data
   status <- metadata %>%
     dplyr::pull({{status_col}})
-
+  
   # Code status variable as 0 (no event) or 1 (event)
   metadata <- metadata %>%
     dplyr::mutate(
@@ -104,14 +104,14 @@ survival_analysis <- function(metadata,
         status %in% c("LIVING", "NO EVENT") ~ FALSE,
         status %in% c("DECEASED", "EVENT") ~ TRUE
       ))
-      
-      
-    #   !!status_col := case_when(
-    #     status_col == "OS_status" ~ as.numeric(
-    #       factor(status, levels = c("LIVING", "DECEASED"))),
-    #     status_col == "EFS_status" ~ as.numeric(
-    #       factor(status, levels = c("NO EVENT", "EVENT")))
-    # ))
+  
+  
+  #   !!status_col := case_when(
+  #     status_col == "OS_status" ~ as.numeric(
+  #       factor(status, levels = c("LIVING", "DECEASED"))),
+  #     status_col == "EFS_status" ~ as.numeric(
+  #       factor(status, levels = c("NO EVENT", "EVENT")))
+  # ))
   
   ############################ Set up the ind data #############################
   # If other ind_data has been supplied, attempt to join it to metadata
@@ -258,38 +258,38 @@ fit_save_model <- function(df,
       metadata_sample_col = "Kids_First_Biospecimen_ID",
       os_days_col = years_col # we want to use years, not days
     )
-      } else if (model_type == "multivariate") {
-        
-        if (years_col == "EFS_years"){
-          
-          # Recode OS_Status (for univariate, `survival_analysis()` does the recoding)
-          df <- df %>%
-            mutate(EFS_status = ifelse(EFS_status == "NO EVENT", 0, 1))
-          
-          # Fit model
-          fitted_multi <- survival::coxph(
-            formula(
-              paste0("survival::Surv(time = EFS_years, event = EFS_status) ~ ", terms)
-            ),
-            data = df
-          )
-          
-        } else if (years_col == "OS_years"){
-          
-          # Recode OS_Status (for univariate, `survival_analysis()` does the recoding)
-          df <- df %>%
-            mutate(OS_status = ifelse(OS_status == "LIVING", 0, 1))
-          
-          # Fit model
-          fitted_multi <- survival::coxph(
-            formula(
-              paste0("survival::Surv(time = OS_years, event = OS_status) ~ ", terms)
-            ),
-            data = df
-          )
-          
-        }
-
+  } else if (model_type == "multivariate") {
+    
+    if (years_col == "EFS_years"){
+      
+      # Recode OS_Status (for univariate, `survival_analysis()` does the recoding)
+      df <- df %>%
+        mutate(EFS_status = ifelse(EFS_status == "NO EVENT", 0, 1))
+      
+      # Fit model
+      fitted_multi <- survival::coxph(
+        formula(
+          paste0("survival::Surv(time = EFS_years, event = EFS_status) ~ ", terms)
+        ),
+        data = df
+      )
+      
+    } else if (years_col == "OS_years"){
+      
+      # Recode OS_Status (for univariate, `survival_analysis()` does the recoding)
+      df <- df %>%
+        mutate(OS_status = ifelse(OS_status == "LIVING", 0, 1))
+      
+      # Fit model
+      fitted_multi <- survival::coxph(
+        formula(
+          paste0("survival::Surv(time = OS_years, event = OS_status) ~ ", terms)
+        ),
+        data = df
+      )
+      
+    }
+    
     # Set up list object to match parts of `survival_analysis()` output we need
     fit <- list(
       model = fitted_multi,
@@ -326,7 +326,7 @@ plotKM <- function(model,
       event_type <- "OS"
       
       diff_obj <- survdiff(survival::Surv(OS_days, OS_status) ~ term,  
-                              model$original_data)
+                           model$original_data)
       diff_pvalue <- 1 - pchisq(diff_obj$chisq, length(diff_obj$n) - 1)
       diff_pvalue_formatted <- format(
         signif(diff_pvalue, 2),
@@ -350,7 +350,7 @@ plotKM <- function(model,
       event_type <- "EFS"
       
       diff_obj <- survdiff(survival::Surv(EFS_days, EFS_status) ~ term,  
-                               model$original_data)
+                           model$original_data)
       diff_pvalue <- 1 - pchisq(diff_obj$chisq, length(diff_obj$n) - 1)
       diff_pvalue_formatted <- format(
         signif(diff_pvalue, 2),
@@ -373,10 +373,10 @@ plotKM <- function(model,
     colors <- colorblindr::palette_OkabeIto[1:(length(levels)+1)]
     colors <- colors[-4]
     lines <- c(rep("solid", length(levels)), 
-              rep("dashed", length(levels)))
+               rep("dashed", length(levels)))
     labels <- glue::glue("{event_type}:{levels}")
     
-      
+    
     km_plot <- survminer::ggsurvplot(fit = model$model, 
                                      data = model$original_data,
                                      palette = colors,
@@ -395,7 +395,7 @@ plotKM <- function(model,
     
     km_plot_graph <- km_plot$plot + 
       ggplot2::annotate("text", 
-                        200, 0.15, 
+                        3500, 0.9, 
                         label = pvalue_label) +
       theme(legend.text = element_text(size = 16, color = "black")) +
       cowplot::background_grid()
@@ -452,8 +452,8 @@ plotKM <- function(model,
       scientific = FALSE)
     
     os_pvalue_label <- ifelse(diff_os_pvalue_formatted < 0.001, 
-                           "OS P < 0.001",
-                           paste0("OS P = ", diff_os_pvalue_formatted))
+                              "OS P < 0.001",
+                              paste0("OS P = ", diff_os_pvalue_formatted))
     
     diff_efs_obj <- survdiff(survival::Surv(EFS_days, EFS_status) ~ variable_efs,  
                              data_efs)
@@ -463,8 +463,8 @@ plotKM <- function(model,
       scientific = FALSE)
     
     efs_pvalue_label <- ifelse(diff_efs_pvalue_formatted < 0.001, 
-                              "EFS P < 0.001",
-                              paste0("EFS P = ", diff_efs_pvalue_formatted))
+                               "EFS P < 0.001",
+                               paste0("EFS P = ", diff_efs_pvalue_formatted))
     
     km_plot <- survminer::ggsurvplot(fit = fit, 
                                      data = data_efs,
@@ -552,10 +552,14 @@ plotForest <- function(model) {
                     levels = term_order,
                     labels = term_labels)
     ) %>%
-    filter(estimate > 1e-4 & estimate < 1500)
+    filter(estimate > 1e-4 & estimate < 1500) %>%
+    arrange(term) %>%
+    dplyr::mutate(term_display = str_replace(str_replace(term, paste(names(model$xlevels), collapse = "|"), ""), paste(names(model$xlevels), collapse = "|"), "")) %>%
+    dplyr::mutate(term_display = fct_relevel(term_display, unique(term_display)))
+  
   
   forest_plot <- ggplot(survival_df) +
-    aes(x = estimate, y = term, fill = significant
+    aes(x = estimate, y = factor(term_display), fill = significant
     ) + 
     # add CI first so line doesn't cover open point
     geom_errorbarh(
@@ -639,5 +643,4 @@ plotForest <- function(model) {
   print(forest_panels)
 }
 
-  
-  
+
