@@ -221,7 +221,7 @@ group_ht <- plot_enr(braf_hist,
 
 # plot enrichment results
 pdf(file.path(plot_dir, "breakpoint_group_ancestry_ct_enr_heatmap.pdf"),
-    height = 3, width = 5)
+    height = 3, width = 4)
 
 draw(group_ht)
 

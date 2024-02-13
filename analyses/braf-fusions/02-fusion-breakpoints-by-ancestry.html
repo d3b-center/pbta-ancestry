@@ -709,7 +709,7 @@ group_ht &lt;- plot_enr(braf_hist,
 
 # plot enrichment results
 pdf(file.path(plot_dir, &quot;breakpoint_group_ancestry_ct_enr_heatmap.pdf&quot;),
-    height = 3, width = 5)
+    height = 3, width = 4)
 
 draw(group_ht)
 
@@ -773,7 +773,7 @@ rare_ht</code></pre>
 ##  2000 replicates)
 ## 
 ## data:  table(braf_hist$breakpoint_type, braf_hist$dkfz_v12_methylation_subclass)
-## p-value = 0.01149
+## p-value = 0.008996
 ## alternative hypothesis: two.sided</code></pre>
 <p>Print breakpoint by methyl subtype</p>
 <pre class="r"><code>table(braf_hist$breakpoint_group, braf_hist$dkfz_v12_methylation_subclass)</code></pre>
