@@ -26,6 +26,8 @@ results_dir <- file.path(analysis_dir, "results")
 input_dir <- file.path(analysis_dir, "input")
 plot_dir <- file.path(analysis_dir, "plots")
 
+source(file.path(analysis_dir, "util", "heatmap_function.R"))
+
 ```
 
 Set file paths
@@ -39,8 +41,6 @@ fusion_dgd_file <- file.path(data_dir, "fusion-dgd.tsv.gz")
 cohort_hist_file <- file.path(root_dir, "analyses", "survival", "results", "merged_ancestry_histology_survival.tsv")
 
 hist_file <- file.path(data_dir, "histologies.tsv")
-
-source(file.path(analysis_dir, "util", "heatmap_function.R"))
 
 ```
 
@@ -264,6 +264,48 @@ rare_ht
 invisible(dev.off())
 
 rare_ht
+
+```
+
+Print ancestry by methyl subtype
+
+```{r}
+table(braf_hist$dkfz_v12_methylation_subclass, braf_hist$predicted_ancestry)
+```
+
+
+Print breakpoint by methyl subtype
+
+```{r}
+table(braf_hist$breakpoint_type, braf_hist$dkfz_v12_methylation_subclass)
+fisher.test(table(braf_hist$breakpoint_type, braf_hist$dkfz_v12_methylation_subclass), simulate.p.value = T)
+```
+
+Print breakpoint by methyl subtype
+
+```{r}
+table(braf_hist$breakpoint_group, braf_hist$dkfz_v12_methylation_subclass)
+fisher.test(table(braf_hist$breakpoint_group, braf_hist$dkfz_v12_methylation_subclass), simulate.p.value = T)
+```
+
+Plot methyl subtype by breakpoint group
+
+```{r}
+
+methyl_ht <- plot_enr(braf_hist[!is.na(braf_hist$dkfz_v12_methylation_subclass),], 
+                     "breakpoint_group", "dkfz_v12_methylation_subclass",
+                     var1_names = c("15:9", "16:9", "16:11", "18:10", "rare"),
+                     var2_names = sort(unique(braf_hist$dkfz_v12_methylation_subclass)))
+
+# plot enrichment results
+pdf(file.path(plot_dir, "breakpoint_group_methyl_subtype_ct_enr_heatmap.pdf"),
+    height = 3, width = 4)
+
+draw(methyl_ht)
+
+invisible(dev.off())
+
+draw(methyl_ht)
 
 ```
 
