@@ -334,18 +334,6 @@ draw(lgg_region_ht)
 
 dev.off()
 
-# plot CNS region-ancestry heatmap in DIPG/DMG tumors
-pdf(file.path(plots_dir, "dmg_region_ancestry_ct_enr_heatmap.pdf"),
-    height = 3, width = 6)
-
-dmg_region_ht <- plot_enr(ancestry[grepl("DIPG or DMG", ancestry$plot_group) & !is.na(ancestry$CNS_region),], "CNS_region", "predicted_ancestry",
-                    var1_names = unique(ancestry$CNS_region[grepl("DIPG or DMG", ancestry$plot_group) & !is.na(ancestry$CNS_region)]),
-                    var2_names = c("AFR", "AMR", "EAS", "EUR", "SAS"))
-
-draw(dmg_region_ht)
-
-invisible(dev.off())
-
 # plot LGG molecular subtype by predicted ancestry
 pdf(file.path(plots_dir, "lgg_subtype_by_predicted_ancestry.pdf"),
     width = 5, height = 14)
