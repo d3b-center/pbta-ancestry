@@ -79,14 +79,14 @@ alluvial_df <- as.data.frame(table(ancestry$predicted_ancestry, ancestry$race, a
 p1 <- ggplot(alluvial_df, aes(y = Freq, stratum = Group, alluvium = alluvium, x = x, fill = Group)) + 
   geom_alluvium(show.legend = F) + 
   geom_stratum(show.legend = F) +
-  scale_fill_manual(values = c("Asian" = "#009E73", "SAS" = "#D55E00", "EAS" = "#009E73",
-                               "White" = "#0072B2", "EUR" = "#0072B2",
-                               "Black/Afr. Am." = "#E69F00", "AFR" = "#E69F00",
-                               "NHPI" = "skyblue", "AMR" = "#56B4E9",
-                               "AI/AN" = "#56B4E9",
-                               "Race Unknown" = "grey", ">1 Race" = "brown",
-                               "Hispanic/Latino" = "#56B4E9",
-                               "Not Hispanic/Latino" = "#0072B2",
+  scale_fill_manual(values = c("Asian" = "#4B0055", "SAS" = "#D55E00", "EAS" = "#009E73",
+                               "White" =  "#7ED357", "EUR" = "#0072B2",
+                               "Black/Afr. Am." = "#353E7C", "AFR" = "#E69F00",
+                               "NHPI" = "#00B28A", "AMR" = "#56B4E9",
+                               "AI/AN" = "#008298",
+                               "Race Unknown" = "grey", ">1 Race" = "#FDE333",
+                               "Hispanic/Latino" =  "#CC79A7",
+                               "Not Hispanic/Latino" = "#882255",
                                "Unknown" = "grey")) +
   xlab("") + 
   ylab("Number of Patients") +
@@ -114,12 +114,12 @@ lgd_race <- ggplot(race_df, aes(x = value, y = factor(race, levels = c("Race Unk
                                 fill = race)) + 
   geom_tile(show.legend = T, color = "black",
             lwd = 0.5, linetype = 1) + 
-  scale_fill_manual(values = c("Asian" = "#009E73",  
-                               "White" = "#0072B2", 
-                               "Black/Afr. Am." = "#E69F00", 
-                               "AI/AN" = "#56B4E9",
-                               "NHPI" = "skyblue", 
-                               ">1 Race" = "brown",
+  scale_fill_manual(values = c("Asian" = "#4B0055",  
+                               "White" = "#7ED357", 
+                               "Black/Afr. Am." = "#353E7C", 
+                               "AI/AN" = "#008298",
+                               "NHPI" =   "#00B28A", 
+                               ">1 Race" = "#FDE333",
                                "Race Unknown" = "grey"),
                     breaks = c("Asian",  
                                "Black/Afr. Am.", 
@@ -157,8 +157,8 @@ lgd_ethn <- ggplot(ethnicity_df, aes(x = value, y = factor(ethnicity,
   geom_tile(show.legend = T, col = "black",
             lwd = 0.5, linetype = 1) + 
   #xlim() + 
-  scale_fill_manual(values = c("Hispanic/Latino" = "#56B4E9",
-                               "Not Hispanic/Latino" = "#0072B2",
+  scale_fill_manual(values = c("Hispanic/Latino" = "#CC79A7",
+                               "Not Hispanic/Latino" = "#882255",
                                "Unknown" = "grey")) +
   labs(fill = "Reported Ethnicity") +
   theme_Publication()
