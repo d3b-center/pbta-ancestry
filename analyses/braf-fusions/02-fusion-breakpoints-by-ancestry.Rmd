@@ -4,7 +4,7 @@ output:
   html_document:
   toc: TRUE
 toc_float: TRUE
-author: Ryan Corbett
+author: Ryan Corbett, Jo Lynne Rokita
 date: "2024"
 ---
 
@@ -26,11 +26,14 @@ results_dir <- file.path(analysis_dir, "results")
 input_dir <- file.path(analysis_dir, "input")
 plot_dir <- file.path(analysis_dir, "plots")
 
+source(file.path(analysis_dir, "util", "heatmap_function.R"))
+
 ```
 
 Set file paths
 
 ```{r}
+
 fusion_file <- file.path(results_dir, "braf-fusions-exon-annotation.tsv")
 
 fusion_dgd_file <- file.path(data_dir, "fusion-dgd.tsv.gz")
@@ -130,24 +133,34 @@ fusions_all <- common_fusions %>%
   )) %>%
   write_tsv(file.path(results_dir, "braf-fusion-breakpoints-by-patient.tsv"))
 
-
-
 ```
 
 Merge breakpoint data to braf hist
 
 ```{r}
-braf_hist <- braf_hist %>%
-  left_join(fusions_all) %>%
-  dplyr::filter(!is.na(breakpoint_type))
+# add high conf methylation subtypes to the braf hist
+scores <- hist %>%
+  filter(dkfz_v12_methylation_subclass_score >= 0.8,
+         # grab only PA subtypes
+         grepl("PA_", dkfz_v12_methylation_subclass)) %>%
+  select("match_id", "dkfz_v12_methylation_subclass") %>%
+  group_by(match_id) %>%
+  summarise(dkfz_v12_methylation_subclass = str_c(unique(dkfz_v12_methylation_subclass), collapse = ";")) %>%
+  unique()
 
+braf_hist <- braf_hist %>%
+  dplyr::rename(Kids_First_Biospecimen_ID_normal = Kids_First_Biospecimen_ID,
+                Kids_First_Biospecimen_ID = Kids_First_Biospecimen_ID_tumor) %>%
+  left_join(fusions_all) %>%
+  dplyr::filter(!is.na(breakpoint_type)) %>%
+  left_join(hist[,c("Kids_First_Biospecimen_ID", "match_id")]) %>%
+  left_join(scores)
 ```
 
 How many patients do we have breakpoint data for? 
 
 ```{r}
 nrow(braf_hist)
-
 ```
 
 ```{r}
@@ -201,56 +214,20 @@ braf_hist <- braf_hist %>%
     TRUE ~ predicted_ancestry
   ))
 
-enr <- matrix(0, length(unique(braf_hist$AS_ancestry)),
-              length(unique(braf_hist$breakpoint_group[!is.na(braf_hist$breakpoint_group)])),
-              dimnames = list(c("AFR", "AMR", "AS", "EUR"),
-                              c(unique(braf_hist$breakpoint_group[!is.na(braf_hist$breakpoint_group)]))))
-pval <- enr
-
-# loop through cancer groups to calculate enrichment 
-for (i in 1:nrow(enr)){
-  no_ancestry <- sum(grepl(rownames(enr)[i], braf_hist$AS_ancestry))
-  for (j in 1:ncol(enr)){
-    no_group <- sum(braf_hist$breakpoint_group == colnames(enr)[j] & !is.na(braf_hist$breakpoint_group))
-    no_anc_group <- sum(braf_hist$AS_ancestry == rownames(enr)[i] & braf_hist$breakpoint_group == colnames(enr)[j])
-    enr[i,j] <- (no_anc_group/no_group)/(no_ancestry/nrow(braf_hist))
-    pval[i,j] <- phyper(no_anc_group, no_ancestry, nrow(braf_hist) - no_ancestry, no_group, lower.tail = F)
-  }
-}
-
-enr <- t(enr[,order(colnames(enr))])
-pval <- t(pval[,order(colnames(pval))])
-
-sig_mat <- ifelse(pval < 0.05 & enr > 1, "*", "")
-
-fill_mat <- matrix(glue::glue("{round(enr, 1)}{sig_mat}"), 
-                   nrow(enr), ncol(enr))
-
-count_mat <- table(braf_hist$breakpoint_group, braf_hist$AS_ancestry)
-ct_enr_mat <- matrix(glue::glue("{count_mat}\n({fill_mat})"),
-                     nrow(count_mat), ncol(count_mat))
-
-col_fun = colorRamp2(c(0, 6), c("white", "orangered"))
+group_ht <- plot_enr(braf_hist, 
+                     "breakpoint_group", "AS_ancestry",
+                     var2_names = c("AFR", "AMR", "AS", "EUR"),
+                     var1_names = c("15:9", "16:9", "16:11", "18:10", "rare"))
 
 # plot enrichment results
 pdf(file.path(plot_dir, "breakpoint_group_ancestry_ct_enr_heatmap.pdf"),
-    height = 3, width = 6)
+    height = 3, width = 4)
 
-ht <- Heatmap(enr,
-        name = "Odds ratio",
-        cluster_rows = F,
-        cluster_columns = F,
-        rect_gp = gpar(col = "black", lwd = 2),
-        col = col_fun,
-        cell_fun = function(j, i, x, y, width, height, fill) {
-          grid.text(sprintf("%s", ct_enr_mat[i, j]), x, y, gp = gpar(fontsize = 12))
-        })
-
-draw(ht)
+draw(group_ht)
 
 invisible(dev.off())
 
-draw(ht)
+draw(group_ht)
 
 ```
 
@@ -258,6 +235,77 @@ Print rare/novel fusion breakpoint count by predicted ancestry
 
 ```{r}
 table(braf_hist$breakpoint_exons_rare, braf_hist$predicted_ancestry)
+
+```
+
+Create heatmap of rare breakpoints by ancestry
+```{r}
+
+pdf(file.path(plot_dir, "rare_breakpoints_by_ancestry.pdf"),
+    height = 3, width = 4)
+
+rare_ct <- table(braf_hist$breakpoint_exons_rare[!is.na(braf_hist$breakpoint_exons_rare)],
+                 braf_hist$predicted_ancestry[!is.na(braf_hist$breakpoint_exons_rare)])
+
+col_fun = colorRamp2(c(0, ceiling(max(rare_ct))), c("white", "orangered"))
+
+rare_ht <- Heatmap(rare_ct,
+            name = "Count",
+            cluster_rows = F,
+            cluster_columns = F,
+            rect_gp = gpar(col = "black", lwd = 2),
+            col = col_fun,
+            cell_fun = function(j, i, x, y, width, height, fill) {
+              grid.text(sprintf("%s", rare_ct[i, j]), x, y, gp = gpar(fontsize = 12))
+            })
+
+rare_ht
+
+invisible(dev.off())
+
+rare_ht
+
+```
+
+Print ancestry by methyl subtype
+
+```{r}
+table(braf_hist$dkfz_v12_methylation_subclass, braf_hist$predicted_ancestry)
+```
+
+
+Print breakpoint by methyl subtype
+
+```{r}
+table(braf_hist$breakpoint_type, braf_hist$dkfz_v12_methylation_subclass)
+fisher.test(table(braf_hist$breakpoint_type, braf_hist$dkfz_v12_methylation_subclass), simulate.p.value = T)
+```
+
+Print breakpoint by methyl subtype
+
+```{r}
+table(braf_hist$breakpoint_group, braf_hist$dkfz_v12_methylation_subclass)
+fisher.test(table(braf_hist$breakpoint_group, braf_hist$dkfz_v12_methylation_subclass), simulate.p.value = T)
+```
+
+Plot methyl subtype by breakpoint group
+
+```{r}
+
+methyl_ht <- plot_enr(braf_hist[!is.na(braf_hist$dkfz_v12_methylation_subclass),], 
+                     "breakpoint_group", "dkfz_v12_methylation_subclass",
+                     var1_names = c("15:9", "16:9", "16:11", "18:10", "rare"),
+                     var2_names = sort(unique(braf_hist$dkfz_v12_methylation_subclass)))
+
+# plot enrichment results
+pdf(file.path(plot_dir, "breakpoint_group_methyl_subtype_ct_enr_heatmap.pdf"),
+    height = 3, width = 4)
+
+draw(methyl_ht)
+
+invisible(dev.off())
+
+draw(methyl_ht)
 
 ```
 
@@ -279,12 +327,36 @@ fisher.test(table(braf_hist$breakpoint_group, braf_hist$extent_of_tumor_resectio
 
 ```
 
+Plot extent of tumor resection by breakpoint group
+
+```{r}
+
+braf_hist <- braf_hist %>%
+  dplyr::mutate(resection = str_replace(extent_of_tumor_resection, " resection", ""))
+
+resection_ht <- plot_enr(braf_hist[!grepl("Not Reported", braf_hist$resection),], 
+                     "breakpoint_group", "resection",
+                     var1_names = c("15:9", "16:9", "16:11", "18:10", "rare"),
+                     var2_names = c("Gross/Near total", "Partial", "Biopsy only"))
+
+# plot enrichment results
+pdf(file.path(plot_dir, "breakpoint_group_resection_ct_enr_heatmap.pdf"),
+    height = 3, width = 4)
+
+draw(resection_ht)
+
+invisible(dev.off())
+
+draw(resection_ht)
+
+```
+
 Assess distribution of tumor CNS region in patients by breakpoint type and group
 
 ```{r}
-round(table(braf_hist$breakpoint_type, braf_hist$CNS_region)/as.vector(table(braf_hist$breakpoint_type)), 3) * 100
 
-fisher.test(table(braf_hist$breakpoint_type, braf_hist$CNS_region))
+round(table(braf_hist$breakpoint_type, braf_hist$CNS_region)/as.vector(table(braf_hist$breakpoint_type)), 3) * 100
+fisher.test(table(braf_hist$breakpoint_type, braf_hist$CNS_region), simulate.p.value = T)
 
 ```
 
@@ -293,6 +365,26 @@ fisher.test(table(braf_hist$breakpoint_type, braf_hist$CNS_region))
 round(table(braf_hist$breakpoint_group, braf_hist$CNS_region)/as.vector(table(braf_hist$breakpoint_group)), 3) * 100
 
 fisher.test(table(braf_hist$breakpoint_group, braf_hist$CNS_region), simulate.p.value = T)
+
+```
+Plot CNS region by breakpoint group
+
+```{r}
+
+region_ht <- plot_enr(braf_hist[braf_hist$CNS_region != "Mixed",], 
+                     "breakpoint_group", "CNS_region",
+                     var1_names = c("15:9", "16:9", "16:11", "18:10", "rare"),
+                     var2_names = sort(unique(braf_hist$CNS_region[braf_hist$CNS_region != "Mixed"])))
+
+# plot enrichment results
+pdf(file.path(plot_dir, "breakpoint_group_region_ct_enr_heatmap.pdf"),
+    height = 3, width = 6.5)
+
+draw(region_ht)
+
+invisible(dev.off())
+
+draw(region_ht)
 
 ```
 
@@ -308,8 +400,10 @@ fisher.test(table(braf_hist$CNS_region, braf_hist$extent_of_tumor_resection), si
 Save braf-specific hist file with breakpoint annotation 
 
 ```{r}
-write_tsv(braf_hist,
-          file.path(results_dir, "lgg-braf-fusion-breakpoint-annotation.tsv"))
+
+braf_hist %>%
+  dplyr::select(-resection) %>%
+  write_tsv(file.path(results_dir, "lgg-braf-fusion-breakpoint-annotation.tsv"))
 
 ```
 
