@@ -77,14 +77,14 @@ alluvial_df <- as.data.frame(table(ancestry$predicted_ancestry, ancestry$race, a
 
 # Generate alluvial plot
 p1 <- ggplot(alluvial_df, aes(y = Freq, stratum = Group, alluvium = alluvium, x = x, fill = Group)) + 
-  geom_alluvium(show.legend = F) + 
-  geom_stratum(show.legend = F) +
+  geom_alluvium(show.legend = F, size = 0.3) + 
+  geom_stratum(show.legend = F, size = 0.3) +
   scale_fill_manual(values = c("Asian" = "#4B0055", "SAS" = "#D55E00", "EAS" = "#009E73",
                                "White" =  "#7ED357", "EUR" = "#0072B2",
                                "Black/Afr. Am." = "#353E7C", "AFR" = "#E69F00",
                                "NHPI" = "#00B28A", "AMR" = "#56B4E9",
-                               "AI/AN" = "#008298",
-                               "Race Unknown" = "grey", ">1 Race" = "#FDE333",
+                               "AI/AN" = "#FDE333",
+                               "Race Unknown" = "grey", ">1 Race" ="#008298",
                                "Hispanic/Latino" =  "#CC79A7",
                                "Not Hispanic/Latino" = "#882255",
                                "Unknown" = "grey")) +
@@ -92,6 +92,9 @@ p1 <- ggplot(alluvial_df, aes(y = Freq, stratum = Group, alluvium = alluvium, x 
   ylab("Number of Patients") +
   scale_x_discrete(labels = c("predicted ancestry", "reported race", "reported ethnicity")) + 
   theme_Publication()
+
+# colors used for reported race
+hcl.colors(n = 6)
 
 # Create separate ancestry, race, and ethnicity dfs for legend generation
 race_df <- data.frame(race = c("Asian", "Black/Afr. Am.", "AI/AN", 
@@ -117,9 +120,9 @@ lgd_race <- ggplot(race_df, aes(x = value, y = factor(race, levels = c("Race Unk
   scale_fill_manual(values = c("Asian" = "#4B0055",  
                                "White" = "#7ED357", 
                                "Black/Afr. Am." = "#353E7C", 
-                               "AI/AN" = "#008298",
+                               "AI/AN" = "#FDE333",
                                "NHPI" =   "#00B28A", 
-                               ">1 Race" = "#FDE333",
+                               ">1 Race" = "#008298",
                                "Race Unknown" = "grey"),
                     breaks = c("Asian",  
                                "Black/Afr. Am.", 
@@ -174,10 +177,10 @@ final_p <- plot_grid(p1, leg,
                      nrow = 1,
                      align = "none",
                      axis = "t",
-                     rel_widths = c(1,0.45))
+                     rel_widths = c(1,0.4))
 
 pdf(file.path(plots_dir, "ancestry-race-ethnicity-alluvial.pdf"),
-    width = 10, height = 6)
+    width = 9, height = 6)
 
 final_p
 
