@@ -276,28 +276,6 @@ draw(group_ht)
 
 invisible(dev.off())
 
-
-# Plot cancer group distribution by ancestry, subsetting for unknown/unreported race patients
-pdf(file.path(plots_dir, "plot_group_by_ancestry_unk_race.pdf"),
-    height = 4, width = 4)
-
-ancestry %>%
-  filter(!is.na(plot_group) & race %in% c("Not Reported/Unknown", "More Than One Race")) %>%
-  mutate(predicted_ancestry = factor(predicted_ancestry, levels = unique(predicted_ancestry)),
-         plot_group = factor(plot_group, rev(unique(plot_group)[order(unique(plot_group))]))) %>%
-  count(predicted_ancestry, plot_group, name = "count", .drop = FALSE) %>%
-  mutate(plot_group = factor(plot_group)) %>%
-  ggplot(aes(x = predicted_ancestry, y = factor(plot_group), fill = count)) +
-  geom_tile(color = "black",
-            lwd = 1,
-            linetype = 1, show.legend = FALSE) +
-  scale_fill_gradient(low="white", high="orangered") +
-  geom_text(aes(label = count), color = "black", size = 3) +
-  labs(x = NULL, y = NULL) +
-  theme_minimal()
-
-dev.off()
-
 # plot extent of tumor resection heatmap in pLGG
 
 lgg <- ancestry %>%
