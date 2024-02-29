@@ -39,7 +39,8 @@ RUN install2.r \
 	survival \
   survMisc \
   survminer \
-  tidytext
+  tidytext \
+  openxlsx \
   
   # install R packages from Bioconductor 
 RUN ./install_bioc.r \
