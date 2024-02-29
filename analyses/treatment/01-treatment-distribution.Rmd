@@ -1,0 +1,439 @@
+---
+title: "DEI Survival Analyses"
+output: 
+  html_notebook:
+    toc: TRUE
+    toc_float: TRUE
+author: Ryan Corbett
+date: 2022
+params:
+  plot_ci: TRUE
+---
+
+**Purpose:** 
+
+Runs survival analysis models.
+
+## Usage 
+
+Uses a wrapper function (`survival_analysis`) from utils folder. 
+
+## Setup
+
+#### Packages and functions
+
+Read in set up script.
+
+```{r Set up library}
+library(survival)
+library(ggpubr)
+library(tidyverse)
+library(openxlsx)
+# Set directories
+root_dir <- rprojroot::find_root(rprojroot::has_dir(".git"))
+analysis_dir <- file.path(root_dir, "analyses", "treatment")
+
+# Magrittr pipe
+`%>%` <- dplyr::`%>%`
+```
+
+#### Set up files and directories
+
+Set up output directories. 
+
+```{r Set up directories}
+input_dir <- file.path(analysis_dir, "input")
+results_dir <- file.path(analysis_dir, "results")
+plots_dir <- file.path(analysis_dir, "plots")
+```
+
+Make output directories.
+
+```{r Make output directories}
+if (!dir.exists(results_dir)) {
+  dir.create(results_dir)
+}
+if (!dir.exists(plots_dir)) {
+  dir.create(plots_dir)
+}
+```
+
+Declare input file paths
+```{r Set input file paths}
+ancestry_file <- file.path(root_dir, "analyses", "survival", "results", "merged_ancestry_histology_survival.tsv")
+
+trt_file <- file.path(input_dir, "treatment.tsv")
+
+radiation_trt_file <- file.path(input_dir, "radiation-treatment.tsv")
+
+pnoc_pt_file <- file.path(input_dir, "pnoc-pts.tsv")
+```
+
+Wrangle data
+```{r}
+ancestry <- read_tsv(ancestry_file)
+
+trt <- read_tsv(trt_file)
+
+pnoc <- read_tsv(pnoc_pt_file)
+```
+
+
+```{r}
+chemo_trt <- trt %>%
+  filter(cbtn_subject_id %in% ancestry$cohort_participant_id) %>%
+  dplyr::select(cbtn_subject_id, chemotherapy, chemotherapy_type,
+                age_at_chemo_start) %>%
+  dplyr::rename(cohort_participant_id = cbtn_subject_id)
+
+radiation_trt <- trt %>%
+  filter(cbtn_subject_id %in% ancestry$cohort_participant_id & radiation == "Yes") %>%
+  arrange(age_at_radiation_start) %>%
+  distinct(cbtn_subject_id, .keep_all = TRUE) %>%
+  dplyr::select(cbtn_subject_id, radiation, radiation_type,
+                age_at_radiation_start) %>%
+  dplyr::rename(cohort_participant_id = cbtn_subject_id)
+
+```
+
+Determine proportion of patients enrolled in clinical trial
+
+```{r}
+chemo_pts <- chemo_trt %>%
+  filter(cohort_participant_id %in% ancestry$cohort_participant_id & chemotherapy == "Yes") %>%
+  pull(cohort_participant_id)
+
+enrolled_pts <- chemo_trt %>%
+  filter(cohort_participant_id %in% ancestry$cohort_participant_id & grepl("is enrolled on a protocol", chemotherapy_type)) %>%
+  pull(cohort_participant_id)
+
+pnoc_pts <- pnoc %>%
+  pull(cohort_participant_id)
+
+ancestry <- ancestry %>%
+  dplyr::mutate(chemotherapy = case_when(
+    cohort_participant_id %in% c(chemo_pts, pnoc_pts) ~ "Yes",
+    TRUE ~ "No"
+  )) %>%
+  dplyr::mutate(enrolled_trial = case_when(
+    cohort_participant_id %in% c(enrolled_pts, pnoc_pts) ~ "Enrolled",
+    TRUE ~ "Not Enrolled"
+  ))
+  
+chemo_ct <- table(ancestry$predicted_ancestry, 
+                     ancestry$chemotherapy)
+chemo_ct
+
+enrolled_ct <- table(ancestry$predicted_ancestry, 
+                     ancestry$enrolled_trial)
+enrolled_ct
+```
+
+
+```{r}
+round(apply(chemo_ct, 2, function(x) x/table(ancestry$predicted_ancestry)), 2)
+
+round(apply(enrolled_ct, 2, function(x) x/table(ancestry$predicted_ancestry)), 2)
+
+```
+
+```{r}
+fisher.test(table(ancestry$predicted_ancestry, 
+      ancestry$chemotherapy))
+
+fisher.test(table(ancestry$predicted_ancestry, 
+      ancestry$enrolled_trial))
+```
+```{r}
+chemo_by_hist <- table(ancestry$plot_group[ancestry$chemotherapy == "Yes"],
+                          ancestry$EUR_status[ancestry$chemotherapy == "Yes"])
+
+total_hist <- table(ancestry$plot_group, ancestry$EUR_status)
+total_hist <- total_hist[rownames(total_hist) %in% rownames(chemo_by_hist)]
+
+chemo_by_hist_freq <- round(chemo_by_hist/total_hist*100, 1)
+
+chemo_by_hist_full <- matrix(glue::glue("{chemo_by_hist} ({chemo_by_hist_freq}%)"),
+                                nrow(chemo_by_hist), ncol(chemo_by_hist),
+                                dimnames = list(rownames(chemo_by_hist),
+                                                colnames(chemo_by_hist)))
+
+chemo_by_hist_full[chemo_by_hist_full %in% c("0 (NaN%)", "0 (0%)")] <- "0"
+
+```
+
+
+```{r}
+groups <- unique(ancestry$plot_group)
+groups <- groups[!is.na(groups)]
+
+chemo_pval <- rep(0, length(groups))
+names(chemo_pval) <- groups
+
+for (group in groups) {
+  
+  chemo_pval[group] <- round(fisher.test(table(ancestry$EUR_status[ancestry$plot_group == group], 
+                                     ancestry$chemotherapy[ancestry$plot_group == group]))$p.value, 3)
+  
+}
+
+```
+
+
+```{r}
+chemo_by_hist_full <- chemo_by_hist_full %>%
+  as.data.frame() %>%
+  dplyr::mutate(pvalue = unlist(chemo_pval[order(names(chemo_pval))])) %>%
+  write_tsv(file.path(results_dir, "freq-chemo-trt-by-ancestry-histology.tsv"))
+
+```
+
+
+
+
+```{r}
+enrolled_by_hist <- table(ancestry$plot_group[ancestry$enrolled_trial == "Enrolled"],
+                          ancestry$predicted_ancestry[ancestry$enrolled_trial == "Enrolled"])
+
+total_hist <- table(ancestry$plot_group, ancestry$predicted_ancestry)
+total_hist <- total_hist[rownames(total_hist) %in% rownames(enrolled_by_hist)]
+
+enrolled_by_hist_freq <- round(enrolled_by_hist/total_hist*100, 1)
+
+enrolled_by_hist_full <- matrix(glue::glue("{enrolled_by_hist} ({enrolled_by_hist_freq}%)"),
+                                nrow(enrolled_by_hist), ncol(enrolled_by_hist),
+                                dimnames = list(rownames(enrolled_by_hist),
+                                                colnames(enrolled_by_hist)))
+
+enrolled_by_hist_full[enrolled_by_hist_full %in% c("0 (NaN%)", "0 (0%)")] <- "0"
+
+```
+
+Difference in % enrolled by histology? 
+
+```{r}
+groups <- unique(ancestry$plot_group)
+groups <- groups[!is.na(groups)]
+
+enrolled_pval <- rep(0, length(groups))
+names(enrolled_pval) <- groups
+
+for (group in groups) {
+  
+  enrolled_pval[group] <- round(fisher.test(table(ancestry$predicted_ancestry[ancestry$plot_group == group], 
+                                     ancestry$enrolled_trial[ancestry$plot_group == group]))$p.value, 3)
+  
+}
+```
+
+```{r}
+enrolled_by_hist_full <- enrolled_by_hist_full %>%
+  as.data.frame() %>%
+  dplyr::mutate(pvalue = unlist(enrolled_pval[order(names(enrolled_pval))])) %>%
+  write_tsv(file.path(results_dir, "freq-enrolled-protocol-by-ancestry-histology.tsv"))
+
+```
+
+
+```{r}
+ancestry <- ancestry %>%
+  left_join(radiation_trt[,c("cohort_participant_id", "radiation", "radiation_type")]) %>%
+  dplyr::mutate(pnoc = case_when(
+    cohort_participant_id %in% pnoc$cohort_participant_id ~ "Yes",
+    TRUE ~ "No"
+  ))
+```
+
+```{r}
+
+radiation_p <- round(fisher.test(table(ancestry$EUR_status,
+                  !is.na(ancestry$radiation_type)))$p.value, 3)
+
+prot_phot_p <- round(fisher.test(table(ancestry$EUR_status[!is.na(ancestry$radiation_type)],
+                   grepl("Photons|Protons", ancestry$radiation_type[!is.na(ancestry$radiation_type)])))$p.value, 3)
+
+photon_p <- round(fisher.test(table(ancestry$EUR_status[!is.na(ancestry$radiation_type)],
+                   ancestry$radiation_type[!is.na(ancestry$radiation_type)] == "Photons"))$p.value, 3)
+
+proton_p <- round(fisher.test(table(ancestry$EUR_status[!is.na(ancestry$radiation_type)],
+                   ancestry$radiation_type[!is.na(ancestry$radiation_type)] == "Protons"))$p.value, 3)
+
+```
+
+
+```{r}
+
+df <- data.frame(row.names = c("EUR", "non-EUR"),
+                 total_ct = as.vector(table(ancestry$EUR_status)),
+                 radiation_ct = as.vector(table(ancestry$EUR_status[!is.na(ancestry$radiation)])),
+                 prot_phot_ct = as.vector(table(ancestry$EUR_status[grepl("Protons|Photons", ancestry$radiation_type)])),
+                 proton_ct = as.vector(table(ancestry$EUR_status[ancestry$radiation_type == "Protons"])),
+                 photon_ct = as.vector(table(ancestry$EUR_status[ancestry$radiation_type == "Photons"])))
+
+df <- df %>%
+  dplyr::mutate(radiation_freq = glue::glue("{radiation_ct} ({round(radiation_ct/total_ct*100, 1)}%)")) %>%
+  dplyr::mutate(prot_phot_freq = glue::glue("{prot_phot_ct} ({round(prot_phot_ct/radiation_ct*100, 1)}%)")) %>%
+  dplyr::mutate(proton_freq = glue::glue("{proton_ct} ({round(proton_ct/radiation_ct*100, 1)}%)")) %>%
+  dplyr::mutate(photon_freq = glue::glue("{photon_ct} ({round(photon_ct/radiation_ct*100, 1)}%)")) %>%
+  dplyr::select(total_ct, radiation_freq, prot_phot_freq,
+                proton_freq, photon_freq) %>%
+  t() %>%
+  as.data.frame() %>%
+  dplyr::mutate("pval" = c(NA_character_, radiation_p, prot_phot_p, proton_p, photon_p))
+
+
+
+```
+
+
+```{r}
+
+groups <- unique(ancestry$plot_group[!is.na(ancestry$plot_group) & !grepl("Germ|Oligo", ancestry$plot_group)])
+
+radiation_df_list <- list()
+
+for (group in groups) {
+  
+  group_hist <- ancestry %>%
+    dplyr::filter(plot_group == group)
+  
+  
+  radiation_p <- round(fisher.test(table(group_hist$EUR_status,
+                    !is.na(group_hist$radiation_type)))$p.value, 3)
+  
+  prot_phot_p <- round(fisher.test(table(group_hist$EUR_status[!is.na(group_hist$radiation_type)],
+                     grepl("Photons|Protons", group_hist$radiation_type[!is.na(group_hist$radiation_type)])))$p.value, 3)
+  
+  photon_p <- round(fisher.test(table(group_hist$EUR_status[!is.na(group_hist$radiation_type)],
+                     group_hist$radiation_type[!is.na(group_hist$radiation_type)] == "Photons"))$p.value, 3)
+  
+  proton_p <- round(fisher.test(table(group_hist$EUR_status[!is.na(group_hist$radiation_type)],
+                     group_hist$radiation_type[!is.na(group_hist$radiation_type)] == "Protons"))$p.value, 3)
+  
+  df <- data.frame(row.names = c("EUR", "non-EUR"),
+                 total_ct = as.vector(table(group_hist$EUR_status)),
+                 radiation_ct = as.vector(table(group_hist$EUR_status[!is.na(group_hist$radiation)])),
+                 prot_phot_ct = as.vector(table(group_hist$EUR_status[grepl("Protons|Photons", group_hist$radiation_type)])),
+                 proton_ct = as.vector(table(group_hist$EUR_status[group_hist$radiation_type == "Protons"])),
+                 photon_ct = as.vector(table(group_hist$EUR_status[group_hist$radiation_type == "Photons"])))
+
+  radiation_df_list[[group]] <- df %>%
+    dplyr::mutate(radiation_freq = glue::glue("{radiation_ct} ({round(radiation_ct/total_ct*100, 1)}%)")) %>%
+    dplyr::mutate(prot_phot_freq = glue::glue("{prot_phot_ct} ({round(prot_phot_ct/radiation_ct*100, 1)}%)")) %>%
+    dplyr::mutate(proton_freq = glue::glue("{proton_ct} ({round(proton_ct/radiation_ct*100, 1)}%)")) %>%
+    dplyr::mutate(photon_freq = glue::glue("{photon_ct} ({round(photon_ct/radiation_ct*100, 1)}%)")) %>%
+    dplyr::select(total_ct, radiation_freq, prot_phot_freq,
+                  proton_freq, photon_freq) %>%
+    t() %>%
+    as.data.frame() %>%
+    dplyr::mutate("pval" = c(NA_character_, radiation_p, prot_phot_p, proton_p, photon_p))
+  
+}
+
+radiation_type_pval <- unlist(radiation_type_pval)
+
+```
+
+```{r}
+
+radiation_type_df <- tibble(plot_group = names(radiation_type_pval),
+                            radiation_type_p = round(radiation_type_pval, 3))
+
+radiation_type_df <- radiation_type_df %>%
+  dplyr::mutate(plot_group = case_when(
+    plot_group == "Atypical Teratoid Rhabdoid Tumor" ~ "ATRT",
+    TRUE ~ plot_group
+  ))
+
+radiation_ct <- ancestry %>%
+  filter(!radiation_type %in% c("Not Reported", "Unavailable")) %>%
+  count(plot_group, EUR_status,
+        name = "group_n") %>%
+  dplyr::filter(plot_group %in% names(radiation_type_pval))
+
+radiation_type_ct <- ancestry %>%
+  filter(radiation_type %in% c("Photons", "Protons")) %>%
+  count(plot_group, EUR_status, radiation_type,
+        name = "type_n") %>%
+  filter(!is.na(radiation_type) & plot_group %in% names(radiation_type_pval)) %>%
+  left_join(radiation_ct) %>%
+  dplyr::mutate(perc = type_n/group_n * 100) %>%
+  dplyr::mutate(plot_group = case_when(
+        plot_group == "Atypical Teratoid Rhabdoid Tumor" ~ "ATRT",
+        TRUE ~ plot_group
+  )) %>%
+  left_join(radiation_type_df) %>%
+  dplyr::mutate(plot_group_p = glue::glue("{plot_group} (p={radiation_type_p})"))
+    
+
+
+
+radiation_type_ct %>%
+  filter(!is.na(plot_group)) %>%
+  dplyr::mutate(predicted_ancestry = factor(predicted_ancestry,
+                                            c("SAS", "EUR", "EAS", "AMR", "AFR")
+                                            )) %>%
+  ggplot(aes(x = predicted_ancestry, y = perc, fill = radiation_type)) +
+  geom_bar(stat = "identity", col = "black") +
+  coord_flip() + 
+  ylab("% patients") + 
+  xlab(NULL) +
+  facet_wrap(~plot_group_p, ncol = 5) +
+  theme_Publication()
+
+ggsave(file.path(plots_dir, 
+       "radiation-type-distribution.pdf"),
+       width = 20, height = 6)
+
+
+
+
+radiation_type_ct %>%
+  filter(!is.na(plot_group) & plot_group == "Ependymoma") %>%
+  dplyr::mutate(predicted_ancestry = factor(predicted_ancestry,
+                                            c("SAS", "EUR", "EAS", "AMR", "AFR")
+                                            )) %>%
+  ggplot(aes(x = predicted_ancestry, y = perc, fill = radiation_type)) +
+  geom_bar(stat = "identity", col = "black") +
+  coord_flip() + 
+  ylab("% patients") + 
+  xlab(NULL) +
+  ggtitle("Ependymoma (p = 0.043)") +
+  theme_Publication()
+
+ggsave(file.path(plots_dir, "radiation_type_freq_epn.pdf"),
+       width = 6, height = 4)
+
+
+```
+
+
+
+
+```{r}
+fisher.test(table(ancestry[!is.na(ancestry$radiation_type),]$EUR_status, 
+      ancestry[!is.na(ancestry$radiation_type),]$radiation_type == "Protons"))
+
+fisher.test(table(ancestry[!is.na(ancestry$radiation_type),]$EUR_status, 
+      ancestry[!is.na(ancestry$radiation_type),]$radiation_type == "Photons"))
+```
+
+
+```{r}
+photon_pval <- rep(0, length(groups))
+names(photon_pval) <- groups
+
+proton_pval <- photon_pval
+
+for (group in groups[!grepl("Craniopharyngioma|Meningioma|Oligo|Choroid|Neurofibroma", groups)]) {
+  
+  photon_pval[group] <- fisher.test(table(ancestry[!is.na(ancestry$radiation_type) & grepl(group, ancestry$plot_group),]$EUR_status, 
+      ancestry[!is.na(ancestry$radiation_type) & grepl(group, ancestry$plot_group),]$radiation_type == "Photons"))$p.value
+  
+  proton_pval[group] <- fisher.test(table(ancestry[!is.na(ancestry$radiation_type) & grepl(group, ancestry$plot_group),]$EUR_status, 
+      ancestry[!is.na(ancestry$radiation_type) & grepl(group, ancestry$plot_group),]$radiation_type == "Protons"))$p.value
+  
+}
+
+
+```

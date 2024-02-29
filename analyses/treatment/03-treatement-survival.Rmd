@@ -1,0 +1,180 @@
+---
+title: "PBTA Ancestry Treatment Analysis: Radiation"
+output: 
+  html_notebook:
+    toc: TRUE
+    toc_float: TRUE
+author: Ryan Corbett
+date: 2022
+params:
+  plot_ci: TRUE
+---
+
+**Purpose:** 
+
+Assess radiation treatment frequencies in PBTA ancestry cohort, and assess differences in treatment frequency by predicted ancestry
+
+## Usage 
+
+Uses a wrapper function (`survival_analysis`) from utils folder. 
+
+## Setup
+
+#### Packages and functions
+
+Read in set up script.
+
+```{r Set up library}
+library(survival)
+library(ggpubr)
+library(tidyverse)
+library(openxlsx)
+# Set directories
+root_dir <- rprojroot::find_root(rprojroot::has_dir(".git"))
+analysis_dir <- file.path(root_dir, "analyses", "treatment")
+
+# Magrittr pipe
+`%>%` <- dplyr::`%>%`
+
+source(file.path(root_dir, "analyses", "survival", "util", "survival_models.R"))
+```
+
+#### Set up files and directories
+
+Set up output directories. 
+
+```{r Set up directories}
+input_dir <- file.path(analysis_dir, "input")
+results_dir <- file.path(analysis_dir, "results")
+plots_dir <- file.path(analysis_dir, "plots")
+```
+
+Make output directories.
+
+```{r Make output directories}
+if (!dir.exists(results_dir)) {
+  dir.create(results_dir)
+}
+if (!dir.exists(plots_dir)) {
+  dir.create(plots_dir)
+}
+```
+
+Declare input file paths
+```{r Set input file paths}
+
+ancestry_file <- file.path(results_dir, "merged_ancestry_histology_survival_chemo_radiation_trt.tsv")
+
+```
+
+Wrangle data
+```{r}
+ancestry <- read_tsv(ancestry_file) %>%
+  dplyr::mutate(predicted_ancestry = factor(predicted_ancestry,
+                                            levels = c("EUR", "AFR", "AMR", "EAS", "SAS")
+                                            )) %>%
+  dplyr::mutate(radiation_type = case_when(
+    radiation_type == "Protons" ~ "Proton",
+    radiation_type == "Photons" ~ "Photon",
+    grepl("Combination", radiation_type) ~ "Combination",
+    grepl("Gamma|Other", radiation_type) ~ "Other",
+    grepl("Not Applicable", radiation_type) ~ "None",
+    TRUE ~ NA)) %>%
+  dplyr::mutate(radiation_type = fct_relevel(radiation_type,
+                                             c("Proton", "Photon",
+                                               "Combination", "Other",
+                                               "None"))) %>%
+  dplyr::mutate(upfront_enrolled = case_when(
+    upfront_enrolled == "Yes" ~ "Upfront enrolled",
+    upfront_enrolled == "No" ~ "Not upfront enrolled"
+  ))
+
+```
+
+
+```{r}
+
+epn <- ancestry %>%
+  dplyr::filter(plot_group == "Ependymoma") %>%
+  dplyr::mutate(mol_sub_group = fct_relevel(mol_sub_group,
+                      c("EPN, ST ZFTA", "EPN, ST YAP1", "EPN, PF A", 
+                        "EPN, PF B", "EPN, MPE", "EPN, SP", "EPN, SP-MYCN",
+                        "EPN, To be classified")))
+
+epn_trt_model_os <- fit_save_model(epn[!grepl("classified", epn$mol_sub_group),],
+                                    terms = "mol_sub_group+age_at_diagnosis_years+predicted_ancestry+upfront_enrolled+radiation_type",
+               file.path(results_dir, "coxph_epn_os_subtype_age_ancestry_trt.RDS"),
+               "multivariate",
+               years_col = "OS_years", status_col = "OS_status"
+              )
+
+plotForest(readRDS(file.path(results_dir, "coxph_epn_os_subtype_age_ancestry_trt.RDS")))
+
+ggsave(file.path(plots_dir, "forest_plot_epn_os_subtype_age_ancestry_trt.pdf"),
+       width = 7.5, height = 4)
+
+```
+
+
+```{r}
+
+lgg <- ancestry %>%
+  dplyr::filter(plot_group == "Low-grade glioma")  %>%
+  dplyr::mutate(mol_sub_group = fct_relevel(mol_sub_group,
+                      c("LGG, WT", "LGG, BRAF V600E", "LGG, BRAF fusion", 
+                        "LGG, Other alteration", "SEGA",
+                        "LGG, To be classified")))
+
+lgg_trt_model_os <- fit_save_model(lgg[!grepl("Not Reported", lgg$extent_of_tumor_resection),],
+                                    terms = "extent_of_tumor_resection+mol_sub_group+age_at_diagnosis_years+predicted_ancestry+upfront_enrolled+radiation_type",
+               file.path(results_dir, "coxph_lgg_os_subtype_age_ancestry_trt.RDS"),
+               "multivariate",
+               years_col = "OS_years", status_col = "OS_status"
+              )
+
+plotForest(readRDS(file.path(results_dir, "coxph_lgg_os_subtype_age_ancestry_trt.RDS")))
+
+ggsave(file.path(plots_dir, "forest_plot_lgg_os_resection_subtype_age_ancestry_trt.pdf"),
+       width = 7.5, height = 4)
+
+```
+
+
+```{r}
+
+germ <- ancestry %>%
+  dplyr::filter(plot_group == "Germ cell tumor")
+
+germ_trt_model_os <- fit_save_model(germ,
+                                    terms = "age_at_diagnosis_years+cancer_group+EUR_status+upfront_enrolled+radiation_type",
+               file.path(results_dir, "coxph_germ_efs_group_age_ancestry_trt.RDS"),
+               "multivariate",
+               years_col = "EFS_years", status_col = "EFS_status"
+              )
+
+plotForest(readRDS(file.path(results_dir, "coxph_germ_efs_group_age_ancestry_trt.RDS")))
+
+ggsave(file.path(plots_dir, "forest_plot_germ_efs_group_age_ancestry_trt.pdf"),
+       width = 7.5, height = 4)
+
+```
+
+
+```{r}
+
+mbshh <- ancestry %>%
+  dplyr::filter(molecular_subtype == "MB, SHH" & plot_group == "Medulloblastoma")
+
+mb_trt_model_efs <- fit_save_model(mbshh,
+                                    terms = "age_at_diagnosis_years+predicted_ancestry+upfront_enrolled+radiation_type",
+               file.path(results_dir, "coxph_mb_efs_age_ancestry_trt.RDS"),
+               "multivariate",
+               years_col = "EFS_years", status_col = "EFS_status"
+              )
+
+plotForest(readRDS(file.path(results_dir, "coxph_mb_efs_age_ancestry_trt.RDS")))
+
+ggsave(file.path(plots_dir, "forest_plot_mbshh_efs_age_ancestry_trt.pdf"),
+       width = 7.5, height = 4)
+
+```

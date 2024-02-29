@@ -1,0 +1,16 @@
+plot_group	AFR	AMR	EAS	EUR	SAS	pvalue
+Atypical Teratoid Rhabdoid Tumor	3 (27%)	4 (40%)	0	3 (12%)	--	0.231
+Choroid plexus tumor	--	0	0	1 (4%)	--	1
+Craniopharyngioma	0	0	0	1 (2%)	0	1
+DIPG or DMG	3 (33%)	19 (70%)	1 (20%)	20 (34%)	3 (60%)	0.012
+Ependymoma	0	6 (38%)	0	10 (13%)	0	0.04
+Germ cell tumor	0	0	1 (25%)	1 (8%)	--	0.692
+Low-grade glioma	2 (5%)	4 (9%)	0	19 (7%)	0	0.934
+Medulloblastoma	3 (25%)	8 (27%)	2 (15%)	39 (32%)	1 (33%)	0.776
+Mesenchymal tumor	0	0	1 (33%)	2 (7%)	2 (67%)	0.048
+Mixed neuronal-glial tumor	0	0	0	5 (5%)	0	1
+Neurofibroma plexiform	0	0	--	1 (9%)	0	1
+Other CNS embryonal tumor	1 (50%)	2 (40%)	--	1 (14%)	1 (50%)	0.471
+Other high-grade glioma	4 (67%)	2 (14%)	3 (43%)	9 (15%)	1 (50%)	0.011
+Other tumor	0	4 (33%)	0	5 (17%)	--	0.365
+Schwannoma	0	0	0	1 (7%)	0	1

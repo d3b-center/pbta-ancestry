@@ -1,0 +1,335 @@
+---
+title: "DEI Survival Analyses"
+output: 
+  html_notebook:
+    toc: TRUE
+    toc_float: TRUE
+author: Ryan Corbett
+date: 2022
+params:
+  plot_ci: TRUE
+---
+
+**Purpose:** 
+
+Runs survival analysis models.
+
+## Usage 
+
+Uses a wrapper function (`survival_analysis`) from utils folder. 
+
+## Setup
+
+#### Packages and functions
+
+Read in set up script.
+
+```{r Set up library}
+library(survival)
+library(ggpubr)
+library(tidyverse)
+library(openxlsx)
+# Set directories
+root_dir <- rprojroot::find_root(rprojroot::has_dir(".git"))
+analysis_dir <- file.path(root_dir, "analyses", "survival")
+# Source this script, which contains a wrapper function that can conduct the survival analyses, from OpenPBTA
+source(file.path(analysis_dir, "util", "survival_models.R"))
+# Magrittr pipe
+`%>%` <- dplyr::`%>%`
+```
+
+#### Set up files and directories
+
+Set up output directories. 
+
+```{r Set up directories}
+input_dir <- file.path(root_dir, "analyses", "add-histologies", "results")
+results_dir <- file.path(analysis_dir, "results")
+plots_dir <- file.path(analysis_dir, "plots")
+```
+
+Make output directories.
+
+```{r Make output directories}
+if (!dir.exists(results_dir)) {
+  dir.create(results_dir)
+}
+if (!dir.exists(plots_dir)) {
+  dir.create(plots_dir)
+}
+```
+
+Declare input file paths and useful variables
+
+```{r Set input file paths}
+ancestry_file <- file.path(input_dir, "merged_ancestry_histology_data.tsv")
+```
+
+Declare output file paths for HGG/DMG all subtypes. 
+
+```{r Set output file paths}
+#kap_meier_plot_file <- file.path(plots_dir, "KM_hgg_alt_subtypes.pdf")
+hgg_kap_meier_model_file <- file.path(results_dir, "logrank_hgg_ancestry.RDS")
+hgg_wt_kap_meier_model_file <- file.path(results_dir, "logrank_hgg_wt_ancestry.RDS")
+hgg_k28_kap_meier_model_file <- file.path(results_dir, "logrank_hgg_k28_ancestry.RDS")
+```
+
+## Import the metadata
+
+```{r Read in metadata}
+# choose HGG samples
+# remove cell-lines from this analysis as well
+metadata <- readr::read_tsv(ancestry_file) %>%
+  mutate(
+    OS_years = OS_days / 365.25) %>%
+  # keep only relevant columns
+  select(Kids_First_Participant_ID, Kids_First_Biospecimen_ID, predicted_ancestry, 
+         reported_gender, cancer_group, plot_group, OPC_methyl_subtype, extent_of_tumor_resection,
+         dkfz_v12_methylation_subclass, dkfz_v12_methylation_subclass_score, 
+         OS_days, OS_years, OS_status, PC1, PC2, cohort)
+```
+
+
+## Create new variable
+```{r subset HGG}
+# first update H3 subtype
+meta_hgg <- metadata %>%
+  filter(plot_group %in% c('DIPG or DMG', 'Other high-grade glioma')) %>%
+  dplyr::mutate(mol_sub_group = case_when(
+    OPC_methyl_subtype %in% c("DMG, H3 K28", 
+                             "DMG, H3 K28, TP53 loss", 
+                             "DMG, H3 K28, TP53 activated") ~ "H3 K28",
+    OPC_methyl_subtype %in% c("HGG, H3 G35",
+                             "HGG, H3 G35, TP53 loss") ~ "H3 G35",
+    OPC_methyl_subtype %in% c("HGG, H3 wildtype",
+                             "HGG, H3 wildtype, TP53 loss",
+                             "HGG, H3 wildtype, TP53 activated") ~ "H3 WT",
+    OPC_methyl_subtype %in% c("HGG, IDH, TP53 loss",
+                             "HGG, IDH, TP53 activated") ~ "IDH",
+    TRUE ~ NA_character_
+  )) %>%
+   mutate(mol_sub_group = factor(mol_sub_group)) %>% 
+   mutate(mol_sub_group = fct_relevel(mol_sub_group, c("H3 WT",
+                                                   "H3 G35",
+                                                   "H3 K28",
+                                                   "IDH"))) %>%
+ arrange(mol_sub_group) %>%
+  mutate(predicted_ancestry = factor(predicted_ancestry)) %>% 
+   mutate(predicted_ancestry = fct_relevel(predicted_ancestry, c("EUR", "AFR",
+                                                   "AMR", "EAS", "SAS"))) %>%
+  mutate(EUR_status = case_when(
+    predicted_ancestry == "EUR" ~ "EUR", 
+    TRUE ~ "non-EUR"
+  ))
+```
+
+Determine if there is any association between HGG molecular subtype and ancestry
+
+```{r HGG chisq}
+fisher.test(meta_hgg$predicted_ancestry, meta_hgg$mol_sub_group)
+```
+
+
+```{r Kaplan Meier, warning=TRUE}
+kap_hgg <- survival_analysis(
+  metadata  = meta_hgg,
+  ind_var = "predicted_ancestry",
+  test = "kap.meier",
+  metadata_sample_col = "Kids_First_Biospecimen_ID"
+  )
+# median and 0.95CI survival days
+kap_hgg_data <- kap_hgg$original_data %>%
+  mutate(OS_months = OS_days/30.417,
+         OS_status = ifelse(OS_status == 1, "LIVING", "DECEASED")) %>%
+  select(-OS_days)
+kap_hgg_data_summary <- kap_hgg_data %>%
+  group_by(predicted_ancestry) %>%
+  summarise_each(funs(median(., na.rm = T), sd(., na.rm = T)), OS_months)
+```
+
+
+```{r Make survival plot}
+surv_plot_hgg <- survminer::ggsurvplot(fit = kap_hgg$model,
+  data = kap_hgg$original_data,
+  pval = TRUE,
+  risk.table = FALSE,
+  xlim = c(0, 4000),
+  break.time.by = 500,
+  ggtheme = theme_minimal(),
+  risk.table.y.text.col = FALSE,
+  risk.table.y.text = FALSE,
+) + guides(color=guide_legend(ncol=2))
+surv_plot_hgg$plot <- surv_plot_hgg$plot +
+  ggtitle(paste0("Kaplan Meier, HGG")) +
+  theme(legend.position = "bottom")
+# Make this plot a combined plot
+surv_plot_all_hgg <-
+  cowplot::plot_grid(surv_plot_hgg[[1]], surv_plot_hgg[[2]], nrow = 2,
+                     rel_heights = c(3, 2))
+# Print it out here
+surv_plot_hgg
+```
+
+```{r}
+readr::write_rds(kap_hgg, hgg_kap_meier_model_file)
+```
+
+```{r add hgg ancestry}
+# we save this for the purpose of printing out a p-value below
+add_hgg_ancestry_model <- fit_save_model(meta_hgg,
+             "mol_sub_group+predicted_ancestry",
+             file.path(results_dir, "cox_hgg_additive_terms_subtype_ancestry.RDS"),
+             "multivariate"
+            )
+add_hgg_ancestry_model
+
+add_hgg_pc_model <- fit_save_model(meta_hgg,
+             "mol_sub_group+cohort+PC4",
+             file.path(results_dir, "cox_hgg_additive_terms_subtype_PC.RDS"),
+             "multivariate"
+            )
+add_hgg_pc_model
+
+add_hgg_eur_model <- fit_save_model(meta_hgg,
+             "mol_sub_group+EUR_status",
+             file.path(results_dir, "cox_hgg_additive_terms_subtype_EURstatus.RDS"),
+             "multivariate"
+            )
+add_hgg_eur_model
+```
+
+
+```{r}
+meta_hgg_wt <- meta_hgg %>%
+  filter(mol_sub_group == 'H3 WT')
+```
+
+```{r Kaplan Meier HGG WT, warning=TRUE}
+kap_hgg_wt <- survival_analysis(
+  metadata  = meta_hgg_wt,
+  ind_var = "predicted_ancestry",
+  test = "kap.meier",
+  metadata_sample_col = "Kids_First_Biospecimen_ID"
+  )
+```
+
+
+```{r Make survival plot}
+surv_plot_hgg_wt <- survminer::ggsurvplot(fit = kap_hgg_wt$model,
+  data = kap_hgg_wt$original_data,
+  pval = TRUE,
+  risk.table = FALSE,
+  xlim = c(0, 4000),
+  break.time.by = 500,
+  ggtheme = theme_minimal(),
+  risk.table.y.text.col = FALSE,
+  risk.table.y.text = FALSE,
+) + guides(color=guide_legend(ncol=2))
+surv_plot_hgg$plot <- surv_plot_hgg$plot +
+  ggtitle(paste0("Kaplan Meier, HGG, H3 WT")) +
+  theme(legend.position = "bottom")
+
+# Print it out here
+surv_plot_hgg_wt
+```
+
+```{r}
+readr::write_rds(kap_hgg_wt, hgg_wt_kap_meier_model_file)
+```
+
+```{r add hgg ancestry}
+# we save this for the purpose of printing out a p-value below
+add_hgg_wt_ancestry_model <- fit_save_model(meta_hgg_wt,
+             "predicted_ancestry",
+             file.path(results_dir, "cox_hgg_wt_additive_terms_ancestry.RDS"),
+             "multivariate"
+            )
+add_hgg_wt_ancestry_model
+
+add_hgg_wt_pc_model <- fit_save_model(meta_hgg_wt,
+             "PC4",
+             file.path(results_dir, "cox_hgg_wt_additive_terms_pc.RDS"),
+             "multivariate"
+            )
+add_hgg_wt_pc_model
+
+
+add_hgg_wt_eur_model <- fit_save_model(meta_hgg_wt,
+             "EUR_status",
+             file.path(results_dir, "cox_hgg_wt_additive_terms_EURstatus.RDS"),
+             "multivariate"
+            )
+add_hgg_wt_eur_model
+```
+
+
+
+
+```{r}
+meta_hgg_k28 <- meta_hgg %>%
+  filter(mol_sub_group == 'H3 K28')
+```
+
+```{r Kaplan Meier HGG WT, warning=TRUE}
+kap_hgg_k28 <- survival_analysis(
+  metadata  = meta_hgg_k28,
+  ind_var = "predicted_ancestry",
+  test = "kap.meier",
+  metadata_sample_col = "Kids_First_Biospecimen_ID"
+  )
+```
+
+
+```{r Make survival plot}
+surv_plot_hgg_k28 <- survminer::ggsurvplot(fit = kap_hgg_k28$model,
+  data = kap_hgg_k28$original_data,
+  pval = TRUE,
+  risk.table = FALSE,
+  xlim = c(0, 4000),
+  break.time.by = 500,
+  ggtheme = theme_minimal(),
+  risk.table.y.text.col = FALSE,
+  risk.table.y.text = FALSE,
+) + guides(color=guide_legend(ncol=2))
+surv_plot_hgg_k28$plot <- surv_plot_hgg_k28$plot +
+  ggtitle(paste0("Kaplan Meier, HGG, H3 K28")) +
+  theme(legend.position = "bottom")
+
+# Print it out here
+surv_plot_hgg_k28
+```
+
+```{r}
+readr::write_rds(kap_hgg_k28, hgg_k28_kap_meier_model_file)
+```
+
+```{r add hgg ancestry}
+# we save this for the purpose of printing out a p-value below
+add_hgg_k28_ancestry_model <- fit_save_model(meta_hgg_k28,
+             "predicted_ancestry",
+             file.path(results_dir, "cox_hgg_k28_additive_terms_ancestry.RDS"),
+             "univariate"
+            )
+add_hgg_k28_ancestry_model
+
+add_hgg_k28_pc_model <- fit_save_model(meta_hgg_k28,
+             "cohort+PC2",
+             file.path(results_dir, "cox_hgg_k28_additive_terms_pc.RDS"),
+             "multivariate"
+            )
+add_hgg_k28_pc_model
+
+add_hgg_k28_eur_model <- fit_save_model(meta_hgg_k28,
+             "EUR_status",
+             file.path(results_dir, "cox_hgg_k28_additive_terms_EURstatus.RDS"),
+             "multivariate"
+            )
+add_hgg_k28_eur_model
+
+add_hgg_k28_pc3_model <- fit_save_model(meta_hgg_k28,
+             "PC3_status",
+             file.path(results_dir, "cox_hgg_k28_additive_terms_PC3status.RDS"),
+             "multivariate"
+            )
+add_hgg_k28_pc3_model
+```

@@ -1,0 +1,392 @@
+---
+title: "DEI Survival Analyses in patients of unknown race"
+output: 
+  html_notebook:
+    toc: TRUE
+    toc_float: TRUE
+author: Ryan Corbett
+date: 2022
+params:
+  plot_ci: TRUE
+---
+
+**Purpose:** 
+
+Runs survival analysis models.
+
+## Usage 
+
+Uses a wrapper function (`survival_analysis`) from utils folder. 
+
+## Setup
+
+#### Packages and functions
+
+Read in set up script.
+
+```{r Set up library}
+library(survival)
+library(ggpubr)
+library(tidyverse)
+library(openxlsx)
+# Set directories
+root_dir <- rprojroot::find_root(rprojroot::has_dir(".git"))
+analysis_dir <- file.path(root_dir, "analyses", "survival")
+# Source this script, which contains a wrapper function that can conduct the survival analyses, from OpenPBTA
+source(file.path(analysis_dir, "util", "survival_models.R"))
+# Magrittr pipe
+`%>%` <- dplyr::`%>%`
+```
+
+#### Set up files and directories
+
+Set up output directories. 
+
+```{r Set up directories}
+input_dir <- file.path(root_dir, "analyses", "survival", "results")
+results_dir <- file.path(analysis_dir, "results")
+plots_dir <- file.path(analysis_dir, "plots")
+```
+
+Make output directories.
+
+```{r Make output directories}
+if (!dir.exists(results_dir)) {
+  dir.create(results_dir)
+}
+if (!dir.exists(plots_dir)) {
+  dir.create(plots_dir)
+}
+```
+
+Declare input file paths and useful variables
+
+```{r Set input file paths}
+ancestry_file <- file.path(input_dir, "merged_ancestry_histology_survival.tsv")
+```
+
+
+## Import the metadata
+
+```{r Read in metadata}
+# choose HGG samples
+# remove cell-lines from this analysis as well
+metadata <- readr::read_tsv(ancestry_file)
+
+metadata <- metadata %>%
+  filter(race %in% c("Not Reported", "Reported Unknown", "Other", "More Than One Race")) %>%
+    mutate(mol_sub_group = case_when(
+    plot_group %in% c("DIPG or DMG", "Other high-grade glioma") & grepl("wildtype", OPC_methyl_subtype) ~ "HGG, H3 WT",
+    plot_group %in% c("DIPG or DMG", "Other high-grade glioma") & grepl("K28", OPC_methyl_subtype) ~ "DMG, H3 K28",
+    plot_group %in% c("DIPG or DMG", "Other high-grade glioma") & grepl("G35", OPC_methyl_subtype) ~ "HGG, H3 G35",
+    plot_group %in% c("DIPG or DMG", "Other high-grade glioma") & grepl("IDH", OPC_methyl_subtype) ~ "HGG, IDH",
+    plot_group %in% c("Low-grade glioma") & grepl("SEGA", OPC_methyl_subtype) ~ "SEGA",
+    plot_group %in% c("Low-grade glioma") & grepl("-BRAF", OPC_methyl_subtype) ~ "LGG, BRAF fusion",
+    plot_group %in% c("Low-grade glioma") & grepl("wildtype", OPC_methyl_subtype) ~ "LGG, wildtype",
+    plot_group %in% c("Low-grade glioma") & !grepl("To be classified", OPC_methyl_subtype) ~ "LGG, Other alteration",
+    plot_group %in% c("Mixed neuronal-glial tumor") & grepl("wildtype", OPC_methyl_subtype) ~ "GNG/GNT, WT",
+    plot_group %in% c("Mixed neuronal-glial tumor") & grepl("-BRAF", OPC_methyl_subtype) ~ "GNG/GNT, BRAF fusion",
+    plot_group %in% c("Mixed neuronal-glial tumor") & !grepl("To be classified", OPC_methyl_subtype) ~ "GNG/GNT, Other alteration",
+    OPC_methyl_subtype == "Atypical Teratoid Rhabdoid Tumor" ~ "ATRT, To be classified",
+    !is.na(OPC_methyl_subtype) ~ OPC_methyl_subtype
+  )) %>%
+  dplyr::mutate(predicted_ancestry = factor(predicted_ancestry, 
+                                            c("AFR", "AMR", "EAS", "EUR", "SAS"))) %>%
+  mutate(age_at_diagnosis_days = as.numeric(age_at_diagnosis_days)) %>%
+  mutate(age_at_diagnosis_years = age_at_diagnosis_days/365.25)
+```
+
+Define plot groups for which survival analyses should be run
+
+```{r}
+# Define groups for survival analyses
+
+groups <- c("DIPG or DMG|Other high-grade glioma",
+            "Mixed neuronal-glial tumor|Low-grade glioma"
+)
+
+# create names vector for output files
+plot_names <- c("hgg", "lgg")
+names(plot_names) <- groups
+```
+
+Loop through groups and create Kaplan Meier survival and Cox Proportional Hazard model for OS and EFS
+
+```{r}
+for (group in groups){
+  
+  km_os_ancestry_model_file <- file.path(results_dir, 
+                                    glue::glue("logrank_{plot_names[group]}_OS_predicted_ancestry_raceUK.RDS"))
+  
+  km_os_eur_model_file <- file.path(results_dir, 
+                                    glue::glue("logrank_{plot_names[group]}_OS_EUR_nonEUR_raceUK.RDS"))
+  
+  coxph_os_ancestry_model_file <- ifelse(group == "Mixed neuronal-glial tumor|Low-grade glioma",
+                             file.path(results_dir,
+                                       glue::glue("cox_{plot_names[group]}_OS_additive_terms_subtype_resection_predicted_ancestry_raceUK.RDS")),
+                             file.path(results_dir,
+                                       glue::glue("cox_{plot_names[group]}_OS_additive_terms_subtype_predicted_ancestry_raceUK.RDS"))
+  )
+  
+  coxph_os_eur_model_file <- ifelse(group == "Mixed neuronal-glial tumor|Low-grade glioma",
+                           file.path(results_dir,
+                                     glue::glue("cox_{plot_names[group]}_OS_additive_terms_subtype_resection_EUR_nonEUR_raceUK.RDS")),
+                           file.path(results_dir,
+                                     glue::glue("cox_{plot_names[group]}_OS_additive_terms_subtype_EUR_nonEUR_raceUK.RDS"))
+  )
+  
+  km_efs_ancestry_model_file <- file.path(results_dir, 
+                                    glue::glue("logrank_{plot_names[group]}_EFS_predicted_ancestry_raceUK.RDS"))
+  
+  km_efs_eur_model_file <- file.path(results_dir, 
+                                    glue::glue("logrank_{plot_names[group]}_EFS_EUR_nonEUR_raceUK.RDS"))
+  
+  coxph_efs_ancestry_model_file <- ifelse(group == "Mixed neuronal-glial tumor|Low-grade glioma",
+                             file.path(results_dir,
+                                       glue::glue("cox_{plot_names[group]}_EFS_additive_terms_subtype_resection_predicted_ancestry_raceUK.RDS")),
+                             file.path(results_dir,
+                                       glue::glue("cox_{plot_names[group]}_EFS_additive_terms_subtype_predicted_ancestry_raceUK.RDS"))
+  )
+  
+  coxph_efs_eur_model_file <- ifelse(group == "Mixed neuronal-glial tumor|Low-grade glioma",
+                             file.path(results_dir,
+                                       glue::glue("cox_{plot_names[group]}_EFS_additive_terms_subtype_resection_EUR_nonEUR_raceUK.RDS")),
+                             file.path(results_dir,
+                                       glue::glue("cox_{plot_names[group]}_EFS_additive_terms_subtype_EUR_nonEUR_raceUK.RDS"))
+  )
+
+  
+  # Subset histology
+  
+  group_hist <- metadata %>%
+    filter(grepl(group, plot_group))
+  
+  if (group == "DIPG or DMG|Other high-grade glioma"){
+    group_hist <- group_hist %>%
+     mutate(mol_sub_group = factor(mol_sub_group)) %>% 
+     mutate(mol_sub_group = fct_relevel(mol_sub_group, c("HGG, H3 WT",
+                                                     "DMG, H3 K28",
+                                                     "HGG, IDH"))) %>%
+   arrange(mol_sub_group)
+    }
+  
+  
+  kap_os_anc <- survival_analysis(
+  metadata  = group_hist,
+  ind_var = "predicted_ancestry",
+  test = "kap.meier",
+  metadata_sample_col = "Kids_First_Biospecimen_ID",
+  days_col = "OS_days",
+  status_col = "OS_status"
+  )
+
+  readr::write_rds(kap_os_anc, km_os_ancestry_model_file)
+  
+  kap_efs_anc <- survival_analysis(
+  metadata  = group_hist,
+  ind_var = "predicted_ancestry",
+  test = "kap.meier",
+  metadata_sample_col = "Kids_First_Biospecimen_ID",
+  days_col = "EFS_days",
+  status_col = "EFS_status"
+  )
+
+  readr::write_rds(kap_efs_anc, km_efs_ancestry_model_file)
+  
+  
+  kap_os_eur <- survival_analysis(
+  metadata  = group_hist,
+  ind_var = "EUR_status",
+  test = "kap.meier",
+  metadata_sample_col = "Kids_First_Biospecimen_ID",
+  days_col = "OS_days",
+  status_col = "OS_status"
+  )
+
+  readr::write_rds(kap_os_eur, km_os_eur_model_file)
+  
+  kap_efs_eur <- survival_analysis(
+  metadata  = group_hist,
+  ind_var = "EUR_status",
+  test = "kap.meier",
+  metadata_sample_col = "Kids_First_Biospecimen_ID",
+  days_col = "EFS_days",
+  status_col = "EFS_status"
+  )
+
+  readr::write_rds(kap_efs_eur, km_efs_eur_model_file)
+  
+  
+  
+  if(group == "Mixed neuronal-glial tumor|Low-grade glioma") {
+    group_hist <- group_hist %>%
+      filter(extent_of_tumor_resection != 'Not Reported')
+  } 
+  
+  group_hist <- group_hist %>%
+    dplyr::mutate(predicted_ancestry = factor(predicted_ancestry, 
+                                            c("EUR", "AFR", "AMR", "EAS", "SAS")))
+
+  add_model_os_anc <- fit_save_model(group_hist[!grepl("EPN, H3 K28|EWS|classified|CNS BCOR", group_hist$OPC_methyl_subtype),],
+                                  terms = ifelse(
+                                      group %in% c("Mixed neuronal-glial tumor|Low-grade glioma"),
+                                      "mol_sub_group+extent_of_tumor_resection+age_at_diagnosis_years+predicted_ancestry",
+                                         "mol_sub_group+age_at_diagnosis_years+predicted_ancestry"),
+             coxph_os_ancestry_model_file,
+             "multivariate",
+             years_col = "OS_years",
+             status_col = "OS_status"
+            )
+  
+  add_model_efs_anc <- fit_save_model(group_hist[!grepl("EPN, H3 K28|EWS|classified|CNS BCOR", group_hist$OPC_methyl_subtype),],
+                                  terms = ifelse(
+                                      group %in% c("Mixed neuronal-glial tumor|Low-grade glioma"),
+                                      "mol_sub_group+extent_of_tumor_resection+age_at_diagnosis_years+predicted_ancestry",
+                                         "mol_sub_group+age_at_diagnosis_years+predicted_ancestry"),
+             coxph_efs_ancestry_model_file,
+             "multivariate",
+             years_col = "EFS_years",
+             status_col = "EFS_status"
+            )
+  
+
+
+  add_model_os_eur <- fit_save_model(group_hist,
+                                  terms = ifelse(
+                                      group %in% c("Mixed neuronal-glial tumor|Low-grade glioma"),
+                                      "mol_sub_group+extent_of_tumor_resection+age_at_diagnosis_years+EUR_status",
+                                         "mol_sub_group+age_at_diagnosis_years+EUR_status"),
+             coxph_os_eur_model_file,
+             "multivariate",
+             years_col = "OS_years",
+             status_col = "OS_status"
+            )
+  
+
+    add_model_efs_eur <- fit_save_model(group_hist,
+                                        terms = ifelse(
+                                          group %in% c("Mixed neuronal-glial tumor|Low-grade glioma"),
+                                              "mol_sub_group+extent_of_tumor_resection+age_at_diagnosis_years+EUR_status",
+                                                 "mol_sub_group+age_at_diagnosis_years+EUR_status"),
+               coxph_efs_eur_model_file,
+               "multivariate",
+               years_col = "EFS_years",
+               status_col = "EFS_status"
+              )
+
+
+}
+```
+
+
+```{r Read in metadata}
+
+metadata <- metadata %>%
+    mutate(mol_sub_group = case_when(
+      is.na(mol_sub_group) & !is.na(plot_group) ~ plot_group,
+      TRUE ~ mol_sub_group
+  )) %>%
+  mutate(mol_sub_group = case_when(
+    mol_sub_group == "Atypical Teratoid Rhabdoid Tumor" ~ "ATRT, To be classified",
+    TRUE ~ mol_sub_group
+  )) %>%
+  dplyr::mutate(predicted_ancestry = factor(predicted_ancestry, 
+                                            c("EUR", "AFR", "AMR", "EAS", "SAS")))
+```
+
+
+```{r}
+  kap_os_anc <- survival_analysis(
+  metadata  = metadata,
+  ind_var = "predicted_ancestry",
+  test = "kap.meier",
+  metadata_sample_col = "Kids_First_Biospecimen_ID",
+  days_col = "OS_days",
+  status_col = "OS_status"
+  )
+
+  kap_efs_anc <- survival_analysis(
+  metadata  = metadata,
+  ind_var = "predicted_ancestry",
+  test = "kap.meier",
+  metadata_sample_col = "Kids_First_Biospecimen_ID",
+  days_col = "EFS_days",
+  status_col = "EFS_status"
+  )
+
+  km_plot <- plotKM(model = list(kap_os_anc, kap_efs_anc),
+                    variable = "predicted_ancestry",
+                    combined = T, 
+                    title = "All histologies")
+  
+  ggsave(file.path(plots_dir, "km_all_histologies_OS_EFS_predicted_ancestry_unk_race.pdf"),
+         km_plot,
+         width = 10, height = 7, units = "in",
+         device = "pdf")
+  
+  
+  kap_os_eur <- survival_analysis(
+  metadata  = metadata,
+  ind_var = "EUR_status",
+  test = "kap.meier",
+  metadata_sample_col = "Kids_First_Biospecimen_ID",
+  days_col = "OS_days",
+  status_col = "OS_status"
+  )
+
+  readr::write_rds(kap_os_eur, km_os_eur_model_file)
+  
+  kap_efs_eur <- survival_analysis(
+  metadata  = metadata,
+  ind_var = "EUR_status",
+  test = "kap.meier",
+  metadata_sample_col = "Kids_First_Biospecimen_ID",
+  days_col = "EFS_days",
+  status_col = "EFS_status"
+  )
+
+  readr::write_rds(kap_efs_eur, km_efs_eur_model_file)
+  
+  km_plot <- plotKM(model = list(kap_os_eur, kap_efs_eur),
+                    variable = "EUR_status",
+                    combined = T, 
+                    title = "All histologies")
+  
+    ggsave(file.path(plots_dir, "km_all_histologies_OS_EFS_EURstatus_unk_race.pdf"),
+           km_plot,
+         width = 10, height = 7, units = "in",
+         device = "pdf")
+
+
+    add_model_os_eur <- fit_save_model(metadata[!grepl("CNS|CHDM|EWS|Other tumor", metadata$mol_sub_group) & metadata$extent_of_tumor_resection != "Not Reported",],
+                                      terms = "mol_sub_group+extent_of_tumor_resection+age_at_diagnosis_years+EUR_status",
+             file.path(results_dir, "coxph_all_histologies_OS_additive_subtype_EUR_nonEUR_raceUK.RDS"),
+             "multivariate",
+             years_col = "OS_years",
+             status_col = "OS_status"
+            )
+    
+    forest_plot <- plotForest(readRDS(file.path(results_dir, "coxph_all_histologies_OS_additive_subtype_EUR_nonEUR_raceUK.RDS")))
+    
+        ggsave(file.path(plots_dir, "forest_all_histologies_OS_subtype_EURstatus_unk_race.pdf"),
+           forest_plot,
+         width = 10, height = 6, units = "in",
+         device = "pdf")
+        
+        
+            add_model_efs_eur <- fit_save_model(metadata[!grepl("CNS|CHDM|EWS|Other tumor", metadata$mol_sub_group) & metadata$extent_of_tumor_resection != "Not Reported",],
+                                      terms = "mol_sub_group+extent_of_tumor_resection+age_at_diagnosis_years+EUR_status",
+             file.path(results_dir, "coxph_all_histologies_EFS_additive_subtype_EUR_nonEUR_raceUK.RDS"),
+             "multivariate",
+             years_col = "EFS_years",
+             status_col = "EFS_status"
+            )
+    
+    forest_plot <- plotForest(readRDS(file.path(results_dir, "coxph_all_histologies_EFS_additive_subtype_EUR_nonEUR_raceUK.RDS")))
+    
+        ggsave(file.path(plots_dir, "forest_all_histologies_EFS_subtype_EURstatus_unk_race.pdf"),
+           forest_plot,
+         width = 10, height = 6, units = "in",
+         device = "pdf")
+
+```

@@ -1,0 +1,455 @@
+---
+title: "DEI Survival Analyses"
+output: 
+  html_notebook:
+    toc: TRUE
+    toc_float: TRUE
+author: Ryan Corbett
+date: 2022
+params:
+  plot_ci: TRUE
+---
+
+**Purpose:** 
+
+Runs survival analysis models.
+
+## Usage 
+
+Uses a wrapper function (`survival_analysis`) from utils folder. 
+
+## Setup
+
+#### Packages and functions
+
+Read in set up script.
+
+```{r Set up library}
+library(survival)
+library(ggpubr)
+library(tidyverse)
+library(openxlsx)
+# Set directories
+root_dir <- rprojroot::find_root(rprojroot::has_dir(".git"))
+analysis_dir <- file.path(root_dir, "analyses", "survival")
+# Source this script, which contains a wrapper function that can conduct the survival analyses, from OpenPBTA
+source(file.path(analysis_dir, "util", "survival_models.R"))
+# Magrittr pipe
+`%>%` <- dplyr::`%>%`
+```
+
+#### Set up files and directories
+
+Set up output directories. 
+
+```{r Set up directories}
+input_dir <- file.path(root_dir, "analyses", "add-histologies", "results")
+results_dir <- file.path(analysis_dir, "results")
+plots_dir <- file.path(analysis_dir, "plots")
+```
+
+Make output directories.
+
+```{r Make output directories}
+if (!dir.exists(results_dir)) {
+  dir.create(results_dir)
+}
+if (!dir.exists(plots_dir)) {
+  dir.create(plots_dir)
+}
+```
+
+Declare input file paths and useful variables
+
+```{r Set input file paths}
+ancestry_file <- file.path(input_dir, "merged_ancestry_histology_data.tsv")
+
+diagnoses_file <- file.path(analysis_dir, "input", "subject_diagnoses.tsv")
+```
+
+```{r}
+diagnoses <- read_tsv(diagnoses_file)
+
+# identify patients with progression reported
+progression_pts <- diagnoses %>%
+  filter(grepl("Progressive", diagnonsis_type)) %>%
+  pull(subject_id) %>%
+  unique()
+```
+
+## Import the metadata
+
+```{r Read in metadata}
+# choose HGG samples
+# remove cell-lines from this analysis as well
+metadata <- readr::read_tsv(ancestry_file) %>%
+  mutate(PFS_days = as.numeric(PFS_days)) %>%
+  dplyr::mutate(PFS_status = case_when(
+    PFS_days < OS_days ~ "PROGRESSION",
+    (PFS_days == OS_days & OS_status == "DECEASED") ~ "PROGRESSION",
+    PFS_days == OS_days & OS_status == "LIVING" & cohort_participant_id %in% progression_pts ~ "PROGRESSION",
+    PFS_days == OS_days & OS_status == "LIVING" & !cohort_participant_id %in% progression_pts ~ "NO PROGRESSION",
+    is.na(PFS_days) & OS_status == "LIVING" & cohort_participant_id %in% progression_pts  ~ "PROGRESSION",
+    is.na(PFS_days) & OS_status == "LIVING" & !cohort_participant_id %in% progression_pts  ~ "NO PROGRESSION",
+    is.na(PFS_days) & OS_status == "DECEASED" ~ "PROGRESSION",
+    TRUE ~ NA_character_
+  )) %>%
+  mutate(
+    OS_years = OS_days / 365.25) %>%
+  mutate(
+    PFS_years = PFS_days / 365.25) %>%
+  
+  # keep only relevant columns
+  select(Kids_First_Participant_ID, Kids_First_Biospecimen_ID, predicted_ancestry, PC1,PC2,PC4,
+         AFR_prob, AMR_prob, EAS_prob, EUR_prob, SAS_prob,
+         reported_gender, cancer_group, plot_group, OPC_methyl_subtype, extent_of_tumor_resection,
+         dkfz_v12_methylation_subclass, dkfz_v12_methylation_subclass_score, 
+         OS_days, OS_years, OS_status, PFS_days, PFS_years, PFS_status, cohort) %>%
+  mutate(EUR_status = case_when(
+    predicted_ancestry == "EUR" ~ "EUR", 
+    TRUE ~ "non-EUR"
+  ))
+```
+
+Define plot groups for which survival analyses should be run
+
+```{r}
+# Define groups for survival analyses
+
+groups <- c("Atypical Teratoid Rhabdoid Tumor",
+            "Craniopharyngioma",
+            "DIPG or DMG|Other high-grade glioma",
+            "Ependymoma",
+            "Mixed neuronal-glial tumor",
+            "Low-grade glioma",
+            "Medulloblastoma",
+            "Meningioma",
+            "Neurofibroma plexiform"
+)
+
+# create names vector for output files
+plot_names <- c("atrt", "cranio", "hgg", "epn", "gng", "lgg", "mb", "mng", "nfp")
+names(plot_names) <- groups
+```
+
+Loop through groups and create Kaplan Meier survival and Cox Proportional Hazard model for OVERALL survival (OS)
+
+```{r}
+for (group in groups){
+  
+  km_os_model_file <- file.path(results_dir, 
+                                    glue::glue("logrank_{plot_names[group]}_OS_predicted_ancestry.RDS"))
+  
+  coxph_os_model_file <- ifelse(group == "Low-grade glioma",
+                             file.path(results_dir,
+                                       glue::glue("cox_{plot_names[group]}_OS_additive_terms_subtype_resection_predicted_ancestry.RDS")),
+                             file.path(results_dir,
+                                       glue::glue("cox_{plot_names[group]}_OS_additive_terms_subtype_predicted_ancestry.RDS"))
+  )
+  
+  km_pfs_model_file <- file.path(results_dir, 
+                                    glue::glue("logrank_{plot_names[group]}_PFS_predicted_ancestry.RDS"))
+  
+  coxph_pfs_model_file <- ifelse(group == "Low-grade glioma",
+                             file.path(results_dir,
+                                       glue::glue("cox_{plot_names[group]}_PFS_additive_terms_subtype_resection_predicted_ancestry.RDS")),
+                             file.path(results_dir,
+                                       glue::glue("cox_{plot_names[group]}_PFS_additive_terms_subtype_predicted_ancestry.RDS"))
+  )
+  
+  subtype_plot_pdf <- file.path(plots_dir, 
+                                glue::glue("{plot_names[group]}_subtype_by_ancestry.pdf"))
+  
+  # Subset histology
+  
+  group_hist <- metadata %>%
+    filter(grepl(group, plot_group))
+  
+  if (group == "DIPG or DMG|Other high-grade glioma"){
+    group_hist <- group_hist %>%
+      dplyr::mutate(mol_sub_group = case_when(
+    OPC_methyl_subtype %in% c("DMG, H3 K28", 
+                             "DMG, H3 K28, TP53 loss", 
+                             "DMG, H3 K28, TP53 activated") ~ "H3 K28",
+    OPC_methyl_subtype %in% c("HGG, H3 G35",
+                             "HGG, H3 G35, TP53 loss") ~ "H3 G35",
+    OPC_methyl_subtype %in% c("HGG, H3 wildtype",
+                             "HGG, H3 wildtype, TP53 loss",
+                             "HGG, H3 wildtype, TP53 activated") ~ "H3 WT",
+    OPC_methyl_subtype %in% c("HGG, IDH, TP53 loss",
+                             "HGG, IDH, TP53 activated") ~ "IDH",
+    TRUE ~ NA_character_
+  )) %>%
+   mutate(mol_sub_group = factor(mol_sub_group)) %>% 
+   mutate(mol_sub_group = fct_relevel(mol_sub_group, c("H3 WT",
+                                                   "H3 G35",
+                                                   "H3 K28",
+                                                   "IDH"))) %>%
+ arrange(mol_sub_group)
+  }
+  
+  if (group %in% c("Mixed neuronal-glial tumor", "Low-grade glioma")) {
+    group_hist <- group_hist %>%
+      dplyr::mutate(mol_sub_group = case_when(
+        grepl("wildtype", OPC_methyl_subtype) ~ "WT",
+        grepl("-BRAF", OPC_methyl_subtype) ~ "BRAF fusion",
+        grepl("SEGA", OPC_methyl_subtype) ~ "SEGA",
+        !is.na(OPC_methyl_subtype) ~ "Other alteration",
+        TRUE ~ NA_character_
+      ))
+  }
+  
+  if (group %in% c("DIPG or DMG|Other high-grade glioma", 
+                   "Mixed neuronal-glial tumor", "Low-grade glioma")) {
+    
+    subtype_plot <- group_hist %>%
+            filter(!is.na(mol_sub_group) & !grepl("CNS|EWS", mol_sub_group)) %>%
+                      mutate(predicted_ancestry = factor(predicted_ancestry, levels = unique(predicted_ancestry)),
+                             mol_sub_group = factor(mol_sub_group, levels = unique(mol_sub_group))) %>%
+                      count(predicted_ancestry, mol_sub_group, name = "count", .drop = FALSE) %>%
+                      ggplot(aes(x = predicted_ancestry, y = mol_sub_group, fill = count)) +
+                      geom_tile(color = "black",
+                                lwd = 1,
+                                linetype = 1, show.legend = FALSE) +
+                      scale_fill_gradient(low="white", high="red") +
+                      geom_text(aes(label = count), color = "black", size = 4) +
+                      labs(x = NULL, y = NULL) +
+                      coord_fixed() +
+                      theme_minimal()
+    ggsave(subtype_plot_pdf, subtype_plot,
+           width = 4, height = 4)
+    
+  } else if (group == "Atypical Teratoid Rhabdoid Tumor") {
+    
+    subtype_plot <- group_hist %>%
+      filter(grepl("ATRT", dkfz_v12_methylation_subclass)) %>%
+      mutate(predicted_ancestry = factor(predicted_ancestry, levels = unique(predicted_ancestry)),
+                             dkfz_v12_methylation_subclass = factor(dkfz_v12_methylation_subclass, levels = unique(dkfz_v12_methylation_subclass))) %>%
+                      count(predicted_ancestry, dkfz_v12_methylation_subclass, name = "count", .drop = FALSE) %>%
+                      ggplot(aes(x = predicted_ancestry, y = dkfz_v12_methylation_subclass, fill = count)) +
+                      geom_tile(color = "black",
+                                lwd = 1,
+                                linetype = 1, show.legend = FALSE) +
+                      scale_fill_gradient(low="white", high="red") +
+                      geom_text(aes(label = count), color = "black", size = 4) +
+                      labs(x = NULL, y = NULL) +
+                      coord_fixed() +
+                      theme_minimal()
+    ggsave(subtype_plot_pdf, subtype_plot,
+           width = 4, height = 4)
+  
+  } else {
+    
+    subtype_plot <- group_hist %>%
+      filter(!is.na(OPC_methyl_subtype) & !grepl("CNS|EWS", OPC_methyl_subtype)) %>%
+                      mutate(predicted_ancestry = factor(predicted_ancestry, levels = unique(predicted_ancestry)),
+                             OPC_methyl_subtype = factor(OPC_methyl_subtype, levels = unique(OPC_methyl_subtype))) %>%
+                      count(predicted_ancestry, OPC_methyl_subtype, name = "count", .drop = FALSE) %>%
+                      ggplot(aes(x = predicted_ancestry, y = OPC_methyl_subtype, fill = count)) +
+                      geom_tile(color = "black",
+                                lwd = 1,
+                                linetype = 1, show.legend = FALSE) +
+                      scale_fill_gradient(low="white", high="red") +
+                      geom_text(aes(label = count), color = "black", size = 4) +
+                      labs(x = NULL, y = NULL) +
+                      coord_fixed() +
+                      theme_minimal()
+    ggsave(subtype_plot_pdf, subtype_plot,
+           width = 4, height = 4)
+    
+  }
+    
+  
+  
+  kap_os <- survival_analysis(
+  metadata  = group_hist,
+  ind_var = "predicted_ancestry",
+  test = "kap.meier",
+  metadata_sample_col = "Kids_First_Biospecimen_ID",
+  days_col = "OS_days",
+  status_col = "OS_status"
+  )
+
+  readr::write_rds(kap_os, km_os_model_file)
+  
+  kap_pfs <- survival_analysis(
+  metadata  = group_hist,
+  ind_var = "predicted_ancestry",
+  test = "kap.meier",
+  metadata_sample_col = "Kids_First_Biospecimen_ID",
+  days_col = "PFS_days",
+  status_col = "PFS_status"
+  )
+
+  readr::write_rds(kap_pfs, km_pfs_model_file)
+  
+  
+  
+  if(group == "Low-grade glioma") {
+    group_hist <- group_hist %>%
+      filter(extent_of_tumor_resection != 'Not Reported') %>%
+      dplyr::mutate(predicted_ancestry = factor(predicted_ancestry,
+                                                c("EAS", "AFR", "AMR", "EUR", "SAS")))
+  } else if (group == "Medulloblastoma") {
+      group_hist <- group_hist %>%
+        filter(OPC_methyl_subtype != "EWS") %>%
+        dplyr::mutate(predicted_ancestry = factor(predicted_ancestry,
+                                                  c("AMR", "AFR", "EAS", "EUR", "SAS")))
+    } else if (group == "Atypical Teratoid Rhabdoid Tumor") {
+        group_hist <- group_hist %>%
+          filter(grepl("ATRT", dkfz_v12_methylation_subclass)) %>%
+          dplyr::mutate(predicted_ancestry = factor(predicted_ancestry,
+                                                    c("AFR", "AMR", "EAS", "EUR", "SAS")))
+      } else if (group == "Craniopharyngioma"){
+        group_hist <- group_hist %>%
+            dplyr::mutate(predicted_ancestry = factor(predicted_ancestry,
+                                                      c("AFR", "AMR", "EAS", "EUR", "SAS")))
+        } else {
+              group_hist <- group_hist %>%
+                dplyr::mutate(predicted_ancestry = factor(predicted_ancestry,
+                                                          c("EUR", "AFR", "AMR", "EAS", "SAS")))
+          }
+      
+  # if (group == "Ependymoma"){
+  #     group_hist <- group_hist %>%
+  #       dplyr::mutate(OPC_methyl_subtype = factor(OPC_methyl_subtype,
+  #                                                 c("EPN, ZFTA", "EPN, PF A", "EPN, SP",
+  #                                                   "EPN, SP-MYCN", "EPN, ST YAP1", "EPN, To be classified")))
+  #     }
+
+  
+  add_model_os <- fit_save_model(group_hist[!grepl("EPN, H3 K28|classified|CNS BCOR", group_hist$OPC_methyl_subtype),],
+                                  terms = ifelse(
+                                    group == "Atypical Teratoid Rhabdoid Tumor", "dkfz_v12_methylation_subclass+predicted_ancestry",
+                                    ifelse(
+                                      group %in% c("Mixed neuronal-glial tumor", "Low-grade glioma"),
+                                                  "mol_sub_group+extent_of_tumor_resection+predicted_ancestry",
+                                      ifelse(
+                                        group == "DIPG or DMG|Other high-grade glioma", "mol_sub_group+predicted_ancestry",
+                                        ifelse(group %in% c("Ependymoma", "Medulloblastoma", "Mixed neuronal-glial tumor"),
+                                                            "OPC_methyl_subtype+predicted_ancestry",
+                                                            "predicted_ancestry"
+                                  )))),
+             coxph_os_model_file,
+             "multivariate",
+             years_col = "OS_years",
+             status_col = "OS_status"
+            )
+  
+  add_model_pfs <- fit_save_model(group_hist[!grepl("EPN, H3 K28|classified|CNS BCOR", group_hist$OPC_methyl_subtype),],
+                                  terms = ifelse(
+                                    group == "Atypical Teratoid Rhabdoid Tumor", "dkfz_v12_methylation_subclass+predicted_ancestry",
+                                    ifelse(
+                                      group %in% c("Mixed neuronal-glial tumor", "Low-grade glioma"),
+                                      "mol_sub_group+extent_of_tumor_resection+predicted_ancestry",
+                                      ifelse(
+                                        group == "DIPG or DMG|Other high-grade glioma", "mol_sub_group+predicted_ancestry",
+                                        ifelse(group %in% c("Ependymoma", "Medulloblastoma", "Mixed neuronal-glial tumor"),
+                                                            "OPC_methyl_subtype+predicted_ancestry",
+                                                            "predicted_ancestry"
+                                  )))),
+             coxph_pfs_model_file,
+             "multivariate",
+             years_col = "PFS_years",
+             status_col = "PFS_status"
+            )
+  
+}
+```
+
+
+```{r}
+
+subtype_df <- data.frame(hist = c("DIPG or DMG", "Other high-grade glioma",
+                                  rep("Low-grade glioma", 2),
+                                  rep("Mixed neuronal-glial tumor", 2),
+                                  "Medulloblastoma"),
+                         names = c("hgg", "hgg", "lgg", "lgg", 
+                                   "gng", "gng", "mb"),
+                         subtype = c("DMG", "wildtype", "wildtype",
+                                     "-BRAF", "wildtype", "-BRAF",
+                                     "Group4"))
+
+for (i in 1:nrow(subtype_df)) {
+  
+    km_os_model_file <- file.path(results_dir, 
+                                    glue::glue("logrank_{subtype_df$names[i]}_{subtype_df$subtype[i]}_OS_predicted_ancestry.RDS"))
+  
+  coxph_os_model_file <- ifelse(subtype_df$hist[i] %in% c("Mixed neuronal-glial tumor", "Low-grade glioma"),
+                             file.path(results_dir,
+                                      glue::glue("cox_{subtype_df$names[i]}_{subtype_df$subtype[i]}_OS_additive_terms_subtype_resection_predicted_ancestry.RDS")),
+                             file.path(results_dir,
+                                       glue::glue("cox_{subtype_df$names[i]}_{subtype_df$subtype[i]}_OS_additive_terms_subtype_predicted_ancestry.RDS"))
+  )
+  
+  km_pfs_model_file <- file.path(results_dir, 
+                                    glue::glue("logrank_{subtype_df$names[i]}_{subtype_df$subtype[i]}_PFS_predicted_ancestry.RDS"))
+  
+  coxph_pfs_model_file <- ifelse(subtype_df$hist[i] %in% c("Mixed neuronal-glial tumor", "Low-grade glioma"),
+                             file.path(results_dir,
+                                       glue::glue("cox_{subtype_df$names[i]}_{subtype_df$subtype[i]}_PFS_additive_terms_subtype_resection_predicted_ancestry.RDS")),
+                             file.path(results_dir,
+                                       glue::glue("cox_{subtype_df$names[i]}_{subtype_df$subtype[i]}_PFS_additive_terms_subtype_predicted_ancestry.RDS"))
+  )
+  
+    subtype_hist <- metadata %>%
+    filter(plot_group == subtype_df$hist[i] & grepl(subtype_df$subtype[i], OPC_methyl_subtype))
+    
+      kap_os <- survival_analysis(
+                  metadata  = subtype_hist,
+                  ind_var = "predicted_ancestry",
+                  test = "kap.meier",
+                  metadata_sample_col = "Kids_First_Biospecimen_ID",
+                  days_col = "OS_days",
+                  status_col = "OS_status"
+                  )
+
+  readr::write_rds(kap_os, km_os_model_file)
+  
+  kap_pfs <- survival_analysis(
+                metadata  = subtype_hist,
+                ind_var = "predicted_ancestry",
+                test = "kap.meier",
+                metadata_sample_col = "Kids_First_Biospecimen_ID",
+                days_col = "PFS_days",
+                status_col = "PFS_status"
+                )
+  
+    readr::write_rds(kap_pfs, km_pfs_model_file)
+    
+    if (subtype_df$hist[i] == "Low-grade glioma"){
+      
+      subtype_hist <- subtype_hist %>%
+        filter(extent_of_tumor_resection != 'Not Reported') %>%
+        dplyr::mutate(predicted_ancestry = factor(predicted_ancestry,
+                                                c("EAS", "AFR", "AMR", "EUR", "SAS")))
+    } else {
+      
+      subtype_hist <- subtype_hist %>%
+        filter(extent_of_tumor_resection != 'Not Reported') %>%
+        dplyr::mutate(predicted_ancestry = factor(predicted_ancestry,
+                                                c("EUR", "AFR", "AMR", "EAS", "SAS")))
+    }
+
+
+    add_model_os <- fit_save_model(subtype_hist,
+                                  terms = ifelse(subtype_df$hist[i] %in% c("Mixed neuronal-glial tumor", "Low-grade glioma"),
+                                                 "extent_of_tumor_resection+predicted_ancestry",
+                                                 "predicted_ancestry"),
+                                   coxph_os_model_file,
+                                   "multivariate",
+                                   years_col = "OS_years",
+                                   status_col = "OS_status")
+    
+    add_model_os <- fit_save_model(subtype_hist,
+                                  terms = ifelse(subtype_df$hist[i] %in% c("Mixed neuronal-glial tumor", "Low-grade glioma"),
+                                                 "extent_of_tumor_resection+predicted_ancestry",
+                                                 "predicted_ancestry"),
+                                     coxph_pfs_model_file,
+                                     "multivariate",
+                                     years_col = "PFS_years",
+                                     status_col = "PFS_status"
+                                    )
+  }
+
+```
