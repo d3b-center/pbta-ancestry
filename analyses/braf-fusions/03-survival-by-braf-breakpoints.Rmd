@@ -24,7 +24,7 @@ results_dir <- file.path(analysis_dir, "results")
 input_dir <- file.path(analysis_dir, "input")
 plot_dir <- file.path(analysis_dir, "plots")
 
-source(file.path(root_dir, "analyses", "survival", "util", "survival_models.R"))
+source(file.path(root_dir, "analyses", "survival", "util", "survival_models_interaction.R"))
 ```
 
 Define file paths
