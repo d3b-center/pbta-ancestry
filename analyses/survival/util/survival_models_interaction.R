@@ -328,9 +328,8 @@ plotKM <- function(model,
       diff_obj <- survdiff(survival::Surv(OS_days, OS_status) ~ term,  
                            model$original_data)
       diff_pvalue <- 1 - pchisq(diff_obj$chisq, length(diff_obj$n) - 1)
-      diff_pvalue_formatted <- format(
-        signif(diff_pvalue, 2),
-        scientific = FALSE)
+      diff_pvalue_formatted <- as.numeric(format(
+        round(diff_pvalue, 3), nsmall = 3))
       
       pvalue_label <- ifelse(diff_pvalue_formatted < 0.001, 
                              paste0(event_type, " P < 0.001"),
@@ -352,9 +351,8 @@ plotKM <- function(model,
       diff_obj <- survdiff(survival::Surv(EFS_days, EFS_status) ~ term,  
                            model$original_data)
       diff_pvalue <- 1 - pchisq(diff_obj$chisq, length(diff_obj$n) - 1)
-      diff_pvalue_formatted <- format(
-        signif(diff_pvalue, 2),
-        scientific = FALSE)
+      diff_pvalue_formatted <- as.numeric(format(
+        round(diff_pvalue, 3), nsmall = 3))
       
       pvalue_label <- ifelse(diff_pvalue_formatted < 0.001, 
                              paste0(event_type, " P < 0.001"),
@@ -395,7 +393,7 @@ plotKM <- function(model,
     
     km_plot_graph <- km_plot$plot + 
       ggplot2::annotate("text", 
-                        3500, 0.9, 
+                        400, 0.15, 
                         label = pvalue_label) +
       theme(legend.text = element_text(size = 16, color = "black")) +
       cowplot::background_grid()
@@ -447,9 +445,8 @@ plotKM <- function(model,
     diff_os_obj <- survdiff(survival::Surv(OS_days, OS_status) ~ variable_os,  
                             data_os)
     diff_os_pvalue <- 1 - pchisq(diff_os_obj$chisq, length(diff_os_obj$n) - 1)
-    diff_os_pvalue_formatted <- format(
-      signif(diff_os_pvalue, 2),
-      scientific = FALSE)
+    diff_os_pvalue_formatted <- as.numeric(format(
+      round(diff_os_pvalue, 3), nsmall = 3))
     
     os_pvalue_label <- ifelse(diff_os_pvalue_formatted < 0.001, 
                               "OS P < 0.001",
@@ -458,9 +455,8 @@ plotKM <- function(model,
     diff_efs_obj <- survdiff(survival::Surv(EFS_days, EFS_status) ~ variable_efs,  
                              data_efs)
     diff_efs_pvalue <- 1 - pchisq(diff_efs_obj$chisq, length(diff_efs_obj$n) - 1)
-    diff_efs_pvalue_formatted <- format(
-      signif(diff_efs_pvalue, 2),
-      scientific = FALSE)
+    diff_efs_pvalue_formatted <- as.numeric(format(
+      round(diff_efs_pvalue, 3), nsmall = 3))
     
     efs_pvalue_label <- ifelse(diff_efs_pvalue_formatted < 0.001, 
                                "EFS P < 0.001",
@@ -485,10 +481,10 @@ plotKM <- function(model,
     
     km_plot_graph <- km_plot$plot + 
       ggplot2::annotate("text", 
-                        300, 0.15, 
+                        500, 0.15, 
                         label = os_pvalue_label) +
       ggplot2::annotate("text", 
-                        300, 0.10, 
+                        500, 0.10, 
                         label = efs_pvalue_label) +
       theme(legend.key.size = unit(1, 'cm')) +
       cowplot::background_grid()
@@ -503,6 +499,7 @@ plotKM <- function(model,
     return(km_final)
     
   }
+  
 }
 
 
