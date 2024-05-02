@@ -14,7 +14,7 @@ analysis_dir <- file.path(root_dir, "analyses", "survival")
 input_dir <- file.path(analysis_dir, "results")
 
 # Load survival functions
-source(file.path(analysis_dir, "util", "survival_models.R"))
+source(file.path(analysis_dir, "util", "survival_models_additive.R"))
 
 ancestry_file <- file.path(input_dir, "merged_ancestry_histology_survival.tsv")
 

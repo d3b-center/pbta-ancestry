@@ -29,7 +29,7 @@ library(circlize)
 root_dir <- rprojroot::find_root(rprojroot::has_dir(".git"))
 analysis_dir <- file.path(root_dir, "analyses", "survival")
 # Source this script, which contains a wrapper function that can conduct the survival analyses, from OpenPBTA
-source(file.path(analysis_dir, "util", "survival_models.R"))
+source(file.path(analysis_dir, "util", "survival_models_additive.R"))
 source(file.path(analysis_dir, "util", "heatmap_function.R"))
 # Magrittr pipe
 `%>%` <- dplyr::`%>%`
