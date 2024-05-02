@@ -1,12 +1,8 @@
-FROM rocker/tidyverse:4.2
+FROM rocker/tidyverse:4.4.0
 
 LABEL maintainer = "Ryan Corbett (corbettr@chop.edu)"
 
-COPY scripts/install_github.r .
 
-COPY scripts/install_bioc.r .
-
-### Install apt-getable packages to start
 #########################################
 RUN apt-get update && apt-get install -y --no-install-recommends apt-utils dialog
 
@@ -25,33 +21,35 @@ RUN apt-get -y --no-install-recommends install \
     libudunits2-dev \
     libmagick++-dev
 
-# install R packages from CRAN
-RUN install2.r \
-	BiocManager \
-	circlize \
-  data.table \
-  ggalluvial \
-  ggpubr \
-  ggthemes \
-	optparse \
-	pheatmap \
-	RColorBrewer \
-	survival \
-  survMisc \
-  survminer \
-  tidytext \
-  openxlsx \
+# Set the Bioconductor repository as the primary repository
+RUN R -e "options(repos = BiocManager::repositories())"
+
+# Install BiocManager and the desired version of Bioconductor
+RUN R -e "install.packages('BiocManager', dependencies=TRUE)"
+RUN R -e "BiocManager::install(version = '3.19')"
+
+# Install packages
+RUN R -e 'BiocManager::install(c( \
+  "biomaRt", \
+  "circlize", \
+  "ComplexHeatmap", \
+  "data.table", \
+  "GenomicRanges", \
+  "ggalluvial", \
+  "ggthemes", \
+  "optparse", \
+  "pheatmap", \
+  "RColorBrewer", \
+  "survival", \
+  "survMisc", \
+  "survminer", \
+  "tidytext", \
+  "openxlsx" \
+))'
   
-  # install R packages from Bioconductor 
-RUN ./install_bioc.r \
-  biomaRt \
-  ComplexHeatmap \
-  GenomicRanges
-  
-RUN ./install_github.r \
-	clauswilke/colorblindr
 	
-RUN ./install_github.r  'thomasp85/patchwork' --ref 'c67c6603ba59dd46899f17197f9858bc5672e9f4'
+RUN R -e "remotes::install_github('clauswilke/colorblindr', ref = '1ac3d4d62dad047b68bb66c06cee927a4517d678', dependencies = TRUE)"
+RUN R -e "remotes::install_github('thomasp85/patchwork', ref = 'c67c6603ba59dd46899f17197f9858bc5672e9f4')"
 	
 WORKDIR /rocker-build/
 
