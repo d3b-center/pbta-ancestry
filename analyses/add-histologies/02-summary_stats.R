@@ -333,3 +333,24 @@ draw(lgg_subtype_ht)
 
 dev.off()
 
+# Plot frequency of MB SHH subtypes among predicted ancestries
+mb_shh_subtypes <- read_tsv(file.path(input_dir, "mb_shh_molecular_subtypes.tsv")) %>%
+  dplyr::rename(molecular_subtype_mb_shh = molecular_subtype)
+
+mb_shh <- ancestry %>%
+  left_join(mb_shh_subtypes %>% dplyr::select(Kids_First_Biospecimen_ID, molecular_subtype_mb_shh),
+            by = c("Kids_First_Biospecimen_ID_tumor" = "Kids_First_Biospecimen_ID")) %>%
+  dplyr::filter(!is.na(molecular_subtype_mb_shh),
+                molecular_subtype_mb_shh != "MB, SHH")
+
+pdf(file.path(plots_dir, "mb_shh_subtype_by_predicted_ancestry.pdf"),
+    width = 5, height = 3)
+
+mbshh_subtype_ht <- plot_enr(mb_shh, "molecular_subtype_mb_shh", "predicted_ancestry",
+                           var1_names = c("MB, SHH alpha", "MB, SHH beta", "MB, SHH gamma", "MB, SHH delta"),
+                           var2_names = c("AFR", "AMR", "EAS", "EUR"),
+                           padjust = FALSE)
+
+draw(mbshh_subtype_ht)
+
+dev.off()
