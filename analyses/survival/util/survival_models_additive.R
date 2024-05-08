@@ -328,9 +328,8 @@ plotKM <- function(model,
       diff_obj <- survdiff(survival::Surv(OS_days, OS_status) ~ term,  
                            model$original_data)
       diff_pvalue <- 1 - pchisq(diff_obj$chisq, length(diff_obj$n) - 1)
-      diff_pvalue_formatted <- format(
-        signif(diff_pvalue, 2),
-        scientific = FALSE)
+      diff_pvalue_formatted <- as.numeric(format(
+        round(diff_pvalue, 3), nsmall = 3))
       
       pvalue_label <- ifelse(diff_pvalue_formatted < 0.001, 
                              paste0(event_type, " P < 0.001"),
@@ -352,9 +351,8 @@ plotKM <- function(model,
       diff_obj <- survdiff(survival::Surv(EFS_days, EFS_status) ~ term,  
                            model$original_data)
       diff_pvalue <- 1 - pchisq(diff_obj$chisq, length(diff_obj$n) - 1)
-      diff_pvalue_formatted <- format(
-        signif(diff_pvalue, 2),
-        scientific = FALSE)
+      diff_pvalue_formatted <- as.numeric(format(
+        round(diff_pvalue, 3), nsmall = 3))
       
       pvalue_label <- ifelse(diff_pvalue_formatted < 0.001, 
                              paste0(event_type, " P < 0.001"),
@@ -447,9 +445,8 @@ plotKM <- function(model,
     diff_os_obj <- survdiff(survival::Surv(OS_days, OS_status) ~ variable_os,  
                             data_os)
     diff_os_pvalue <- 1 - pchisq(diff_os_obj$chisq, length(diff_os_obj$n) - 1)
-    diff_os_pvalue_formatted <- format(
-      signif(diff_os_pvalue, 2),
-      scientific = FALSE)
+    diff_os_pvalue_formatted <- as.numeric(format(
+      round(diff_os_pvalue, 3), nsmall = 3))
     
     os_pvalue_label <- ifelse(diff_os_pvalue_formatted < 0.001, 
                               "OS P < 0.001",
@@ -458,9 +455,8 @@ plotKM <- function(model,
     diff_efs_obj <- survdiff(survival::Surv(EFS_days, EFS_status) ~ variable_efs,  
                              data_efs)
     diff_efs_pvalue <- 1 - pchisq(diff_efs_obj$chisq, length(diff_efs_obj$n) - 1)
-    diff_efs_pvalue_formatted <- format(
-      signif(diff_efs_pvalue, 2),
-      scientific = FALSE)
+    diff_efs_pvalue_formatted <- as.numeric(format(
+      round(diff_efs_pvalue, 3), nsmall = 3))
     
     efs_pvalue_label <- ifelse(diff_efs_pvalue_formatted < 0.001, 
                                "EFS P < 0.001",
