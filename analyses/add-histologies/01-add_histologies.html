@@ -430,31 +430,18 @@ font-size: 0.95em;
 <p>Load libraries and set directories</p>
 <pre class="r"><code>library(data.table)
 library(tidyverse)</code></pre>
-<pre><code>## ── Attaching core tidyverse packages ──────────────────────────────────────────────────────────────────── tidyverse 2.0.0 ──
-## ✔ dplyr     1.1.1     ✔ readr     2.1.4
-## ✔ forcats   1.0.0     ✔ stringr   1.5.0
-## ✔ ggplot2   3.4.2     ✔ tibble    3.2.1
-## ✔ lubridate 1.9.2     ✔ tidyr     1.3.0
-## ✔ purrr     1.0.1     
-## ── Conflicts ────────────────────────────────────────────────────────────────────────────────────── tidyverse_conflicts() ──
-## ✖ dplyr::between()     masks data.table::between()
-## ✖ dplyr::filter()      masks stats::filter()
-## ✖ dplyr::first()       masks data.table::first()
-## ✖ lubridate::hour()    masks data.table::hour()
-## ✖ lubridate::isoweek() masks data.table::isoweek()
-## ✖ dplyr::lag()         masks stats::lag()
-## ✖ dplyr::last()        masks data.table::last()
-## ✖ lubridate::mday()    masks data.table::mday()
-## ✖ lubridate::minute()  masks data.table::minute()
-## ✖ lubridate::month()   masks data.table::month()
-## ✖ lubridate::quarter() masks data.table::quarter()
-## ✖ lubridate::second()  masks data.table::second()
-## ✖ purrr::transpose()   masks data.table::transpose()
-## ✖ lubridate::wday()    masks data.table::wday()
-## ✖ lubridate::week()    masks data.table::week()
-## ✖ lubridate::yday()    masks data.table::yday()
-## ✖ lubridate::year()    masks data.table::year()
-## ℹ Use the conflicted package (&lt;http://conflicted.r-lib.org/&gt;) to force all conflicts to become errors</code></pre>
+<pre><code>## ── Attaching packages ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── tidyverse 1.3.2 ──
+## ✔ ggplot2 3.4.0     ✔ purrr   1.0.1
+## ✔ tibble  3.1.8     ✔ dplyr   1.1.0
+## ✔ tidyr   1.3.0     ✔ stringr 1.5.0
+## ✔ readr   2.1.3     ✔ forcats 1.0.0
+## ── Conflicts ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── tidyverse_conflicts() ──
+## ✖ dplyr::between()   masks data.table::between()
+## ✖ dplyr::filter()    masks stats::filter()
+## ✖ dplyr::first()     masks data.table::first()
+## ✖ dplyr::lag()       masks stats::lag()
+## ✖ dplyr::last()      masks data.table::last()
+## ✖ purrr::transpose() masks data.table::transpose()</code></pre>
 <pre class="r"><code>root_dir &lt;- rprojroot::find_root(rprojroot::has_dir(&quot;.git&quot;))
 
 data_dir &lt;- file.path(root_dir, &quot;data&quot;)
@@ -477,7 +464,7 @@ output_file &lt;- file.path(results_dir, &#39;merged_ancestry_histology_data.tsv
 <h2>Read in somalier results and histologies files</h2>
 <pre class="r"><code>ancestry &lt;- read_tsv(ancestry_file)</code></pre>
 <pre><code>## Rows: 1513 Columns: 13
-## ── Column specification ────────────────────────────────────────────────────────────────────────────────────────────────────
+## ── Column specification ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 ## Delimiter: &quot;\t&quot;
 ## chr  (2): Kids_First_Biospecimen_ID, predicted_ancestry
 ## dbl (10): EAS_prob, AFR_prob, AMR_prob, SAS_prob, EUR_prob, PC1, PC2, PC3, P...
@@ -487,7 +474,7 @@ output_file &lt;- file.path(results_dir, &#39;merged_ancestry_histology_data.tsv
 ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
 <pre class="r"><code>hist &lt;- read_tsv(hist_file, guess_max = 1000000)</code></pre>
 <pre><code>## Rows: 47633 Columns: 58
-## ── Column specification ────────────────────────────────────────────────────────────────────────────────────────────────────
+## ── Column specification ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 ## Delimiter: &quot;\t&quot;
 ## chr (41): Kids_First_Participant_ID, Kids_First_Biospecimen_ID, sample_id, a...
 ## dbl (17): cell_line_passage, OS_days, EFS_days, age_at_diagnosis_days, age_a...
@@ -500,8 +487,11 @@ output_file &lt;- file.path(results_dir, &#39;merged_ancestry_histology_data.tsv
 <p>demographic data, pathology, and clinical data</p>
 <pre class="r"><code># Add participant IDs to `ancestry`
 ancestry &lt;- ancestry %&gt;%
-  left_join(hist[,c(&#39;Kids_First_Biospecimen_ID&#39;, &#39;Kids_First_Participant_ID&#39;, &#39;sample_type&#39;, &quot;cohort_participant_id&quot;)], by = &#39;Kids_First_Biospecimen_ID&#39;) %&gt;%
-  dplyr::filter(sample_type != &#39;Tumor&#39;)
+  left_join(hist[,c(&#39;Kids_First_Biospecimen_ID&#39;, &#39;Kids_First_Participant_ID&#39;, 
+                    &#39;sample_type&#39;, &quot;cohort_participant_id&quot;,
+                    &#39;reported_gender&#39;, &#39;race&#39;, &#39;ethnicity&#39;)], by = &#39;Kids_First_Biospecimen_ID&#39;) %&gt;%
+  dplyr::filter(sample_type != &#39;Tumor&#39;,
+                !grepl(&quot;-P|-M&quot;, cohort_participant_id))
 
 # filter histologies file to exclude Normal samples
 hist_tumor &lt;- hist %&gt;%
@@ -510,8 +500,8 @@ hist_tumor &lt;- hist %&gt;%
 
 # read in plot_mapping file to add plot group to results
 plot_mapping &lt;- read_tsv(plot_mapping_file)</code></pre>
-<pre><code>## Rows: 79 Columns: 9
-## ── Column specification ────────────────────────────────────────────────────────────────────────────────────────────────────
+<pre><code>## Rows: 80 Columns: 9
+## ── Column specification ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 ## Delimiter: &quot;\t&quot;
 ## chr (8): broad_histology, cancer_group, broad_histology_display, plot_group,...
 ## dbl (1): broad_histology_order
@@ -521,16 +511,23 @@ plot_mapping &lt;- read_tsv(plot_mapping_file)</code></pre>
 <pre class="r"><code># add histology data to `ancestry` by participant ID
 ancestry &lt;- ancestry %&gt;%
   dplyr::left_join(hist_tumor[, c(&#39;Kids_First_Participant_ID&#39;, &#39;Kids_First_Biospecimen_ID_tumor&#39;, &#39;sample_id&#39;,
-                              &#39;reported_gender&#39;, &#39;race&#39;, &#39;ethnicity&#39;, &#39;broad_histology&#39;, &#39;cancer_group&#39;,
+                              &#39;broad_histology&#39;, &#39;cancer_group&#39;,
                               &#39;molecular_subtype&#39;, &#39;tumor_descriptor&#39;, &quot;CNS_region&quot;, &#39;extent_of_tumor_resection&#39;, 
                               &#39;age_at_diagnosis_days&#39;, &#39;OS_days&#39;, &#39;OS_status&#39;, &#39;EFS_days&#39;, &quot;EFS_event_type&quot;,
                      &#39;age_at_chemo_start&#39;, &#39;age_at_radiation_start&#39;)], 
             by = &#39;Kids_First_Participant_ID&#39;) %&gt;%
+  # There is one sample (BS_M52K86E6) with no matched tumor in OPC v14, but is known to have an oligodendroglioma. We will manually enter braod_histology and cancer_group info
+  dplyr::mutate(broad_histology = case_when(
+    Kids_First_Biospecimen_ID == &quot;BS_M52K86E6&quot; ~ &quot;Diffuse astrocytic and oligodendroglial tumor&quot;,
+    TRUE ~ broad_histology),
+    cancer_group = case_when(
+      Kids_First_Biospecimen_ID == &quot;BS_M52K86E6&quot; ~ &quot;Oligodendroglioma&quot;,
+      TRUE ~ cancer_group)
+    ) %&gt;%
   dplyr::left_join(plot_mapping[,c(&#39;broad_histology&#39;, &#39;cancer_group&#39;, &#39;plot_group&#39;)], by = c(&#39;broad_histology&#39;, &#39;cancer_group&#39;))</code></pre>
-<pre><code>## Warning in dplyr::left_join(., hist_tumor[, c(&quot;Kids_First_Participant_ID&quot;, : Detected an unexpected many-to-many relationship between `x` and `y`.
-## ℹ Row 14 of `x` matches multiple rows in `y`.
-## ℹ Row 61 of `y` matches multiple rows in `x`.
-## ℹ If a many-to-many relationship is expected, set `relationship = &quot;many-to-many&quot;` to silence this warning.</code></pre>
+<pre><code>## Warning in dplyr::left_join(., hist_tumor[, c(&quot;Kids_First_Participant_ID&quot;, : Each row in `x` is expected to match at most 1 row in `y`.
+## ℹ Row 14 of `x` matches multiple rows.
+## ℹ If multiple matches are expected, set `multiple = &quot;all&quot;` to silence this warning.</code></pre>
 <p>To select one normal-tumor pair per patient, select matched tumors in
 the following prioritization order: intial CNS tumor, recurrent, other.
 There are rare cases of different molecular subtypes being called from
@@ -549,6 +546,17 @@ other_tumors &lt;- ancestry %&gt;%
 <p>Merge data to obtain one row per patient</p>
 <pre class="r"><code>ancestry_unique &lt;- initial_tumors %&gt;%
   bind_rows(recurrent_tumors, other_tumors)</code></pre>
+<p>There is one sample (BS_6Z213H2V) with a matched tumor that is
+unassigned to a plot group but has high-confidence schwannoma by
+methylation subtyping. We will manually enter schwannoma classification,
+and assign any other remaining samples with no plot group to “Other
+tumor”</p>
+<pre class="r"><code>ancestry_unique &lt;- ancestry_unique %&gt;%
+  dplyr::mutate(plot_group = case_when(
+    Kids_First_Biospecimen_ID_tumor == &quot;BS_6Z213H2V&quot; ~ &quot;Schwannoma&quot;,
+    is.na(plot_group) ~ &quot;Other tumor&quot;,
+    TRUE ~ plot_group
+  ))</code></pre>
 </div>
 <div id="write-merged-data-to-file" class="section level1">
 <h1>Write merged data to file</h1>

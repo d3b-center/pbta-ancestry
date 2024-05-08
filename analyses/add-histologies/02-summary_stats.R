@@ -88,9 +88,13 @@ pc12 <- ancestry %>%
   ggplot(aes(x = PC1, y = PC2, fill = predicted_ancestry)) +
   geom_point(size=2, shape=23,
              show.legend = FALSE) +
-  scale_fill_manual(values = okabe_palette,
-                    labels=c("AFR (n=155)", "AMR (n=224)", "EAS (n=67)",
-                             "EUR (n=996)", "SAS (n=43)")) +
+  scale_fill_manual(values = okabe_palette) +
+                    # labels=c(glue::glue("AFR (n={sum(ancestry$predicted_ancestry == 'AFR')})"),
+                    #          glue::glue("AMR (n={sum(ancestry$predicted_ancestry == 'AMR')})"),
+                    #          glue::glue("EAS (n={sum(ancestry$predicted_ancestry == 'EAS')})"),
+                    #          glue::glue("EUR (n={sum(ancestry$predicted_ancestry == 'EUR')})"),
+                    #          glue::glue("SAS (n={sum(ancestry$predicted_ancestry == 'SAS')})")
+                    #          )) +
   theme_Publication()
 
 
@@ -99,8 +103,12 @@ pc34 <- ancestry %>%
   geom_point(size=2, shape=23) +
   labs(fill = "predicted ancestry") +
   scale_fill_manual(values = okabe_palette,
-                    labels=c("AFR (n=155)", "AMR (n=224)", "EAS (n=67)",
-                             "EUR (n=996)", "SAS (n=43)")) +
+                    labels=c(glue::glue("AFR (n={sum(ancestry$predicted_ancestry == 'AFR')})"),
+                             glue::glue("AMR (n={sum(ancestry$predicted_ancestry == 'AMR')})"),
+                             glue::glue("EAS (n={sum(ancestry$predicted_ancestry == 'EAS')})"),
+                             glue::glue("EUR (n={sum(ancestry$predicted_ancestry == 'EUR')})"),
+                             glue::glue("SAS (n={sum(ancestry$predicted_ancestry == 'SAS')})")
+                    )) +
   theme_Publication()
 
 ggarrange(pc12, pc34,

@@ -52,10 +52,13 @@ hist <- read_tsv(hist_file, guess_max = 1000000)
 demographic data, pathology, and clinical data 
 ```{r add histology}
 
-# Add participant IDs to `ancestry`
+# Add participant IDs and demographic data to `ancestry`
 ancestry <- ancestry %>%
-  left_join(hist[,c('Kids_First_Biospecimen_ID', 'Kids_First_Participant_ID', 'sample_type', "cohort_participant_id")], by = 'Kids_First_Biospecimen_ID') %>%
-  dplyr::filter(sample_type != 'Tumor')
+  left_join(hist[,c('Kids_First_Biospecimen_ID', 'Kids_First_Participant_ID', 
+                    'sample_type', "cohort_participant_id",
+                    'reported_gender', 'race', 'ethnicity')], by = 'Kids_First_Biospecimen_ID') %>%
+  dplyr::filter(sample_type != 'Tumor',
+                !grepl("-P|-M", cohort_participant_id))
 
 # filter histologies file to exclude Normal samples
 hist_tumor <- hist %>%
@@ -68,11 +71,19 @@ plot_mapping <- read_tsv(plot_mapping_file)
 # add histology data to `ancestry` by participant ID
 ancestry <- ancestry %>%
   dplyr::left_join(hist_tumor[, c('Kids_First_Participant_ID', 'Kids_First_Biospecimen_ID_tumor', 'sample_id',
-                              'reported_gender', 'race', 'ethnicity', 'broad_histology', 'cancer_group',
+                              'broad_histology', 'cancer_group',
                               'molecular_subtype', 'tumor_descriptor', "CNS_region", 'extent_of_tumor_resection', 
                               'age_at_diagnosis_days', 'OS_days', 'OS_status', 'EFS_days', "EFS_event_type",
                      'age_at_chemo_start', 'age_at_radiation_start')], 
             by = 'Kids_First_Participant_ID') %>%
+  # There is one sample (BS_M52K86E6) with no matched tumor in OPC v14, but is known to have an oligodendroglioma. We will manually enter braod_histology and cancer_group info
+  dplyr::mutate(broad_histology = case_when(
+    Kids_First_Biospecimen_ID == "BS_M52K86E6" ~ "Diffuse astrocytic and oligodendroglial tumor",
+    TRUE ~ broad_histology),
+    cancer_group = case_when(
+      Kids_First_Biospecimen_ID == "BS_M52K86E6" ~ "Oligodendroglioma",
+      TRUE ~ cancer_group)
+    ) %>%
   dplyr::left_join(plot_mapping[,c('broad_histology', 'cancer_group', 'plot_group')], by = c('broad_histology', 'cancer_group'))
 ```
 
@@ -98,6 +109,18 @@ Merge data to obtain one row per patient
 ```{r}
 ancestry_unique <- initial_tumors %>%
   bind_rows(recurrent_tumors, other_tumors)
+```
+
+There is one sample (BS_6Z213H2V) with a matched tumor that is unassigned to a plot group but has high-confidence schwannoma by methylation subtyping. We will manually enter schwannoma classification, and assign any other remaining samples with no plot group to "Other tumor"
+
+```{r}
+ancestry_unique <- ancestry_unique %>%
+  dplyr::mutate(plot_group = case_when(
+    Kids_First_Biospecimen_ID_tumor == "BS_6Z213H2V" ~ "Schwannoma",
+    is.na(plot_group) ~ "Other tumor",
+    TRUE ~ plot_group
+  ))
+
 ```
 
 
