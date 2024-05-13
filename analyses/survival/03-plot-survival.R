@@ -128,13 +128,17 @@ for (var in variables){
         ))
     }
     
-    forest_pdf <- file.path(plots_dir, 
-                            glue::glue("forest_{group_df$subtype[i]}_OS_subtype_{var}.pdf"))
+    if (sum(is.na(broom::tidy(os_survival_result)$estimate)) != nrow(broom::tidy(os_survival_result))) {
     
+      forest_pdf <- file.path(plots_dir, 
+                              glue::glue("forest_{group_df$subtype[i]}_OS_subtype_{var}.pdf"))
+      
+      
+      forest_plot <- try(plotForest(os_survival_result), silent = TRUE)
+      
+      ggsave(forest_pdf, forest_plot, width = 8, height = 3)
     
-    forest_plot <- plotForest(os_survival_result)
-    
-    ggsave(forest_pdf, forest_plot, width = 8, height = 3)
+    }
     
     
     if (grepl("Low-grade glioma|LGG", group_df$group[i])){
@@ -149,14 +153,17 @@ for (var in variables){
         ))
     }
     
-    forest_pdf <- file.path(plots_dir, 
-                            glue::glue("forest_{group_df$subtype[i]}_EFS_subtype_{var}.pdf"))
-    
-    
-    forest_plot <- plotForest(efs_survival_result)
-    
-    ggsave(forest_pdf, forest_plot, width = 8, height = 3)
-    
+    if (sum(is.na(broom::tidy(efs_survival_result)$estimate)) != nrow(broom::tidy(efs_survival_result))) {
+      
+      forest_pdf <- file.path(plots_dir, 
+                              glue::glue("forest_{group_df$subtype[i]}_EFS_subtype_{var}.pdf"))
+      
+      
+      forest_plot <- plotForest(efs_survival_result)
+      
+      ggsave(forest_pdf, forest_plot, width = 8, height = 3)
+      
+    }
     
   }
   

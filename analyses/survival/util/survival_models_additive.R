@@ -328,9 +328,8 @@ plotKM <- function(model,
       diff_obj <- survdiff(survival::Surv(OS_days, OS_status) ~ term,  
                            model$original_data)
       diff_pvalue <- 1 - pchisq(diff_obj$chisq, length(diff_obj$n) - 1)
-      diff_pvalue_formatted <- format(
-        signif(diff_pvalue, 2),
-        scientific = FALSE)
+      diff_pvalue_formatted <- as.numeric(format(
+        round(diff_pvalue, 3), nsmall = 3))
       
       pvalue_label <- ifelse(diff_pvalue_formatted < 0.001, 
                              paste0(event_type, " P < 0.001"),
@@ -352,9 +351,8 @@ plotKM <- function(model,
       diff_obj <- survdiff(survival::Surv(EFS_days, EFS_status) ~ term,  
                            model$original_data)
       diff_pvalue <- 1 - pchisq(diff_obj$chisq, length(diff_obj$n) - 1)
-      diff_pvalue_formatted <- format(
-        signif(diff_pvalue, 2),
-        scientific = FALSE)
+      diff_pvalue_formatted <- as.numeric(format(
+        round(diff_pvalue, 3), nsmall = 3))
       
       pvalue_label <- ifelse(diff_pvalue_formatted < 0.001, 
                              paste0(event_type, " P < 0.001"),
@@ -447,9 +445,8 @@ plotKM <- function(model,
     diff_os_obj <- survdiff(survival::Surv(OS_days, OS_status) ~ variable_os,  
                             data_os)
     diff_os_pvalue <- 1 - pchisq(diff_os_obj$chisq, length(diff_os_obj$n) - 1)
-    diff_os_pvalue_formatted <- format(
-      signif(diff_os_pvalue, 2),
-      scientific = FALSE)
+    diff_os_pvalue_formatted <- as.numeric(format(
+      round(diff_os_pvalue, 3), nsmall = 3))
     
     os_pvalue_label <- ifelse(diff_os_pvalue_formatted < 0.001, 
                               "OS P < 0.001",
@@ -458,9 +455,8 @@ plotKM <- function(model,
     diff_efs_obj <- survdiff(survival::Surv(EFS_days, EFS_status) ~ variable_efs,  
                              data_efs)
     diff_efs_pvalue <- 1 - pchisq(diff_efs_obj$chisq, length(diff_efs_obj$n) - 1)
-    diff_efs_pvalue_formatted <- format(
-      signif(diff_efs_pvalue, 2),
-      scientific = FALSE)
+    diff_efs_pvalue_formatted <- as.numeric(format(
+      round(diff_efs_pvalue, 3), nsmall = 3))
     
     efs_pvalue_label <- ifelse(diff_efs_pvalue_formatted < 0.001, 
                                "EFS P < 0.001",
@@ -576,10 +572,12 @@ plotForest <- function(model) {
          subtitle = glue::glue("{event_type}: N = {survival_n$n} with {survival_n$nevent} events")
     ) + 
     # log-scale the x-axis
-    scale_x_log10() +
+  #  scale_x_log10() +
+    scale_x_log10(labels = function(x) format(x, scientific = FALSE)) +
     ggpubr::theme_pubr() + 
     theme(
-      plot.subtitle = element_text(face = "bold")
+      plot.subtitle = element_text(face = "bold"),
+      plot.margin = margin(r=6, unit = "pt")
     ) +
     # grid makes it easier to follow lines
     cowplot::background_grid()
@@ -593,16 +591,18 @@ plotForest <- function(model) {
     mutate(
       # Clean pvalues into labels. 
       p_string = if_else(
-        p.value >= 0.001, 
-        paste0("P = ",round(p.value,3)),
-        "P < 0.001"
+        p.value >= 0.01, 
+        paste0("P = ", format(round(p.value, 2), nsmall = 2)),
+        "P < 0.01"
       ),
-      # round to 2 digits and create single string with "hr (low-high)"
-      conf.low = signif(conf.low, 2),
-      conf.high = signif(conf.high, 2),
-      estimate = signif(estimate, 2),
+      conf.low = format(round(conf.low, 2), nsmall = 2),
+      conf.high = format(round(conf.high, 2), nsmall = 2),
+      estimate = format(round(estimate, 2), nsmall = 2),
       hr_ci = glue::glue("{estimate} ({conf.low} - {conf.high})")
     ) %>%
+    dplyr::mutate(hr_ci = str_replace_all(hr_ci, " - ", "-"),
+                  hr_ci = str_replace_all(hr_ci, "  ", ""),
+                  hr_ci = str_replace_all(hr_ci, "- ", "-")) %>%
     dplyr::select(term, hr_ci, p_string) %>%
     # this throws a warning but it's ok
     # format tibble for plotting
@@ -612,17 +612,13 @@ plotForest <- function(model) {
   
   labels_panel <- ggplot(survival_df_spread) +
     aes(x = name, y = term, label = value) + 
-    geom_text(hjust = 0, size = 3) +
-    labs(
-      # hack!
-      subtitle = paste0("               ",
-                        "HR (95% CI)        P-value")
-    ) +
+    geom_text(hjust = 0, size = 3,
+              nudge_x = -0.5) +
     ggpubr::theme_pubr() + 
     # remove axes.
     theme(
       axis.title.x = element_blank(),
-      axis.text.x = element_blank(),
+      axis.text.x = element_text(face = "bold"),
       axis.ticks.x = element_blank(),
       axis.line.x = element_blank(),
       axis.title.y = element_blank(),
@@ -630,11 +626,15 @@ plotForest <- function(model) {
       axis.ticks.y = element_blank(),
       axis.line.y = element_blank(),
       # -26 is as low as we can go before plot starts to get coverd
-      plot.margin = margin(6, 0, 36, -25, unit = "pt"),
-      plot.subtitle = element_text(face = "bold")
-    ) 
+      plot.margin = margin(6, 0, 6, 0, unit = "pt"),
+    #  plot.subtitle = element_text(face = "bold")
+    ) +
+    scale_x_discrete(labels = c("      HR (95% CI)            ", 
+                                "P-value              "),
+                     position = "top")
   
-  forest_panels <- cowplot::plot_grid(forest_plot, labels_panel, nrow = 1, rel_widths = c(1,0.5), scale = 0.95)
+  forest_panels <- cowplot::plot_grid(forest_plot, labels_panel, nrow = 1, rel_widths = c(1,0.5), 
+                                      scale = 1, align = "h", hjust = 0, ncol = 2)
   
   print(forest_panels)
 }
