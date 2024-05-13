@@ -148,10 +148,14 @@ braf_fusions <- braf_fusions %>%
     FusionName == "KIAA1549--BRAF" ~ glue::glue("{left_exon_rank}:{right_exon_rank}"),
     FusionName == "BRAF--KIAA1549" ~ glue::glue("{right_exon_rank}:{left_exon_rank}")
     )) %>%
-  dplyr::select(-subjectHits, -queryHits)
+  dplyr::select(-subjectHits, -queryHits) %>%
+  dplyr::mutate(breakpoint_exons = str_replace(
+                                              str_replace(breakpoint_exons,
+                                               ":8", ":08"),
+                                              ":9", ":09"))
 
 # add column indicating if breakpoint is common or rare/novel
-common_breakpoints <- c("16:9", "15:9", "16:11", "18:10")
+common_breakpoints <- c("16:09", "15:09", "16:11", "18:10")
 
 braf_fusions <- braf_fusions %>%
   dplyr::mutate(breakpoint_type = case_when(

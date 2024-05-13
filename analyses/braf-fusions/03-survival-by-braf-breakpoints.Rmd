@@ -47,7 +47,7 @@ braf_hist <- braf_hist %>%
     TRUE ~ predicted_ancestry
   )) %>%
   dplyr::mutate(breakpoint_group = fct_relevel(breakpoint_group,
-                                               c("16:11", "15:9", "16:9", "18:10", "rare")))
+                                               c("16:11", "15:09", "16:09", "18:10", "rare")))
 ```
 
 Run Kaplan-Meier analysis of event-free survival by breakpoint type (common vs. rare)
@@ -101,7 +101,7 @@ Run Kaplan-Meier analysis of event-free survival by predicted ancestry among 16:
 
 ```{r}
 kap_efs_group <- survival_analysis(
-  metadata  = braf_hist[braf_hist$breakpoint_group == "16:9" & !braf_hist$predicted_ancestry %in% c("EAS", "SAS"),],
+  metadata  = braf_hist[braf_hist$breakpoint_group == "16:09" & !braf_hist$predicted_ancestry %in% c("EAS", "SAS"),],
   ind_var = "predicted_ancestry",
   test = "kap.meier",
   metadata_sample_col = "Kids_First_Biospecimen_ID", 
@@ -124,7 +124,7 @@ Run Kaplan-Meier analysis of event-free survival by predicted ancestry among 15:
 
 ```{r}
 kap_efs_group <- survival_analysis(
-  metadata  = braf_hist[braf_hist$breakpoint_group == "15:9",],
+  metadata  = braf_hist[braf_hist$breakpoint_group == "15:09",],
   ind_var = "AS_ancestry",
   test = "kap.meier",
   metadata_sample_col = "Kids_First_Biospecimen_ID", 
@@ -257,7 +257,7 @@ ggsave(file.path(plot_dir, "pbta_ancestry_forest_efs_add_resection_ancestry_brea
 Run and plot cox proportional hazards model of EFS in 16:09 breakpoint patients, including tumor resection and predicted ancestry as covariates
 
 ```{r}
-braf_model_efs <- fit_save_model(braf_hist[braf_hist$extent_of_tumor_resection != "Not Reported" & braf_hist$breakpoint_group == "16:9",],
+braf_model_efs <- fit_save_model(braf_hist[braf_hist$extent_of_tumor_resection != "Not Reported" & braf_hist$breakpoint_group == "16:09",],
                                     terms = "extent_of_tumor_resection+predicted_ancestry",
                file.path(results_dir, "coxph_braf_efs_add_16_9_resection_ancestry_breakpoint.RDS"),
                "multivariate",
@@ -274,7 +274,7 @@ ggsave(file.path(plot_dir, "pbta_ancestry_forest_efs_add_breakpoint16_9_resectio
 Run and plot cox proportional hazards model of EFS in 15:09 breakpoint patients, including tumor resection and predicted ancestry as covariates
 
 ```{r}
-braf_model_efs <- fit_save_model(braf_hist[braf_hist$extent_of_tumor_resection != "Not Reported" & braf_hist$breakpoint_group == "15:9",],
+braf_model_efs <- fit_save_model(braf_hist[braf_hist$extent_of_tumor_resection != "Not Reported" & braf_hist$breakpoint_group == "15:09",],
                                     terms = "extent_of_tumor_resection+AS_ancestry",
                file.path(results_dir, "coxph_braf_efs_add_15_9_resection_ancestry_breakpoint.RDS"),
                "multivariate",

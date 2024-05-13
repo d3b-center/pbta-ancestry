@@ -70,8 +70,13 @@ braf_fusions_dgd <- read_tsv(fusion_dgd_file) %>%
   dplyr::select(Kids_First_Biospecimen_ID, FusionName, `5_prime_region`, `3_prime_region`) %>%
   dplyr::mutate(`5_prime_region` = gsub("^Exon |^exon ", "", `5_prime_region`),
          `3_prime_region` = gsub("^Exon |^exon ", "", `3_prime_region`),                        
-         breakpoint_exons = paste(`5_prime_region`, `3_prime_region`, sep = ":"),
-         breakpoint_type = case_when(breakpoint_exons %in% c("16:9", "15:9", "16:11", "18:10") ~ "common",
+         breakpoint_exons = paste(`5_prime_region`, `3_prime_region`, sep = ":")) %>%
+    # re-format exon numbers to match those in pbta fusion file
+  dplyr::mutate(breakpoint_exons = str_replace(
+                                              str_replace(breakpoint_exons,
+                                               ":8", ":08"),
+                                              ":9", ":09"),
+         breakpoint_type = case_when(breakpoint_exons %in% c("16:09", "15:09", "16:11", "18:10") ~ "common",
                                      TRUE ~ "rare/novel"),
          keep = "yes") %>%
   left_join(hist[,c("Kids_First_Participant_ID", "Kids_First_Biospecimen_ID")])
@@ -82,13 +87,13 @@ Consolidate all common and rare exon breakpoints per patient
 
 ```{r}
 common_fusions_pbta <- braf_fusions %>%
-  dplyr::filter(breakpoint_exons %in% c("16:9", "15:9", "16:11", "18:10") & keep == "yes") %>%
+  dplyr::filter(breakpoint_exons %in% c("16:09", "15:09", "16:11", "18:10") & keep == "yes") %>%
   distinct(Kids_First_Participant_ID, breakpoint_exons, .keep_all = T) %>%
   group_by(Kids_First_Participant_ID) %>%
   summarise(breakpoint_exons_common = str_c(breakpoint_exons, collapse = ";"))
 
 common_fusions <- braf_fusions_dgd %>%
-  dplyr::filter(breakpoint_exons %in% c("16:9", "15:9", "16:11", "18:10") & keep == "yes") %>%
+  dplyr::filter(breakpoint_exons %in% c("16:09", "15:09", "16:11", "18:10") & keep == "yes") %>%
   distinct(Kids_First_Participant_ID, breakpoint_exons, .keep_all = T) %>%
   group_by(Kids_First_Participant_ID) %>%
   summarise(breakpoint_exons_common = str_c(breakpoint_exons, collapse = ";")) %>%
@@ -98,13 +103,13 @@ common_fusions <- braf_fusions_dgd %>%
   summarise(breakpoint_exons_common = str_c(breakpoint_exons_common, collapse = ";"))
 
 rare_novel_fusions_pbta <- braf_fusions %>%
-  dplyr::filter(!breakpoint_exons %in% c("16:9", "15:9", "16:11", "18:10") & keep == "yes") %>%
+  dplyr::filter(!breakpoint_exons %in% c("16:09", "15:09", "16:11", "18:10") & keep == "yes") %>%
   distinct(Kids_First_Participant_ID, breakpoint_exons, .keep_all = T) %>%
   group_by(Kids_First_Participant_ID) %>%
   summarise(breakpoint_exons_rare = str_c(breakpoint_exons, collapse = ";"))
 
 rare_novel_fusions <- braf_fusions_dgd %>%
-  dplyr::filter(!breakpoint_exons %in% c("16:9", "15:9", "16:11", "18:10") & keep == "yes") %>%
+  dplyr::filter(!breakpoint_exons %in% c("16:09", "15:09", "16:11", "18:10") & keep == "yes") %>%
   distinct(Kids_First_Participant_ID, breakpoint_exons, .keep_all = T) %>%
   group_by(Kids_First_Participant_ID) %>%
   summarise(breakpoint_exons_rare = str_c(breakpoint_exons, collapse = ";")) %>%
@@ -124,8 +129,8 @@ fusions_all <- common_fusions %>%
   # Assign breakpoint group (unique common breakpoint or broad rare group)
   dplyr::mutate(breakpoint_group = case_when(
     !is.na(breakpoint_exons_common) & !is.na(breakpoint_exons_rare) ~ NA_character_,
-    breakpoint_exons_common == "16:9" ~ "16:9",
-    breakpoint_exons_common == "15:9" ~ "15:9",
+    breakpoint_exons_common == "16:09" ~ "16:09",
+    breakpoint_exons_common == "15:09" ~ "15:09",
     breakpoint_exons_common == "16:11" ~ "16:11",
     breakpoint_exons_common == "18:10" ~ "18:10",
     !is.na(breakpoint_exons_rare) ~ "rare",
@@ -143,7 +148,7 @@ scores <- hist %>%
   filter(dkfz_v12_methylation_subclass_score >= 0.8,
          # grab only PA subtypes
          grepl("PA_", dkfz_v12_methylation_subclass)) %>%
-  select("match_id", "dkfz_v12_methylation_subclass") %>%
+  dplyr::select("match_id", "dkfz_v12_methylation_subclass") %>%
   group_by(match_id) %>%
   summarise(dkfz_v12_methylation_subclass = str_c(unique(dkfz_v12_methylation_subclass), collapse = ";")) %>%
   unique()
@@ -182,7 +187,7 @@ table(braf_hist$breakpoint_exons_common, braf_hist$predicted_ancestry)
 Calculate fusion breakpoint frequency by predicted ancestry and Fisher's exact test p-value 
 
 ```{r}
-common_breakpoints <- c("16:9", "15:9", "16:11", "18:10")
+common_breakpoints <- c("16:09", "15:09", "16:11", "18:10")
 
 common_df <- braf_hist %>%
   dplyr::filter(breakpoint_exons_common %in% common_breakpoints) %>%
@@ -208,16 +213,10 @@ write_tsv(common_df,
 Calculate breakpoint group odds ratios and p-values across predicted ancestries, and plot
 
 ```{r}
-braf_hist <- braf_hist %>%
-  dplyr::mutate(AS_ancestry = case_when(
-    predicted_ancestry %in% c("EAS", "SAS") ~ "AS",
-    TRUE ~ predicted_ancestry
-  ))
-
 group_ht <- plot_enr(braf_hist, 
-                     "breakpoint_group", "AS_ancestry",
-                     var2_names = c("AFR", "AMR", "AS", "EUR"),
-                     var1_names = c("15:9", "16:9", "16:11", "18:10", "rare"))
+                     "breakpoint_group", "predicted_ancestry",
+                     var2_names = c("AFR", "AMR", "EAS", "EUR", "SAS"),
+                     var1_names = c("15:09", "16:09", "16:11", "18:10", "rare"))
 
 # plot enrichment results
 pdf(file.path(plot_dir, "breakpoint_group_ancestry_ct_enr_heatmap.pdf"),
@@ -294,7 +293,7 @@ Plot methyl subtype by breakpoint group
 
 methyl_ht <- plot_enr(braf_hist[!is.na(braf_hist$dkfz_v12_methylation_subclass),], 
                      "breakpoint_group", "dkfz_v12_methylation_subclass",
-                     var1_names = c("15:9", "16:9", "16:11", "18:10", "rare"),
+                     var1_names = c("15:09", "16:09", "16:11", "18:10", "rare"),
                      var2_names = sort(unique(braf_hist$dkfz_v12_methylation_subclass)))
 
 # plot enrichment results
@@ -336,7 +335,7 @@ braf_hist <- braf_hist %>%
 
 resection_ht <- plot_enr(braf_hist[!grepl("Not Reported", braf_hist$resection),], 
                      "breakpoint_group", "resection",
-                     var1_names = c("15:9", "16:9", "16:11", "18:10", "rare"),
+                     var1_names = c("15:09", "16:09", "16:11", "18:10", "rare"),
                      var2_names = c("Gross/Near total", "Partial", "Biopsy only"))
 
 # plot enrichment results
@@ -373,7 +372,7 @@ Plot CNS region by breakpoint group
 
 region_ht <- plot_enr(braf_hist[braf_hist$CNS_region != "Mixed",], 
                      "breakpoint_group", "CNS_region",
-                     var1_names = c("15:9", "16:9", "16:11", "18:10", "rare"),
+                     var1_names = c("15:09", "16:09", "16:11", "18:10", "rare"),
                      var2_names = sort(unique(braf_hist$CNS_region[braf_hist$CNS_region != "Mixed"])))
 
 # plot enrichment results
