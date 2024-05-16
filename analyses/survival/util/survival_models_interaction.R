@@ -8,6 +8,9 @@
 # Attach this package
 library(survminer)
 
+# set locale to system default UTF-8 to print "±" in plots
+Sys.setlocale("LC_ALL","en_US.UTF-8")
+
 # Magrittr pipe
 `%>%` <- dplyr::`%>%`
 
