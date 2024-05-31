@@ -2906,15 +2906,15 @@ library(ggpubr)</code></pre>
 <!-- rnb-source-begin eyJkYXRhIjoibGlicmFyeSh0aWR5dmVyc2UpIn0= -->
 <pre class="r"><code>library(tidyverse)</code></pre>
 <!-- rnb-source-end -->
-<!-- rnb-message-begin eyJkYXRhIjoiLS0gQXR0YWNoaW5nIGNvcmUgdGlkeXZlcnNlIHBhY2thZ2VzIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tIHRpZHl2ZXJzZSAyLjAuMCAtLVxudiBkcGx5ciAgICAgMS4xLjQgICAgIHYgcmVhZHIgICAgIDIuMS41XG52IGZvcmNhdHMgICAxLjAuMCAgICAgdiBzdHJpbmdyICAgMS41LjFcbnYgbHVicmlkYXRlIDEuOS4zICAgICB2IHRpYmJsZSAgICAzLjIuMVxudiBwdXJyciAgICAgMS4wLjIgICAgIHYgdGlkeXIgICAgIDEuMy4xXG4ifQ== -->
-<pre><code>-- Attaching core tidyverse packages -------------------------------------------------------------------------------- tidyverse 2.0.0 --
+<!-- rnb-message-begin eyJkYXRhIjoiLS0gQXR0YWNoaW5nIGNvcmUgdGlkeXZlcnNlIHBhY2thZ2VzIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tIHRpZHl2ZXJzZSAyLjAuMCAtLVxudiBkcGx5ciAgICAgMS4xLjQgICAgIHYgcmVhZHIgICAgIDIuMS41XG52IGZvcmNhdHMgICAxLjAuMCAgICAgdiBzdHJpbmdyICAgMS41LjFcbnYgbHVicmlkYXRlIDEuOS4zICAgICB2IHRpYmJsZSAgICAzLjIuMVxudiBwdXJyciAgICAgMS4wLjIgICAgIHYgdGlkeXIgICAgIDEuMy4xXG4ifQ== -->
+<pre><code>-- Attaching core tidyverse packages ----------------------------------------------------------------------------------------------------------------------- tidyverse 2.0.0 --
 v dplyr     1.1.4     v readr     2.1.5
 v forcats   1.0.0     v stringr   1.5.1
 v lubridate 1.9.3     v tibble    3.2.1
 v purrr     1.0.2     v tidyr     1.3.1</code></pre>
 <!-- rnb-message-end -->
-<!-- rnb-message-begin eyJkYXRhIjoiLS0gQ29uZmxpY3RzIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tIHRpZHl2ZXJzZV9jb25mbGljdHMoKSAtLVxueCBkcGx5cjo6ZmlsdGVyKCkgbWFza3Mgc3RhdHM6OmZpbHRlcigpXG54IGRwbHlyOjpsYWcoKSAgICBtYXNrcyBzdGF0czo6bGFnKClcbmkgVXNlIHRoZSBjb25mbGljdGVkIHBhY2thZ2UgKDxodHRwOi8vY29uZmxpY3RlZC5yLWxpYi5vcmcvPikgdG8gZm9yY2UgYWxsIGNvbmZsaWN0cyB0byBiZWNvbWUgZXJyb3JzXG4ifQ== -->
-<pre><code>-- Conflicts -------------------------------------------------------------------------------------------------- tidyverse_conflicts() --
+<!-- rnb-message-begin eyJkYXRhIjoiLS0gQ29uZmxpY3RzIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tIHRpZHl2ZXJzZV9jb25mbGljdHMoKSAtLVxueCBkcGx5cjo6ZmlsdGVyKCkgbWFza3Mgc3RhdHM6OmZpbHRlcigpXG54IGRwbHlyOjpsYWcoKSAgICBtYXNrcyBzdGF0czo6bGFnKClcbmkgVXNlIHRoZSBjb25mbGljdGVkIHBhY2thZ2UgKDxodHRwOi8vY29uZmxpY3RlZC5yLWxpYi5vcmcvPikgdG8gZm9yY2UgYWxsIGNvbmZsaWN0cyB0byBiZWNvbWUgZXJyb3JzXG4ifQ== -->
+<pre><code>-- Conflicts ----------------------------------------------------------------------------------------------------------------------------------------- tidyverse_conflicts() --
 x dplyr::filter() masks stats::filter()
 x dplyr::lag()    masks stats::lag()
 i Use the conflicted package (&lt;http://conflicted.r-lib.org/&gt;) to force all conflicts to become errors</code></pre>
@@ -3026,9 +3026,9 @@ if (!dir.exists(plots_dir)) {
 <!-- rnb-source-begin eyJkYXRhIjoibWV0YWRhdGEgPC0gcmVhZHI6OnJlYWRfdHN2KGFuY2VzdHJ5X2ZpbGUpIn0= -->
 <pre class="r"><code>metadata &lt;- readr::read_tsv(ancestry_file)</code></pre>
 <!-- rnb-source-end -->
-<!-- rnb-message-begin eyJkYXRhIjoiUm93czogMTQ4NCBDb2x1bW5zOiA0MVxuLS0gQ29sdW1uIHNwZWNpZmljYXRpb24gLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLVxuRGVsaW1pdGVyOiBcIlxcdFwiXG5jaHIgKDIyKTogS2lkc19GaXJzdF9CaW9zcGVjaW1lbl9JRCwgcHJlZGljdGVkX2FuY2VzdHJ5LCBLaWRzX0ZpcnN0X1BhcnRpY2lwLi4uXG5kYmwgKDE4KTogRUFTX3Byb2IsIEFGUl9wcm9iLCBBTVJfcHJvYiwgU0FTX3Byb2IsIEVVUl9wcm9iLCBQQzEsIFBDMiwgUEMzLCBQLi4uXG5sZ2wgICgxKTogZ2l2ZW5fYW5jZXN0cnlcblxuaSBVc2UgYHNwZWMoKWAgdG8gcmV0cmlldmUgdGhlIGZ1bGwgY29sdW1uIHNwZWNpZmljYXRpb24gZm9yIHRoaXMgZGF0YS5cbmkgU3BlY2lmeSB0aGUgY29sdW1uIHR5cGVzIG9yIHNldCBgc2hvd19jb2xfdHlwZXMgPSBGQUxTRWAgdG8gcXVpZXQgdGhpcyBtZXNzYWdlLlxuIn0= -->
+<!-- rnb-message-begin eyJkYXRhIjoiUm93czogMTQ4NCBDb2x1bW5zOiA0MVxuLS0gQ29sdW1uIHNwZWNpZmljYXRpb24gLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLVxuRGVsaW1pdGVyOiBcIlxcdFwiXG5jaHIgKDIyKTogS2lkc19GaXJzdF9CaW9zcGVjaW1lbl9JRCwgcHJlZGljdGVkX2FuY2VzdHJ5LCBLaWRzX0ZpcnN0X1BhcnRpY2lwLi4uXG5kYmwgKDE4KTogRUFTX3Byb2IsIEFGUl9wcm9iLCBBTVJfcHJvYiwgU0FTX3Byb2IsIEVVUl9wcm9iLCBQQzEsIFBDMiwgUEMzLCBQLi4uXG5sZ2wgICgxKTogZ2l2ZW5fYW5jZXN0cnlcblxuaSBVc2UgYHNwZWMoKWAgdG8gcmV0cmlldmUgdGhlIGZ1bGwgY29sdW1uIHNwZWNpZmljYXRpb24gZm9yIHRoaXMgZGF0YS5cbmkgU3BlY2lmeSB0aGUgY29sdW1uIHR5cGVzIG9yIHNldCBgc2hvd19jb2xfdHlwZXMgPSBGQUxTRWAgdG8gcXVpZXQgdGhpcyBtZXNzYWdlLlxuIn0= -->
 <pre><code>Rows: 1484 Columns: 41
--- Column specification ----------------------------------------------------------------------------------------------------------------
+-- Column specification -------------------------------------------------------------------------------------------------------------------------------------------------------
 Delimiter: &quot;\t&quot;
 chr (22): Kids_First_Biospecimen_ID, predicted_ancestry, Kids_First_Particip...
 dbl (18): EAS_prob, AFR_prob, AMR_prob, SAS_prob, EUR_prob, PC1, PC2, PC3, P...

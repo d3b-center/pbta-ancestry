@@ -8,6 +8,9 @@
 # Attach this package
 library(survminer)
 
+# set locale to system default UTF-8 to print "±" in plots
+Sys.setlocale("LC_ALL","en_US.UTF-8")
+
 # Magrittr pipe
 `%>%` <- dplyr::`%>%`
 
@@ -503,8 +506,6 @@ plotKM <- function(model,
 
 
 
-
-
 plotForest <- function(model) {
   
   # Determine if OS or EFS model 
@@ -529,15 +530,20 @@ plotForest <- function(model) {
     dplyr::select(n, nevent)
   
   # Convert survival model result to data frame, and exponentiate estimates/CIs to get HRs
-  survival_df <- broom::tidy(model) %>%
-    
+  survival_df <- summary(model)$coefficients %>%
+    as.data.frame() %>%
+    rownames_to_column("term") %>%
+    bind_cols(summary(model)$conf.int[,3:4]) %>%
+    dplyr::filter(!is.nan(`Pr(>|z|)`)) %>%
+  
     # Add references
     add_row(term = term_order[!term_order %in% broom::tidy(model)$term], 
-            estimate = 0) %>%
+            `exp(coef)` = 1) %>%
     mutate(
-      conf.low = exp(estimate-std.error),
-      conf.high = exp(estimate+std.error),
-      estimate = exp(estimate),
+      conf.low = `lower .95`,
+      conf.high = `upper .95`,
+      estimate = `exp(coef)`,
+      p.value = `Pr(>|z|)`,
       # significance indicator column for filling points.
       # Note T/F these are strings for type compatibility with "REF"
       significant = case_when(p.value <= 0.05 ~ "TRUE", 
