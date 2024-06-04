@@ -31,8 +31,6 @@ docker exec -ti <CONTAINER_NAME> bash
 bash download_data.sh
 ```
 
-## Code Authors
-
 ### Contact
 
 For questions, please submit an issue or send an email to Ryan Corbett ([@rjcorb](https://github.com/rjcorb)): corbettr@chop.edu
