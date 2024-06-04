@@ -33,8 +33,6 @@ bash download_data.sh
 
 ## Code Authors
 
-Ryan Corbett ([@rjcorb](https://github.com/rjcorb)), Jo Lynne Rokita ([@jharenza](https://github.com/jharenza)), Zhuangzhuang Geng ([@zzgeng](https://github.com/zzgeng)), Antonia Chroni ([@AntoniaChroni](https://github.com/AntoniaChroni)), and Ammar S. Naqvi ([@naqvia](https://github.com/naqvia))
-
 ### Contact
 
 For questions, please submit an issue or send an email to Ryan Corbett ([@rjcorb](https://github.com/rjcorb)): corbettr@chop.edu
