@@ -370,7 +370,7 @@ round(table(braf_hist$CNS_region, braf_hist$extent_of_tumor_resection)/as.vector
 fisher.test(table(braf_hist$CNS_region, braf_hist$extent_of_tumor_resection), simulate.p.value= T)
 ```
 
-````{r}
+```{r}
 hist <- read_tsv(file.path(data_dir, "histologies.tsv"))
 
 diagnoses <- read_tsv(file.path(input_dir, "lgg_braf_fusion_final_diagnosis.txt"))
