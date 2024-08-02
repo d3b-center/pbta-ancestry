@@ -73,6 +73,7 @@ pdf(file.path(plots_dir, "low_major_ancestry_heatmap.pdf"),
     height = 6, width = 3)
 
 pheatmap(low_major,
+         name = "probability",
          col = colors,
          treeheight_row = 20,
          treeheight_col = 10,
@@ -251,7 +252,8 @@ race_ht <- plot_enr(ancestry, "race", "predicted_ancestry",
                  var1_names = c("AI/AN", "Asian", "Black/Afr. Am.",
                                 "NHPI", "White", ">1 Race",
                                 "Race Unknown"),
-                 var2_names = c("AFR", "AMR", "EAS", "EUR", "SAS"))
+                 var2_names = c("AFR", "AMR", "EAS", "EUR", "SAS"),
+                 padjust = TRUE)
 
 draw(race_ht)
 
@@ -264,7 +266,8 @@ pdf(file.path(plots_dir, "ethnicity_ancestry_ct_enr_heatmap.pdf"),
 ethn_ht <- plot_enr(ancestry, "ethnicity", "predicted_ancestry",
                     var1_names = c("Hispanic/Latino", "Not Hispanic/Latino",
                                    "Ethnicity Unknown"),
-                    var2_names = c("AFR", "AMR", "EAS", "EUR", "SAS"))
+                    var2_names = c("AFR", "AMR", "EAS", "EUR", "SAS"),
+                    padjust = TRUE)
 
 draw(ethn_ht)
 
@@ -286,35 +289,59 @@ invisible(dev.off())
 
 # plot extent of tumor resection heatmap in pLGG
 
-lgg <- ancestry %>%
-  filter(plot_group == "Low-grade glioma") %>%
+ancestry <- ancestry %>%
+#  filter(plot_group == "Low-grade glioma") %>%
   dplyr::mutate(extent_of_tumor_resection = case_when(
     extent_of_tumor_resection %in% c("Unavailable", "Not Reported") ~ "Unavailable/Unreported",
     grepl("Gross/Near total resection", extent_of_tumor_resection) ~ "Gross/Near total resection",
     TRUE ~ extent_of_tumor_resection
-  ))
+  )) %>%
+  dplyr::mutate(extent_of_tumor_resection = fct_relevel(extent_of_tumor_resection,
+                                                   c("Gross/Near total resection", "Partial resection", "Biopsy only",
+                                                     "Unavailable/Unreported")))
 
-pdf(file.path(plots_dir, "lgg_tumor_resection_by_predicted_ancestry.pdf"),
-    width = 6, height = 3)
+group_df <- data.frame(plot_group = c("Atypical Teratoid Rhabdoid Tumor",
+                                      "Craniopharyngioma",
+                                      "Ependymoma", "Mixed neuronal-glial tumor",
+                                      "Low-grade glioma", "Medulloblastoma",
+                                      "Other high-grade glioma"),
+                       abbreviation = c("atrt", "cpg", "epn", "gnt", "lgg",
+                                        "mb", "hgg"))
 
-resection_ht <- plot_enr(lgg[!is.na(lgg$extent_of_tumor_resection),], "extent_of_tumor_resection", "predicted_ancestry",
-                     var1_names = c("Gross/Near total resection", "Partial resection", "Biopsy only",
-                                    "Unavailable/Unreported"),
-                     var2_names = c("AFR", "AMR", "EAS", "EUR", "SAS"),
-                     padjust = FALSE)
+pdf(NULL)
 
-draw(resection_ht)
+for (i in 1:nrow(group_df)){
+  
+  group <- group_df$plot_group[i]
+  abbrev <- group_df$abbreviation[i]
+  
+  
+  group_anc <- ancestry %>%
+    dplyr::filter(plot_group == group,
+                  !is.na(extent_of_tumor_resection))
 
-invisible(dev.off())
+  pdf(file.path(plots_dir, glue::glue("{abbrev}_tumor_resection_by_predicted_ancestry.pdf")),
+      width = 6, height = 3)
+
+  resection_ht <- plot_enr(group_anc, "extent_of_tumor_resection", "predicted_ancestry",
+                          var1_names = unique(group_anc$extent_of_tumor_resection),
+                          var2_names = sort(unique(group_anc$predicted_ancestry)),
+                          padjust = TRUE)
+  
+  draw(resection_ht)
+  
+  invisible(dev.off())
+  
+}
 
 # Plot tumor location by predicted ancestry (LGG only)
 pdf(file.path(plots_dir, "lgg_tumor_location_by_predicted_ancestry.pdf"),
     width = 6, height = 4)
 
-lgg_region_ht <- plot_enr(lgg[!is.na(lgg$CNS_region),], "CNS_region", "predicted_ancestry",
-                         var1_names = sort(unique(lgg$CNS_region[!is.na(lgg$CNS_region)])),
+lgg_region_ht <- plot_enr(ancestry[ancestry$plot_group == "Low-grade glioma" & !is.na(ancestry$CNS_region),], "CNS_region", "predicted_ancestry",
+                         var1_names = sort(unique(ancestry$CNS_region[ancestry$plot_group == "Low-grade glioma" & !is.na(ancestry$CNS_region)])),
                          var2_names = c("AFR", "AMR", "EAS", "EUR", "SAS"),
-                         padjust = FALSE)
+                         padjust = TRUE)
 
 draw(lgg_region_ht)
 
@@ -324,8 +351,8 @@ dev.off()
 pdf(file.path(plots_dir, "lgg_subtype_by_predicted_ancestry.pdf"),
     width = 5, height = 14)
 
-lgg_subtype_ht <- plot_enr(lgg[!is.na(lgg$molecular_subtype),], "molecular_subtype", "predicted_ancestry",
-                          var1_names = sort(unique(lgg$molecular_subtype[!is.na(lgg$molecular_subtype)])),
+lgg_subtype_ht <- plot_enr(ancestry[ancestry$plot_group == "Low-grade glioma" & !is.na(ancestry$molecular_subtype),], "molecular_subtype", "predicted_ancestry",
+                          var1_names = sort(unique(ancestry$molecular_subtype[ancestry$plot_group == "Low-grade glioma" & !is.na(ancestry$molecular_subtype)])),
                           var2_names = c("AFR", "AMR", "EAS", "EUR", "SAS"),
                           padjust = FALSE)
 
@@ -349,7 +376,7 @@ pdf(file.path(plots_dir, "mb_shh_subtype_by_predicted_ancestry.pdf"),
 mbshh_subtype_ht <- plot_enr(mb_shh, "molecular_subtype_mb_shh", "predicted_ancestry",
                            var1_names = c("MB, SHH alpha", "MB, SHH beta", "MB, SHH gamma", "MB, SHH delta"),
                            var2_names = c("AFR", "AMR", "EAS", "EUR"),
-                           padjust = FALSE)
+                           padjust = TRUE)
 
 draw(mbshh_subtype_ht)
 
