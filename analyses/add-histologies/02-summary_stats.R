@@ -318,7 +318,8 @@ for (i in 1:nrow(group_df)){
   
   group_anc <- ancestry %>%
     dplyr::filter(plot_group == group,
-                  !is.na(extent_of_tumor_resection))
+                  !is.na(extent_of_tumor_resection),
+                  !grepl("Unavailable", extent_of_tumor_resection))
 
   pdf(file.path(plots_dir, glue::glue("{abbrev}_tumor_resection_by_predicted_ancestry.pdf")),
       width = 6, height = 3)
