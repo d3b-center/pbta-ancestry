@@ -325,7 +325,7 @@ for (i in 1:nrow(group_df)){
       width = 6, height = 3)
 
   resection_ht <- plot_enr(group_anc, "extent_of_tumor_resection", "predicted_ancestry",
-                          var1_names = unique(group_anc$extent_of_tumor_resection),
+                          var1_names = sort(unique(group_anc$extent_of_tumor_resection)),
                           var2_names = sort(unique(group_anc$predicted_ancestry)),
                           padjust = TRUE)
   
