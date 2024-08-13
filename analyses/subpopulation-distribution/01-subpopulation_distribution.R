@@ -248,4 +248,5 @@ for (pop in populations){
 # save subpopulation data with BS IDs 
 subpop_df %>%
   dplyr::filter(Kids_First_Biospecimen_ID %in% ancestry$Kids_First_Biospecimen_ID) %>%
+  left_join(ancestry %>% dplyr::select(Kids_First_Biospecimen_ID, predicted_ancestry)) %>%
   write_tsv(file.path(results_dir, "pbta-somalier-subpopulations.tsv"))
