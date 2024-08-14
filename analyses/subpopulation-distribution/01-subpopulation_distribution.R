@@ -19,7 +19,7 @@ source(file.path(root_dir, "figures", "theme.R"))
 
 # Set file paths
 
-subpopulation_file <- file.path(input_dir, "PBTA_population.somalier-ancestry.tsv")
+subpopulation_file <- file.path(input_dir, "DEI_CBTN-PNOC_rerun_subpopulation.somalier-ancestry.tsv")
 
 hist_file <- file.path(data_dir, "histologies.tsv")
 
@@ -37,12 +37,13 @@ subpop_df <- read_tsv(subpopulation_file) %>%
   dplyr::filter(is.na(given_ancestry)) %>%
   # sample IDs are OPC aliquot IDs
   dplyr::rename(aliquot_id = `#sample_id`) %>%
-  dplyr::mutate(aliquot_id = str_replace(aliquot_id, "_D1", "")) %>%
+  dplyr::mutate(aliquot_id = str_replace(aliquot_id, "_D1|_D$", "")) %>%
   # Get corresponding BS IDs from OPC hist
   dplyr::mutate(Kids_First_Biospecimen_ID = case_when(
     grepl("BS", aliquot_id) ~ aliquot_id,
     TRUE ~ opc_hist$Kids_First_Biospecimen_ID[match(aliquot_id, opc_hist$aliquot_id)]
-  ))
+  )) %>%
+  dplyr::filter(Kids_First_Biospecimen_ID %in% ancestry$Kids_First_Biospecimen_ID)
 
 # Create subpopulation-superpopulation key data frame
 
@@ -240,7 +241,7 @@ for (pop in populations){
                             widths = c(0.75, 0.25))
 
   ggsave(file.path(plots_dir,
-                   glue::glue("{pop}_subpopulation_probablilties.pdf")),
+                   glue::glue("{pop}_subpopulation_probabilities.pdf")),
            width = 15, height = 4)
   
 }
