@@ -354,3 +354,36 @@ mbshh_subtype_ht <- plot_enr(mb_shh, "molecular_subtype_mb_shh", "predicted_ance
 draw(mbshh_subtype_ht)
 
 dev.off()
+
+mb <- ancestry %>%
+  dplyr::filter(plot_group == "Medulloblastoma")
+
+
+pdf(file.path(plots_dir, "mb_region_by_predicted_ancestry.pdf"),
+    width = 5, height = 3)
+
+mb_region_ht <- plot_enr(mb, "CNS_region", "predicted_ancestry",
+                             var1_names = unique(mb$CNS_region),
+                             var2_names = sort(unique(mb$predicted_ancestry)),
+                             padjust = TRUE)
+
+draw(mb_region_ht)
+
+dev.off()
+
+
+gnt <- ancestry %>%
+  dplyr::filter(plot_group == "Mixed neuronal-glial tumor")
+
+
+pdf(file.path(plots_dir, "gnt_region_by_predicted_ancestry.pdf"),
+    width = 5, height = 4)
+
+gnt_region_ht <- plot_enr(gnt, "CNS_region", "predicted_ancestry",
+                         var1_names = unique(gnt$CNS_region),
+                         var2_names = sort(unique(gnt$predicted_ancestry)),
+                         padjust = TRUE)
+
+draw(gnt_region_ht)
+
+dev.off()
