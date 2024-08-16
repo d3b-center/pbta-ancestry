@@ -21,12 +21,12 @@ ancestry_file <- file.path(input_dir, "merged_ancestry_histology_survival.tsv")
 
 # Define df of histology names and folder names
 hist_df <- data.frame(group = c("ATRT", "Choroid plexus tumor",
-                                "Craniopharyngioma", "HGG", 
+                                "Craniopharyngioma", "DMG", "HGG", 
                                  "Ependymoma", "Germ cell tumor", "GNG", "LGG", 
                                  "Medulloblastoma", "Meningioma", 
                                  "Mesenchymal tumor", "Neurofibroma Plexiform",
                                  "Oligodendroglioma", "Schwannoma"),
-                       hist = c("ATRT", "CPT", "CRANIO", "HGG", "EPN", "GERM",
+                       hist = c("ATRT", "CPT", "CRANIO", "DMG", "HGG", "EPN", "GERM",
                                 "GNG", "LGG", "MB", "MNG", "MES", "NFP",
                                   "OLIGO", "SWN"))
 
@@ -59,7 +59,7 @@ group_df <- subtype_df %>%
   arrange(group)
   
 # define variables
-variables <- c("predicted_ancestry", "race", "ethnicity", "EUR_status")
+variables <- c("predicted_ancestry", "EUR_status")
 
 pdf(NULL)
 
@@ -116,7 +116,7 @@ for (var in variables){
            device = "pdf")
     
     # Load cox proportional hazards models and plot
-    if (grepl("Low-grade glioma|LGG", group_df$group[i])){
+    if (grepl("Low-grade glioma|LGG|Other high-grade glioma|HGG|ATRT|Schwannoma", group_df$group[i])){
       os_survival_result <- read_rds(
         file.path(input_dir,
                   glue::glue("cox_{group_df$subtype[i]}_OS_additive_terms_subtype_resection_{var}.RDS")
@@ -141,7 +141,7 @@ for (var in variables){
     }
     
     
-    if (grepl("Low-grade glioma|LGG", group_df$group[i])){
+    if (grepl("Low-grade glioma|LGG|Other high-grade glioma|HGG|ATRT|Schwannoma", group_df$group[i])){
       efs_survival_result <- read_rds(
         file.path(input_dir,
                   glue::glue("cox_{group_df$subtype[i]}_EFS_additive_terms_subtype_resection_{var}.RDS")

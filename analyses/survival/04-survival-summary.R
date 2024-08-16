@@ -69,7 +69,7 @@ for (i in 1:nrow(group_df)){
   
   input_dir <- file.path(analysis_dir, "results", group_df$hist[i])
   
-  if (grepl("Low-grade glioma|LGG", group_df$group[i])){
+  if (grepl("Low-grade glioma|LGG|Other high-grade glioma|HGG|ATRT|Schwannoma", group_df$group[i])){
     survival_os_anc <- read_rds(
       file.path(input_dir,
                 glue::glue("cox_{group_df$subtype[i]}_OS_additive_terms_subtype_resection_predicted_ancestry.RDS")
@@ -85,7 +85,7 @@ for (i in 1:nrow(group_df)){
   survival_anc_stats[group_df$group[i],]$OS_p <- round(anova(survival_os_anc)["predicted_ancestry", 4], 2)
   
   
-  if (grepl("Low-grade glioma|LGG", group_df$group[i])){
+  if (grepl("Low-grade glioma|LGG|Other high-grade glioma|HGG|ATRT|Schwannoma", group_df$group[i])){
     survival_efs_anc <- read_rds(
       file.path(input_dir,
                 glue::glue("cox_{group_df$subtype[i]}_EFS_additive_terms_subtype_resection_predicted_ancestry.RDS")
