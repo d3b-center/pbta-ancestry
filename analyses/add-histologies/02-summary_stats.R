@@ -316,7 +316,7 @@ for (i in 1:nrow(group_df)){
   abbrev <- group_df$abbreviation[i]
   
   
-  group_anc <- ancestry %>%
+  group_anc_resection <- ancestry %>%
     dplyr::filter(plot_group == group,
                   !is.na(extent_of_tumor_resection),
                   !grepl("Unavailable", extent_of_tumor_resection))
@@ -324,29 +324,34 @@ for (i in 1:nrow(group_df)){
   pdf(file.path(plots_dir, glue::glue("{abbrev}_tumor_resection_by_predicted_ancestry.pdf")),
       width = 6, height = 3)
 
-  resection_ht <- plot_enr(group_anc, "extent_of_tumor_resection", "predicted_ancestry",
-                          var1_names = sort(unique(group_anc$extent_of_tumor_resection)),
-                          var2_names = sort(unique(group_anc$predicted_ancestry)),
+  resection_ht <- plot_enr(group_anc_resection, "extent_of_tumor_resection", "predicted_ancestry",
+                          var1_names = sort(unique(group_anc_resection$extent_of_tumor_resection)),
+                          var2_names = sort(unique(group_anc_resection$predicted_ancestry)),
                           padjust = TRUE)
   
   draw(resection_ht)
   
   invisible(dev.off())
   
+  
+  group_anc_region <- ancestry %>%
+    dplyr::filter(plot_group == group,
+                  !is.na(CNS_region),
+                  !CNS_region %in% c("Mixed", "Other"))
+  
+  pdf(file.path(plots_dir, glue::glue("{abbrev}_CNS_region_by_predicted_ancestry.pdf")),
+      width = 6, height = 3)
+  
+  region_ht <- plot_enr(group_anc_region, "CNS_region", "predicted_ancestry",
+                           var1_names = sort(unique(group_anc_region$CNS_region)),
+                           var2_names = sort(unique(group_anc_region$predicted_ancestry)),
+                           padjust = TRUE)
+  
+  draw(region_ht)
+  
+  invisible(dev.off())
+  
 }
-
-# Plot tumor location by predicted ancestry (LGG only)
-pdf(file.path(plots_dir, "lgg_tumor_location_by_predicted_ancestry.pdf"),
-    width = 6, height = 4)
-
-lgg_region_ht <- plot_enr(ancestry[ancestry$plot_group == "Low-grade glioma" & !is.na(ancestry$CNS_region),], "CNS_region", "predicted_ancestry",
-                         var1_names = sort(unique(ancestry$CNS_region[ancestry$plot_group == "Low-grade glioma" & !is.na(ancestry$CNS_region)])),
-                         var2_names = c("AFR", "AMR", "EAS", "EUR", "SAS"),
-                         padjust = TRUE)
-
-draw(lgg_region_ht)
-
-dev.off()
 
 # plot LGG molecular subtype by predicted ancestry
 pdf(file.path(plots_dir, "lgg_subtype_by_predicted_ancestry.pdf"),
