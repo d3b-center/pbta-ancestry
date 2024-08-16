@@ -340,7 +340,7 @@ for (i in 1:nrow(group_df)){
                   !CNS_region %in% c("Mixed", "Other"))
   
   pdf(file.path(plots_dir, glue::glue("{abbrev}_CNS_region_by_predicted_ancestry.pdf")),
-      width = 6, height = 3)
+      width = 5, height = 3.5)
   
   region_ht <- plot_enr(group_anc_region, "CNS_region", "predicted_ancestry",
                            var1_names = sort(unique(group_anc_region$CNS_region)),
