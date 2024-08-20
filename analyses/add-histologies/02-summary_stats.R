@@ -10,7 +10,6 @@ library(RColorBrewer)
 library(circlize)
 library(colorblindr)
 library(ggpubr)
-library(ggalluvial)
 library(cowplot)
 
 root_dir <- rprojroot::find_root(rprojroot::has_dir(".git"))
@@ -65,6 +64,11 @@ low_major <- ancestry %>%
   filter(major_perc < 0.9) %>%
   dplyr::select(Kids_First_Biospecimen_ID, 
          EAS_prob, AFR_prob, AMR_prob, SAS_prob, EUR_prob) %>%
+  dplyr::rename("AFR" = "AFR_prob",
+                "AMR" = "AMR_prob",
+                "EAS" = "EAS_prob",
+                "EUR" = "EUR_prob",
+                "SAS" = "SAS_prob") %>%
   column_to_rownames("Kids_First_Biospecimen_ID")
 
 colors <- colorRampPalette(brewer.pal(9, "Reds"))(100)
@@ -73,6 +77,7 @@ pdf(file.path(plots_dir, "low_major_ancestry_heatmap.pdf"),
     height = 6, width = 3)
 
 pheatmap(low_major,
+         name = "probability",
          col = colors,
          treeheight_row = 20,
          treeheight_col = 10,
