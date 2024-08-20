@@ -90,12 +90,6 @@ pc12 <- ancestry %>%
   geom_point(size=2, shape=23,
              show.legend = FALSE) +
   scale_fill_manual(values = okabe_palette) +
-                    # labels=c(glue::glue("AFR (n={sum(ancestry$predicted_ancestry == 'AFR')})"),
-                    #          glue::glue("AMR (n={sum(ancestry$predicted_ancestry == 'AMR')})"),
-                    #          glue::glue("EAS (n={sum(ancestry$predicted_ancestry == 'EAS')})"),
-                    #          glue::glue("EUR (n={sum(ancestry$predicted_ancestry == 'EUR')})"),
-                    #          glue::glue("SAS (n={sum(ancestry$predicted_ancestry == 'SAS')})")
-                    #          )) +
   theme_Publication()
 
 
@@ -136,7 +130,6 @@ ancestry <- ancestry %>%
 
 # calculate reported race sums across cohort 
 race_total <- ancestry %>%
-  #filter(Kids_First_Biospecimen_ID %in% survival$Kids_First_Biospecimen_ID) %>%
   count(race) %>%
   rename("total" = "n") %>%
   mutate(race = fct_relevel(race,
@@ -290,7 +283,6 @@ invisible(dev.off())
 # plot extent of tumor resection heatmap in pLGG
 
 ancestry <- ancestry %>%
-#  filter(plot_group == "Low-grade glioma") %>%
   dplyr::mutate(extent_of_tumor_resection = case_when(
     extent_of_tumor_resection %in% c("Unavailable", "Not Reported") ~ "Unavailable/Unreported",
     grepl("Gross/Near total resection", extent_of_tumor_resection) ~ "Gross/Near total resection",
@@ -304,9 +296,10 @@ group_df <- data.frame(plot_group = c("Atypical Teratoid Rhabdoid Tumor",
                                       "Craniopharyngioma",
                                       "Ependymoma", "Mixed neuronal-glial tumor",
                                       "Low-grade glioma", "Medulloblastoma",
-                                      "Other high-grade glioma"),
+                                      "Mesenchymal tumor", "Other high-grade glioma",
+                                      "Schwannoma"),
                        abbreviation = c("atrt", "cpg", "epn", "gnt", "lgg",
-                                        "mb", "hgg"))
+                                        "mb", "mes", "hgg", "swn"))
 
 pdf(NULL)
 
