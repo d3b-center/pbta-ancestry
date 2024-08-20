@@ -79,8 +79,9 @@ metadata <- metadata %>%
 Define plot groups for which survival analyses should be run
 ```{r define histologies}
 # Define groups for survival analyses
-groups <- c("Atypical Teratoid Rhabdoid Tumor", "Craniopharyngioma",
-            "DIPG or DMG", "Other high-grade glioma", "Ependymoma",
+groups <- c("Atypical Teratoid Rhabdoid Tumor", "Choroid plexus tumor",
+            "Craniopharyngioma", "DIPG or DMG", 
+            "Other high-grade glioma", "Ependymoma",
             "Germ cell tumor",
             "Mixed neuronal-glial tumor", "Low-grade glioma",
             "Medulloblastoma", "Meningioma",
@@ -89,7 +90,10 @@ groups <- c("Atypical Teratoid Rhabdoid Tumor", "Craniopharyngioma",
 )
 
 # create names vector for output files
-plot_names <- c("ATRT", "CRANIO", "DMG", "HGG", "EPN", "GERM", "GNG", "LGG", "MB", "MNG", "MES", "NFP", "OLIGO", "SWN")
+plot_names <- c("ATRT", "CPT", "CRANIO", "DMG", 
+                "HGG", "EPN", "GERM", "GNG", 
+                "LGG", "MB", "MNG", "MES", 
+                "NFP", "OLIGO", "SWN")
 names(plot_names) <- groups
 ```
 
