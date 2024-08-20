@@ -352,12 +352,12 @@ for (i in 1:nrow(group_df)){
 
 # plot LGG molecular subtype by predicted ancestry
 pdf(file.path(plots_dir, "lgg_subtype_by_predicted_ancestry.pdf"),
-    width = 5, height = 14)
+    width = 6, height = 14)
 
 lgg_subtype_ht <- plot_enr(ancestry[ancestry$plot_group == "Low-grade glioma" & !is.na(ancestry$molecular_subtype),], "molecular_subtype", "predicted_ancestry",
                           var1_names = sort(unique(ancestry$molecular_subtype[ancestry$plot_group == "Low-grade glioma" & !is.na(ancestry$molecular_subtype)])),
                           var2_names = c("AFR", "AMR", "EAS", "EUR", "SAS"),
-                          padjust = FALSE)
+                          padjust = TRUE)
 
 draw(lgg_subtype_ht)
 
