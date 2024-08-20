@@ -248,7 +248,7 @@ for (var in variable){
                                             c("EUR", "AFR", "AMR", "EAS", "SAS")))
   
     # Run cox proportional hazards model
-    add_model_os <- fit_save_model(group_hist[!grepl("To be classified", group_hist$mol_sub_group),],
+    add_model_os <- fit_save_model(group_hist[!grepl("To be classified", group_hist$mol_sub_group) & !grepl("To be classified", group_hist$molecular_subtype),],
                                     terms = ifelse(
                                         group %in% c("Low-grade glioma", "Atypical Teratoid Rhabdoid Tumor"),
                                         glue::glue("extent_of_tumor_resection+mol_sub_group+age_at_diagnosis_years+{var}"),
@@ -273,7 +273,7 @@ for (var in variable){
                years_col = "OS_years", status_col = "OS_status"
               )
     
-    add_model_efs <- fit_save_model(group_hist[!grepl("To be classified", group_hist$mol_sub_group),],
+    add_model_efs <- fit_save_model(group_hist[!grepl("To be classified", group_hist$mol_sub_group) & !grepl("To be classified", group_hist$molecular_subtype),],
                                     terms = ifelse(
                                         group %in% c("Low-grade glioma", "Atypical Teratoid Rhabdoid Tumor"),
                                         glue::glue("extent_of_tumor_resection+mol_sub_group+age_at_diagnosis_years+{var}"),
