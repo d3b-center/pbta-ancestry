@@ -10,7 +10,6 @@ library(RColorBrewer)
 library(circlize)
 library(colorblindr)
 library(ggpubr)
-library(ggalluvial)
 library(cowplot)
 
 root_dir <- rprojroot::find_root(rprojroot::has_dir(".git"))
@@ -65,6 +64,11 @@ low_major <- ancestry %>%
   filter(major_perc < 0.9) %>%
   dplyr::select(Kids_First_Biospecimen_ID, 
          EAS_prob, AFR_prob, AMR_prob, SAS_prob, EUR_prob) %>%
+  dplyr::rename("AFR" = "AFR_prob",
+                "AMR" = "AMR_prob",
+                "EAS" = "EAS_prob",
+                "EUR" = "EUR_prob",
+                "SAS" = "SAS_prob") %>%
   column_to_rownames("Kids_First_Biospecimen_ID")
 
 colors <- colorRampPalette(brewer.pal(9, "Reds"))(100)
@@ -348,12 +352,12 @@ for (i in 1:nrow(group_df)){
 
 # plot LGG molecular subtype by predicted ancestry
 pdf(file.path(plots_dir, "lgg_subtype_by_predicted_ancestry.pdf"),
-    width = 5, height = 14)
+    width = 6, height = 14)
 
 lgg_subtype_ht <- plot_enr(ancestry[ancestry$plot_group == "Low-grade glioma" & !is.na(ancestry$molecular_subtype),], "molecular_subtype", "predicted_ancestry",
                           var1_names = sort(unique(ancestry$molecular_subtype[ancestry$plot_group == "Low-grade glioma" & !is.na(ancestry$molecular_subtype)])),
                           var2_names = c("AFR", "AMR", "EAS", "EUR", "SAS"),
-                          padjust = FALSE)
+                          padjust = TRUE)
 
 draw(lgg_subtype_ht)
 
