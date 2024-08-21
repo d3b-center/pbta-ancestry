@@ -206,7 +206,8 @@ Calculate breakpoint group odds ratios and p-values across predicted ancestries,
 group_ht <- plot_enr(braf_hist, 
                      "breakpoint_group", "predicted_ancestry",
                      var2_names = c("AFR", "AMR", "EAS", "EUR", "SAS"),
-                     var1_names = c("15:09", "16:09", "16:11", "18:10", "rare"))
+                     var1_names = c("15:09", "16:09", "16:11", "18:10", "rare"),
+                     padjust = TRUE)
 
 # plot enrichment results
 pdf(file.path(plot_dir, "breakpoint_group_ancestry_ct_enr_heatmap.pdf"),
@@ -279,7 +280,8 @@ Plot methyl subtype by breakpoint group
 methyl_ht <- plot_enr(braf_hist[!is.na(braf_hist$dkfz_v12_methylation_subclass),], 
                      "breakpoint_group", "dkfz_v12_methylation_subclass",
                      var1_names = c("15:09", "16:09", "16:11", "18:10", "rare"),
-                     var2_names = sort(unique(braf_hist$dkfz_v12_methylation_subclass)))
+                     var2_names = sort(unique(braf_hist$dkfz_v12_methylation_subclass)),
+                     padjust = TRUE)
 
 # plot enrichment results
 pdf(file.path(plot_dir, "breakpoint_group_methyl_subtype_ct_enr_heatmap.pdf"),
@@ -317,7 +319,8 @@ braf_hist <- braf_hist %>%
 resection_ht <- plot_enr(braf_hist[!grepl("Not Reported", braf_hist$resection),], 
                      "breakpoint_group", "resection",
                      var1_names = c("15:09", "16:09", "16:11", "18:10", "rare"),
-                     var2_names = c("Gross/Near total", "Partial", "Biopsy only"))
+                     var2_names = c("Gross/Near total", "Partial", "Biopsy only"),
+                     padjust = TRUE)
 
 # plot enrichment results
 pdf(file.path(plot_dir, "breakpoint_group_resection_ct_enr_heatmap.pdf"),
@@ -349,7 +352,8 @@ Plot CNS region by breakpoint group
 region_ht <- plot_enr(braf_hist[braf_hist$CNS_region != "Mixed",], 
                      "breakpoint_group", "CNS_region",
                      var1_names = c("15:09", "16:09", "16:11", "18:10", "rare"),
-                     var2_names = sort(unique(braf_hist$CNS_region[braf_hist$CNS_region != "Mixed"])))
+                     var2_names = sort(unique(braf_hist$CNS_region[braf_hist$CNS_region != "Mixed"])),
+                     padjust = TRUE)
 
 # plot enrichment results
 pdf(file.path(plot_dir, "breakpoint_group_region_ct_enr_heatmap.pdf"),
@@ -391,7 +395,7 @@ diagnosis_ht = plot_enr(braf_hist, var1 = "diagnosis", var2 = "breakpoint_group"
                                         "pilocytic/pilomyxoid astrocytoma",
                                         "pilomyxoid astrocytoma"), 
                         var2_names = c("15:09", "16:09", "16:11", "18:10", "rare"),
-                         padjust = FALSE)
+                         padjust = TRUE)
 
 pdf(file.path(plot_dir, "lgg_braf_fusion_breakpoint_group_diagnosis_enr_heatmap.pdf"),
     width = 6, height = 3)

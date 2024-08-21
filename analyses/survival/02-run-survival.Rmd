@@ -212,7 +212,8 @@ for (var in variable){
         
         group_ht <- plot_enr(group_hist[!is.na(group_hist$mol_sub_group) & !grepl("classified", group_hist$mol_sub_group),], "mol_sub_group", "predicted_ancestry",
                        var1_names = levels(group_hist$mol_sub_group)[!grepl("classified", levels(group_hist$mol_sub_group))],
-                       var2_names = sort(unique(group_hist$predicted_ancestry[!is.na(group_hist$mol_sub_group) & !grepl("classified", group_hist$mol_sub_group)])))
+                       var2_names = sort(unique(group_hist$predicted_ancestry[!is.na(group_hist$mol_sub_group) & !grepl("classified", group_hist$mol_sub_group)])),
+                       padjust = TRUE)
         
         draw(group_ht)
         
