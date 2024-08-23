@@ -100,8 +100,12 @@ for (pop in populations){
     )) %>%
     # Define all non-superpopulation subpopulations as "other" to be merged 
     dplyr::mutate(subpopulation = case_when(
-      !subpopulation %in% subpopulations ~ glue::glue("non-{pop}"),
-      TRUE ~ subpopulation
+      subpopulation %in% subpopulations ~ subpopulation,
+      subpopulation %in% afr_subpopulations ~ "AFR",
+      subpopulation %in% amr_subpopulations ~ "AMR",
+      subpopulation %in% eas_subpopulations ~ "EAS",
+      subpopulation %in% eur_subpopulations ~ "EUR",
+      subpopulation %in% sas_subpopulations ~ "SAS",
     )) %>%
     group_by(Kids_First_Biospecimen_ID, subpopulation) %>%
     # Sum non-superpopulation probabilities 
@@ -112,8 +116,9 @@ for (pop in populations){
     ))
   
   # Define color palette 
-  color_palette <- c(brewer.pal(n = length(subpopulations), name = "Dark2"),
-                     "#999999")
+  color_palette <- c(rev(brewer.pal(n = length(subpopulations), name = "Set2")),
+                     colorblindr::palette_OkabeIto[c(1:3,5:6)])
+  names(color_palette) <- c(subpopulations, "AFR", "AMR", "EAS", "EUR", "SAS")
 
   if (pop == "AMR"){
     
@@ -129,7 +134,8 @@ for (pop in populations){
                                                        levels = order_pts)) %>%
       arrange(Kids_First_Biospecimen_ID) %>%
       dplyr::mutate(subpopulation = factor(subpopulation,
-                                           levels = c("MXL", "CLM", "PEL", "PUR", "non-AMR")))
+                                           levels = c("MXL", "CLM", "PEL", "PUR", 
+                                                      "AFR", "EAS", "EUR", "SAS")))
     
   }
   
@@ -149,7 +155,8 @@ for (pop in populations){
       dplyr::mutate(subpopulation = factor(subpopulation,
                                            levels = c("ASW", "ACB", "ESN", 
                                                       "GWD", "LWK", "MSL", 
-                                                      "YRI", "non-AFR")))
+                                                      "YRI", "AMR", "EAS", 
+                                                      "EUR", "SAS")))
     
   }
   
@@ -168,7 +175,8 @@ for (pop in populations){
       arrange(Kids_First_Biospecimen_ID) %>%
       dplyr::mutate(subpopulation = factor(subpopulation,
                                            levels = c("CDX", "CHB", "CHS", 
-                                                      "JPT", "KHV", "non-EAS")))
+                                                      "JPT", "KHV",
+                                                      "AFR", "AMR", "EUR", "SAS")))
     
   }
   
@@ -187,7 +195,8 @@ for (pop in populations){
       arrange(Kids_First_Biospecimen_ID) %>%
       dplyr::mutate(subpopulation = factor(subpopulation,
                                            levels = c("CEU", "GBR", "FIN",
-                                                      "IBS", "TSI", "non-EUR")))
+                                                      "IBS", "TSI",
+                                                      "AFR", "AMR", "EAS", "SAS")))
     
   }
   
@@ -206,7 +215,8 @@ for (pop in populations){
       arrange(Kids_First_Biospecimen_ID) %>%
       dplyr::mutate(subpopulation = factor(subpopulation,
                                            levels = c("BEB", "GIH", "ITU", 
-                                                      "PJL", "STU", "non-SAS")))
+                                                      "PJL", "STU",
+                                                      "AFR", "AMR", "EAS", "EUR")))
     
   }
   
@@ -218,7 +228,7 @@ for (pop in populations){
     geom_col(size = 0.05, width = 1,
              show.legend = FALSE) +
     scale_fill_manual(values = color_palette,
-                      breaks = c(subpopulations, glue::glue("non-{pop}"))) +
+                      breaks = c(subpopulations, as.character(sort(unique(pop_subpop_df$subpopulation[!pop_subpop_df$subpopulation %in% subpopulations]))))) +
     labs(x = "Patient", fill = "Subpopulation", title = "CBTN") +
     theme_Publication() +
     theme(axis.text.x=element_blank(),
@@ -230,7 +240,7 @@ for (pop in populations){
                fill = subpopulation)) +
     geom_col(size = 0.25, width = 1) +
     scale_fill_manual(values = color_palette,
-                      breaks = c(subpopulations, glue::glue("non-{pop}"))) +
+                      breaks = c(subpopulations, as.character(sort(unique(pop_subpop_df$subpopulation[!pop_subpop_df$subpopulation %in% subpopulations]))))) +
     labs(x = "Patient", fill = "Subpopulation", y = NULL, title = "PNOC") +
     theme_Publication() +
     theme(axis.text.x=element_blank(),
