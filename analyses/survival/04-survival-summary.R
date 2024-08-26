@@ -38,6 +38,7 @@ for (surv in c("EFS", "OS")){
   # define correct status column
   status <- ifelse(surv == "EFS", "EFS_status", "OS_status")
   
+<<<<<<< HEAD
   # filter plot_groups based on # events
   hist_df <- ancestry %>%
     dplyr::count(plot_group, !!sym(status)) %>%
@@ -140,6 +141,18 @@ for (surv in c("EFS", "OS")){
       dplyr::mutate(p.value = round(p.value, 2)) %>%
       pull(p.value)
     
+=======
+  if (grepl("LGG|HGG|ATRT|SWN", group_df$hist[i])){
+    survival_os_anc <- read_rds(
+      file.path(input_dir,
+                glue::glue("cox_{group_df$subtype[i]}_OS_additive_terms_subtype_resection_predicted_ancestry.RDS")
+      ))
+  }else{
+    survival_os_anc <- read_rds(
+      file.path(input_dir,
+                glue::glue("cox_{group_df$subtype[i]}_OS_additive_terms_subtype_predicted_ancestry.RDS")
+      ))
+>>>>>>> rjcorb/survival-add-resection
   }
   
   # calculaate FDRs
@@ -150,6 +163,7 @@ for (surv in c("EFS", "OS")){
   # define survival variable
   surv_var <- ifelse(surv == "EFS", "EFS_years", "OS_years")
   
+<<<<<<< HEAD
   # Calculate median survival by predicted ancestry and plot group
   median_surv_group <- ancestry %>%
     dplyr::filter(plot_group %in% rownames(survival_anc_stats)) %>%
@@ -157,6 +171,19 @@ for (surv in c("EFS", "OS")){
     summarize(median_surv_years = round(median(!!sym(surv_var), na.rm = T), 1)) %>%
     spread(predicted_ancestry, median_surv_years) %>%
     rename(group = plot_group)
+=======
+  if (grepl("LGG|HGG|ATRT|SWN", group_df$hist[i])){
+    survival_efs_anc <- read_rds(
+      file.path(input_dir,
+                glue::glue("cox_{group_df$subtype[i]}_EFS_additive_terms_subtype_resection_predicted_ancestry.RDS")
+      ))
+  }else{
+    survival_efs_anc <- read_rds(
+      file.path(input_dir,
+                glue::glue("cox_{group_df$subtype[i]}_EFS_additive_terms_subtype_predicted_ancestry.RDS")
+      ))
+  }
+>>>>>>> rjcorb/survival-add-resection
   
   # Calculate median survival by predicted ancestry and molecular subgroup
   median_surv_subgroup <- ancestry %>%
