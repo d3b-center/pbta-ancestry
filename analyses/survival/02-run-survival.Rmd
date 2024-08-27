@@ -210,18 +210,43 @@ for (var in variable){
     # create heatmap of subtype by predicted ancestry
     if (length(table(group_hist$mol_sub_group)) >= 2 & var == "predicted_ancestry") {
       
+      if (group %in% c("Other high-grade glioma", "DIPG or DMG")){
+        
         pdf(subtype_plot_pdf,
-            height = length(unique(group_hist$predicted_ancestry[!is.na(group_hist$mol_sub_group) & !grepl("classified", group_hist$mol_sub_group)]))/1.5, 
-            width = 6)
+          height = length(2 + unique(group_hist$predicted_ancestry[!is.na(group_hist$molecular_subtype) & !grepl("classified", group_hist$molecular_subtype)]))/1.25, 
+          width = 6)
+      
+        subgroup <- "molecular_subtype"
+        subtypes <- levels(group_hist$molecular_subtype)[!grepl("classified", levels(group_hist$molecular_subtype))]
         
-        group_ht <- plot_enr(group_hist[!is.na(group_hist$mol_sub_group) & !grepl("classified", group_hist$mol_sub_group),], "mol_sub_group", "predicted_ancestry",
-                       var1_names = levels(group_hist$mol_sub_group)[!grepl("classified", levels(group_hist$mol_sub_group))],
-                       var2_names = sort(unique(group_hist$predicted_ancestry[!is.na(group_hist$mol_sub_group) & !grepl("classified", group_hist$mol_sub_group)])),
-                       padjust = TRUE)
+        group_ht <- plot_enr(group_hist[!is.na(group_hist$molecular_subtype) & !grepl("classified", group_hist$molecular_subtype),], 
+                     var1 = subgroup, 
+                     var2 = "predicted_ancestry",
+                     var1_names = subtypes,
+                     var2_names = sort(unique(group_hist$predicted_ancestry[!is.na(group_hist$molecular_subtype) & !grepl("classified", group_hist$molecular_subtype)])),
+                     padjust = TRUE)
+
+      } else {
         
-        draw(group_ht)
+        pdf(subtype_plot_pdf,
+          height = length(2 + unique(group_hist$predicted_ancestry[!is.na(group_hist$mol_sub_group) & !grepl("classified", group_hist$mol_sub_group)]))/1.5, 
+          width = 6)
         
-        invisible(dev.off())
+        subgroup <- "mol_sub_group"
+        subtypes <- levels(group_hist$mol_sub_group)[!grepl("classified", levels(group_hist$mol_sub_group))]
+        
+        group_ht <- plot_enr(group_hist[!is.na(group_hist$mol_sub_group) & !grepl("classified", group_hist$mol_sub_group),], 
+                     var1 = subgroup, 
+                     var2 = "predicted_ancestry",
+                     var1_names = subtypes,
+                     var2_names = sort(unique(group_hist$predicted_ancestry[!is.na(group_hist$mol_sub_group) & !grepl("classified", group_hist$mol_sub_group)])),
+                     padjust = TRUE)
+        
+      }
+
+      draw(group_ht)
+      
+      invisible(dev.off())
       
     }
 
