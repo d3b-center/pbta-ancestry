@@ -77,11 +77,13 @@ ancestry <- ancestry %>%
                      'age_at_chemo_start', 'age_at_radiation_start')], 
             by = 'Kids_First_Participant_ID') %>%
   # There is one sample (BS_M52K86E6) with no matched tumor in OPC v14, but is known to have an oligodendroglioma. We will manually enter braod_histology and cancer_group info
+  # Additionally, 4 PNOC-003 samples have incorrect cancer_group assignment; should be DMG but is listed as High-grade glioma. We will update here
   dplyr::mutate(broad_histology = case_when(
     Kids_First_Biospecimen_ID == "BS_M52K86E6" ~ "Diffuse astrocytic and oligodendroglial tumor",
     TRUE ~ broad_histology),
     cancer_group = case_when(
       Kids_First_Biospecimen_ID == "BS_M52K86E6" ~ "Oligodendroglioma",
+      sample_id %in% c("7316-4994", "7316-3220", "7316-3232", "7316-4998") ~ "Diffuse midline glioma",
       TRUE ~ cancer_group)
     ) %>%
   dplyr::left_join(plot_mapping[,c('broad_histology', 'cancer_group', 'plot_group')], by = c('broad_histology', 'cancer_group'))

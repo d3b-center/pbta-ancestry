@@ -434,13 +434,13 @@ ancestry cohort</p>
 <p>Load libraries and set directories</p>
 <pre class="r"><code>library(data.table)
 library(tidyverse)</code></pre>
-<pre><code>## -- Attaching core tidyverse packages ------------------------------------------------------------------------------------------------------------------------------------------- tidyverse 2.0.0 --
+<pre><code>## -- Attaching core tidyverse packages ----------------------------------------------------------------------------------------------------------------- tidyverse 2.0.0 --
 ## v dplyr     1.1.4     v readr     2.1.5
 ## v forcats   1.0.0     v stringr   1.5.1
 ## v ggplot2   3.5.1     v tibble    3.2.1
 ## v lubridate 1.9.3     v tidyr     1.3.1
 ## v purrr     1.0.2     
-## -- Conflicts ------------------------------------------------------------------------------------------------------------------------------------------------------------- tidyverse_conflicts() --
+## -- Conflicts ----------------------------------------------------------------------------------------------------------------------------------- tidyverse_conflicts() --
 ## x dplyr::between()     masks data.table::between()
 ## x dplyr::filter()      masks stats::filter()
 ## x dplyr::first()       masks data.table::first()
@@ -515,7 +515,7 @@ hist_file &lt;- file.path(data_dir, &quot;histologies.tsv&quot;)</code></pre>
   dplyr::filter(plot_group == &quot;Low-grade glioma&quot; &amp; (grepl(&quot;-BRAF|wildtype|classified&quot;, molecular_subtype) | is.na(molecular_subtype))) %&gt;%
   dplyr::mutate(predicted_ancestry = factor(predicted_ancestry))</code></pre>
 <pre><code>## Rows: 1484 Columns: 41
-## -- Column specification ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+## -- Column specification -------------------------------------------------------------------------------------------------------------------------------------------------
 ## Delimiter: &quot;\t&quot;
 ## chr (22): Kids_First_Biospecimen_ID, predicted_ancestry, Kids_First_Particip...
 ## dbl (18): EAS_prob, AFR_prob, AMR_prob, SAS_prob, EUR_prob, PC1, PC2, PC3, P...
@@ -525,7 +525,7 @@ hist_file &lt;- file.path(data_dir, &quot;histologies.tsv&quot;)</code></pre>
 ## i Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
 <pre class="r"><code>hist &lt;- read_tsv(hist_file)</code></pre>
 <pre><code>## Rows: 47633 Columns: 58
-## -- Column specification ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+## -- Column specification -------------------------------------------------------------------------------------------------------------------------------------------------
 ## Delimiter: &quot;\t&quot;
 ## chr (41): Kids_First_Participant_ID, Kids_First_Biospecimen_ID, sample_id, a...
 ## dbl (17): cell_line_passage, OS_days, EFS_days, age_at_diagnosis_days, age_a...
@@ -546,7 +546,7 @@ braf_fusions &lt;- read_tsv(fusion_file) %&gt;%
 ##   dat &lt;- vroom(...)
 ##   problems(dat)</code></pre>
 <pre><code>## Rows: 260 Columns: 31
-## -- Column specification ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+## -- Column specification -------------------------------------------------------------------------------------------------------------------------------------------------
 ## Delimiter: &quot;\t&quot;
 ## chr  (18): Sample, FusionName, DomainRetainedGene1A, DomainRetainedGene1B, G...
 ## dbl   (6): caller.count, Chromosome, LeftBreakpoint_position, RightBreakpoin...
@@ -572,7 +572,7 @@ braf_fusions &lt;- read_tsv(fusion_file) %&gt;%
          keep = &quot;yes&quot;) %&gt;%
   left_join(hist[,c(&quot;Kids_First_Participant_ID&quot;, &quot;Kids_First_Biospecimen_ID&quot;)])</code></pre>
 <pre><code>## Rows: 533 Columns: 22
-## -- Column specification ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+## -- Column specification -------------------------------------------------------------------------------------------------------------------------------------------------
 ## Delimiter: &quot;\t&quot;
 ## chr (14): Sample, FusionName, Fusion_Type, Gene1A, Gene1B, 5_prime_transcrip...
 ## dbl  (2): JunctionReadCount, SpanningFragCount
@@ -772,7 +772,7 @@ rare_ht</code></pre>
 ##  2000 replicates)
 ## 
 ## data:  table(braf_hist$breakpoint_type, braf_hist$dkfz_v12_methylation_subclass)
-## p-value = 0.004498
+## p-value = 0.004998
 ## alternative hypothesis: two.sided</code></pre>
 <p>Print breakpoint by methyl subtype</p>
 <pre class="r"><code>table(braf_hist$breakpoint_group, braf_hist$dkfz_v12_methylation_subclass)</code></pre>
@@ -952,7 +952,7 @@ significantly associated:</p>
 ## alternative hypothesis: two.sided</code></pre>
 <pre class="r"><code>hist &lt;- read_tsv(file.path(data_dir, &quot;histologies.tsv&quot;))</code></pre>
 <pre><code>## Rows: 47633 Columns: 58
-## -- Column specification ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+## -- Column specification -------------------------------------------------------------------------------------------------------------------------------------------------
 ## Delimiter: &quot;\t&quot;
 ## chr (41): Kids_First_Participant_ID, Kids_First_Biospecimen_ID, sample_id, a...
 ## dbl (17): cell_line_passage, OS_days, EFS_days, age_at_diagnosis_days, age_a...
@@ -961,7 +961,7 @@ significantly associated:</p>
 ## i Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
 <pre class="r"><code>diagnoses &lt;- read_tsv(file.path(input_dir, &quot;lgg_braf_fusion_final_diagnosis.txt&quot;))</code></pre>
 <pre><code>## Rows: 20 Columns: 5
-## -- Column specification ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+## -- Column specification -------------------------------------------------------------------------------------------------------------------------------------------------
 ## Delimiter: &quot;\t&quot;
 ## chr (5): Kids_First_Biospecimen_ID, sample_id, pathology_free_text_diagnosis...
 ## 
