@@ -208,7 +208,7 @@ for (var in variable){
     }
 
     # create heatmap of subtype by predicted ancestry
-    if (length(table(group_hist$mol_sub_group)) >= 2 & var == "predicted_ancestry") {
+    if (var == "predicted_ancestry" & (length(table(group_hist$mol_sub_group)) >= 2 | group == "DIPG or DMG")) {
       
       if (group %in% c("Other high-grade glioma", "DIPG or DMG")){
         
