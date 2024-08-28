@@ -72,7 +72,10 @@ metadata <- metadata %>%
           extent_of_tumor_resection %in% c('Not Reported', "Unavailable") ~ NA_character_,
           extent_of_tumor_resection == "Not Applicable" ~ "No resection",
           TRUE ~ extent_of_tumor_resection
-        ))
+        )) %>%
+  dplyr::mutate(extent_of_tumor_resection = fct_relevel(extent_of_tumor_resection,
+                                                        c("Gross/Near total resection",
+                                                          "Partial resection", "Biopsy only")))
   
 ```
 
@@ -117,7 +120,7 @@ for (var in variable){
                                       glue::glue("logrank_{plot_names[group]}_OS_{var}.RDS"))
 
     coxph_os_model_file <- ifelse(group %in% c("Low-grade glioma", "Atypical Teratoid Rhabdoid Tumor",
-                                               "Other high-grade glioma", "Schwannoma"),
+                                               "Medulloblastoma", "Other high-grade glioma", "Schwannoma"),
                                file.path(results_dir,
                                          glue::glue("cox_{plot_names[group]}_OS_additive_terms_subtype_resection_{var}.RDS")),
                                file.path(results_dir,
@@ -128,7 +131,7 @@ for (var in variable){
                                       glue::glue("logrank_{plot_names[group]}_EFS_{var}.RDS"))
 
     coxph_efs_model_file <- ifelse(group %in% c("Low-grade glioma", "Atypical Teratoid Rhabdoid Tumor",
-                                               "Other high-grade glioma", "Schwannoma"),
+                                               "Medulloblastoma", "Other high-grade glioma", "Schwannoma"),
                                file.path(results_dir,
                                          glue::glue("cox_{plot_names[group]}_EFS_additive_terms_subtype_resection_{var}.RDS")),
                                file.path(results_dir,
@@ -208,8 +211,8 @@ for (var in variable){
     }
 
     # create heatmap of subtype by predicted ancestry
-    if (length(table(group_hist$mol_sub_group)) >= 2 & var == "predicted_ancestry") {
-      
+    if (var == "predicted_ancestry" & (length(table(group_hist$mol_sub_group)) >= 2 | group == "DIPG or DMG")) {
+
       if (group %in% c("Other high-grade glioma", "DIPG or DMG")){
         
         pdf(subtype_plot_pdf,
@@ -280,7 +283,7 @@ for (var in variable){
     # Run cox proportional hazards model
     add_model_os <- fit_save_model(group_hist[!grepl("To be classified", group_hist$mol_sub_group) & !grepl("To be classified", group_hist$molecular_subtype),],
                                     terms = ifelse(
-                                        group %in% c("Low-grade glioma", "Atypical Teratoid Rhabdoid Tumor"),
+                                        group %in% c("Low-grade glioma", "Atypical Teratoid Rhabdoid Tumor", "Medulloblastoma"),
                                         glue::glue("extent_of_tumor_resection+mol_sub_group+age_at_diagnosis_years+{var}"),
                                         ifelse(
                                           group == "Other high-grade glioma",
@@ -305,7 +308,7 @@ for (var in variable){
     
     add_model_efs <- fit_save_model(group_hist[!grepl("To be classified", group_hist$mol_sub_group) & !grepl("To be classified", group_hist$molecular_subtype),],
                                     terms = ifelse(
-                                        group %in% c("Low-grade glioma", "Atypical Teratoid Rhabdoid Tumor"),
+                                        group %in% c("Low-grade glioma", "Atypical Teratoid Rhabdoid Tumor", "Medulloblastoma"),
                                         glue::glue("extent_of_tumor_resection+mol_sub_group+age_at_diagnosis_years+{var}"),
                                         ifelse(
                                           group == "Other high-grade glioma",
@@ -366,7 +369,7 @@ for (var in variable){
     km_os_model_file <- file.path(results_dir, 
                                       glue::glue("logrank_{subtype_df$hist[i]}_{subtype_df$subtype[i]}_OS_{var}.RDS"))
   
-    coxph_os_model_file <- ifelse(subtype_df$hist[i] %in% c("LGG", "HGG"),
+    coxph_os_model_file <- ifelse(subtype_df$hist[i] %in% c("LGG", "HGG", "MB"),
                                file.path(results_dir,
                                         glue::glue("cox_{subtype_df$hist[i]}_{subtype_df$subtype[i]}_OS_additive_terms_subtype_resection_{var}.RDS")),
                                file.path(results_dir,
@@ -376,7 +379,7 @@ for (var in variable){
       km_efs_model_file <- file.path(results_dir, 
                                       glue::glue("logrank_{subtype_df$hist[i]}_{subtype_df$subtype[i]}_EFS_{var}.RDS"))
   
-    coxph_efs_model_file <- ifelse(subtype_df$hist[i] %in% c("LGG", "HGG"),
+    coxph_efs_model_file <- ifelse(subtype_df$hist[i] %in% c("LGG", "HGG", "MB"),
                                file.path(results_dir,
                                         glue::glue("cox_{subtype_df$hist[i]}_{subtype_df$subtype[i]}_EFS_additive_terms_subtype_resection_{var}.RDS")),
                                file.path(results_dir,
@@ -415,7 +418,7 @@ for (var in variable){
                                                 c("EUR", "AFR", "AMR", "EAS", "SAS")))
 
     add_model_os <- fit_save_model(subtype_hist,
-                                  terms = ifelse(subtype_df$plot_group[i] == "Low-grade glioma",
+                                  terms = ifelse(subtype_df$plot_group[i] %in% c("Low-grade glioma", "Medulloblastoma"),
                                                  glue::glue("extent_of_tumor_resection+age_at_diagnosis_years+{var}"),
                                                  ifelse(subtype_df$plot_group[i] == "Other high-grade glioma",
                                                         glue::glue("extent_of_tumor_resection+molecular_subtype+age_at_diagnosis_years+{var}"),
@@ -426,7 +429,7 @@ for (var in variable){
                                   )
     
     add_model_efs <- fit_save_model(subtype_hist,
-                                  terms = ifelse(subtype_df$plot_group[i] == "Low-grade glioma",
+                                  terms = ifelse(subtype_df$plot_group[i] %in% c("Low-grade glioma", "Medulloblastoma"),
                                                  glue::glue("extent_of_tumor_resection+age_at_diagnosis_years+{var}"),
                                                  ifelse(subtype_df$plot_group[i] == "Other high-grade glioma",
                                                         glue::glue("extent_of_tumor_resection+molecular_subtype+age_at_diagnosis_years+{var}"),

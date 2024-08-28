@@ -116,7 +116,7 @@ for (var in variables){
            device = "pdf")
     
     # Load cox proportional hazards models and plot
-    if (grepl("LGG|HGG|ATRT|SWN", group_df$hist[i])){
+    if (grepl("LGG|HGG|ATRT|MB|SWN", group_df$hist[i])){
       os_survival_result <- read_rds(
         file.path(input_dir,
                   glue::glue("cox_{group_df$subtype[i]}_OS_additive_terms_subtype_resection_{var}.RDS")
@@ -141,7 +141,7 @@ for (var in variables){
     }
     
     
-    if (grepl("LGG|HGG|ATRT|SWN", group_df$hist[i])){
+    if (grepl("LGG|HGG|ATRT|MB|SWN", group_df$hist[i])){
       efs_survival_result <- read_rds(
         file.path(input_dir,
                   glue::glue("cox_{group_df$subtype[i]}_EFS_additive_terms_subtype_resection_{var}.RDS")
