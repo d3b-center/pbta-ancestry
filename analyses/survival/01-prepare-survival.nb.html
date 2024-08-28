@@ -2910,25 +2910,15 @@ library(ggpubr)</code></pre>
 <!-- rnb-source-begin eyJkYXRhIjoibGlicmFyeSh0aWR5dmVyc2UpIn0= -->
 <pre class="r"><code>library(tidyverse)</code></pre>
 <!-- rnb-source-end -->
-<<<<<<< HEAD
-<!-- rnb-message-begin eyJkYXRhIjoiLS0gQXR0YWNoaW5nIGNvcmUgdGlkeXZlcnNlIHBhY2thZ2VzIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLSB0aWR5dmVyc2UgMi4wLjAgLS1cbnYgZHBseXIgICAgIDEuMS40ICAgICB2IHJlYWRyICAgICAyLjEuNVxudiBmb3JjYXRzICAgMS4wLjAgICAgIHYgc3RyaW5nciAgIDEuNS4xXG52IGx1YnJpZGF0ZSAxLjkuMyAgICAgdiB0aWJibGUgICAgMy4yLjFcbnYgcHVycnIgICAgIDEuMC4yICAgICB2IHRpZHlyICAgICAxLjMuMVxuIn0= -->
-<pre><code>-- Attaching core tidyverse packages ------------------------------------------------------------------------------------------------------------------------------------------------------------ tidyverse 2.0.0 --
-=======
 <!-- rnb-message-begin eyJkYXRhIjoiLS0gQXR0YWNoaW5nIGNvcmUgdGlkeXZlcnNlIHBhY2thZ2VzIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tIHRpZHl2ZXJzZSAyLjAuMCAtLVxudiBkcGx5ciAgICAgMS4xLjQgICAgIHYgcmVhZHIgICAgIDIuMS41XG52IGZvcmNhdHMgICAxLjAuMCAgICAgdiBzdHJpbmdyICAgMS41LjFcbnYgbHVicmlkYXRlIDEuOS4zICAgICB2IHRpYmJsZSAgICAzLjIuMVxudiBwdXJyciAgICAgMS4wLjIgICAgIHYgdGlkeXIgICAgIDEuMy4xXG4ifQ== -->
 <pre><code>-- Attaching core tidyverse packages -------------------------------------------------------------------------------------------------------------------------------------------------------------- tidyverse 2.0.0 --
->>>>>>> rjcorb/update-surv-summary
 v dplyr     1.1.4     v readr     2.1.5
 v forcats   1.0.0     v stringr   1.5.1
 v lubridate 1.9.3     v tibble    3.2.1
 v purrr     1.0.2     v tidyr     1.3.1</code></pre>
 <!-- rnb-message-end -->
-<<<<<<< HEAD
-<!-- rnb-message-begin eyJkYXRhIjoiLS0gQ29uZmxpY3RzIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLSB0aWR5dmVyc2VfY29uZmxpY3RzKCkgLS1cbnggZHBseXI6OmZpbHRlcigpIG1hc2tzIHN0YXRzOjpmaWx0ZXIoKVxueCBkcGx5cjo6bGFnKCkgICAgbWFza3Mgc3RhdHM6OmxhZygpXG5pIFVzZSB0aGUgY29uZmxpY3RlZCBwYWNrYWdlICg8aHR0cDovL2NvbmZsaWN0ZWQuci1saWIub3JnLz4pIHRvIGZvcmNlIGFsbCBjb25mbGljdHMgdG8gYmVjb21lIGVycm9yc1xuIn0= -->
-<pre><code>-- Conflicts ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ tidyverse_conflicts() --
-=======
 <!-- rnb-message-begin eyJkYXRhIjoiLS0gQ29uZmxpY3RzIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tIHRpZHl2ZXJzZV9jb25mbGljdHMoKSAtLVxueCBkcGx5cjo6ZmlsdGVyKCkgbWFza3Mgc3RhdHM6OmZpbHRlcigpXG54IGRwbHlyOjpsYWcoKSAgICBtYXNrcyBzdGF0czo6bGFnKClcbmkgVXNlIHRoZSBjb25mbGljdGVkIHBhY2thZ2UgKDxodHRwOi8vY29uZmxpY3RlZC5yLWxpYi5vcmcvPikgdG8gZm9yY2UgYWxsIGNvbmZsaWN0cyB0byBiZWNvbWUgZXJyb3JzXG4ifQ== -->
 <pre><code>-- Conflicts -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- tidyverse_conflicts() --
->>>>>>> rjcorb/update-surv-summary
 x dplyr::filter() masks stats::filter()
 x dplyr::lag()    masks stats::lag()
 i Use the conflicted package (&lt;http://conflicted.r-lib.org/&gt;) to force all conflicts to become errors</code></pre>
@@ -2970,15 +2960,9 @@ histologies</h2>
 <!-- rnb-source-begin eyJkYXRhIjoiYW5jZXN0cnkgPC0gcmVhZHI6OnJlYWRfdHN2KGFuY2VzdHJ5X2ZpbGUpIn0= -->
 <pre class="r"><code>ancestry &lt;- readr::read_tsv(ancestry_file)</code></pre>
 <!-- rnb-source-end -->
-<<<<<<< HEAD
-<!-- rnb-message-begin eyJkYXRhIjoiUm93czogMTQ4NCBDb2x1bW5zOiAzNVxuLS0gQ29sdW1uIHNwZWNpZmljYXRpb24gLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS1cbkRlbGltaXRlcjogXCJcXHRcIlxuY2hyICgxOSk6IEtpZHNfRmlyc3RfQmlvc3BlY2ltZW5fSUQsIHByZWRpY3RlZF9hbmNlc3RyeSwgS2lkc19GaXJzdF9QYXJ0aWNpcC4uLlxuZGJsICgxNSk6IEVBU19wcm9iLCBBRlJfcHJvYiwgQU1SX3Byb2IsIFNBU19wcm9iLCBFVVJfcHJvYiwgUEMxLCBQQzIsIFBDMywgUC4uLlxubGdsICAoMSk6IGdpdmVuX2FuY2VzdHJ5XG5cbmkgVXNlIGBzcGVjKClgIHRvIHJldHJpZXZlIHRoZSBmdWxsIGNvbHVtbiBzcGVjaWZpY2F0aW9uIGZvciB0aGlzIGRhdGEuXG5pIFNwZWNpZnkgdGhlIGNvbHVtbiB0eXBlcyBvciBzZXQgYHNob3dfY29sX3R5cGVzID0gRkFMU0VgIHRvIHF1aWV0IHRoaXMgbWVzc2FnZS5cbiJ9 -->
-<pre><code>Rows: 1484 Columns: 35
--- Column specification --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-=======
 <!-- rnb-message-begin eyJkYXRhIjoiUm93czogMTQ4NCBDb2x1bW5zOiAzNVxuLS0gQ29sdW1uIHNwZWNpZmljYXRpb24gLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLVxuRGVsaW1pdGVyOiBcIlxcdFwiXG5jaHIgKDE5KTogS2lkc19GaXJzdF9CaW9zcGVjaW1lbl9JRCwgcHJlZGljdGVkX2FuY2VzdHJ5LCBLaWRzX0ZpcnN0X1BhcnRpY2lwLi4uXG5kYmwgKDE1KTogRUFTX3Byb2IsIEFGUl9wcm9iLCBBTVJfcHJvYiwgU0FTX3Byb2IsIEVVUl9wcm9iLCBQQzEsIFBDMiwgUEMzLCBQLi4uXG5sZ2wgICgxKTogZ2l2ZW5fYW5jZXN0cnlcblxuaSBVc2UgYHNwZWMoKWAgdG8gcmV0cmlldmUgdGhlIGZ1bGwgY29sdW1uIHNwZWNpZmljYXRpb24gZm9yIHRoaXMgZGF0YS5cbmkgU3BlY2lmeSB0aGUgY29sdW1uIHR5cGVzIG9yIHNldCBgc2hvd19jb2xfdHlwZXMgPSBGQUxTRWAgdG8gcXVpZXQgdGhpcyBtZXNzYWdlLlxuIn0= -->
 <pre><code>Rows: 1484 Columns: 35
 -- Column specification ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
->>>>>>> rjcorb/update-surv-summary
 Delimiter: &quot;\t&quot;
 chr (19): Kids_First_Biospecimen_ID, predicted_ancestry, Kids_First_Particip...
 dbl (15): EAS_prob, AFR_prob, AMR_prob, SAS_prob, EUR_prob, PC1, PC2, PC3, P...
