@@ -97,7 +97,7 @@ for (surv in c("EFS", "OS")){
     input_dir <- file.path(analysis_dir, "results", group_df$hist[i])
     
     # set file survival model file paths
-    if (grepl("Low-grade glioma|LGG|Other high-grade glioma|HGG|ATRT|SWN", group_df$hist[i])){
+    if (grepl("Low-grade glioma|LGG|Other high-grade glioma|HGG|ATRT|SWN|MB", group_df$hist[i])){
       
       survival_anc <- read_rds(
         file.path(input_dir,
@@ -141,15 +141,15 @@ for (surv in c("EFS", "OS")){
       dplyr::filter(term == "EUR_statusnon-EUR") %>%
       dplyr::mutate(p.value = round(p.value, 2)) %>%
       pull(p.value)
-
-  # calculate FDRs
+    
+  # calculaate FDRs
   survival_anc_stats <- survival_anc_stats %>%
     dplyr::mutate(fdr_superpop = round(p.adjust(p_superpop, method = "BH"), 2),
                   HR_fdr_nonEUR = round(p.adjust(HR_p_nonEUR, method = "BH"), 2))
   
   # define survival variable
   surv_var <- ifelse(surv == "EFS", "EFS_years", "OS_years")
-  
+
   # Calculate median survival by predicted ancestry and plot group
   median_surv_group <- ancestry %>%
     dplyr::filter(plot_group %in% rownames(survival_anc_stats)) %>%
