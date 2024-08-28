@@ -38,8 +38,6 @@ for (surv in c("EFS", "OS")){
   # define correct status column
   status <- ifelse(surv == "EFS", "EFS_status", "OS_status")
   
-<<<<<<< HEAD
-<<<<<<< HEAD
   # filter plot_groups based on # events
   hist_df <- ancestry %>%
     dplyr::count(plot_group, !!sym(status)) %>%
@@ -99,7 +97,7 @@ for (surv in c("EFS", "OS")){
     input_dir <- file.path(analysis_dir, "results", group_df$hist[i])
     
     # set file survival model file paths
-    if (grepl("Low-grade glioma|LGG|Other high-grade glioma|HGG|ATRT|SWN", group_df$hist[i])){
+    if (grepl("Low-grade glioma|LGG|Other high-grade glioma|HGG|ATRT|SWN|MB", group_df$hist[i])){
       
       survival_anc <- read_rds(
         file.path(input_dir,
@@ -141,6 +139,8 @@ for (surv in c("EFS", "OS")){
       dplyr::filter(term == "EUR_statusnon-EUR") %>%
       dplyr::mutate(p.value = round(p.value, 2)) %>%
       pull(p.value)
+    
+  }
     
   # calculaate FDRs
   survival_anc_stats <- survival_anc_stats %>%
