@@ -2906,15 +2906,15 @@ library(ggpubr)</code></pre>
 <!-- rnb-source-begin eyJkYXRhIjoibGlicmFyeSh0aWR5dmVyc2UpIn0= -->
 <pre class="r"><code>library(tidyverse)</code></pre>
 <!-- rnb-source-end -->
-<!-- rnb-message-begin eyJkYXRhIjoiLS0gQXR0YWNoaW5nIGNvcmUgdGlkeXZlcnNlIHBhY2thZ2VzIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tIHRpZHl2ZXJzZSAyLjAuMCAtLVxudiBkcGx5ciAgICAgMS4xLjQgICAgIHYgcmVhZHIgICAgIDIuMS41XG52IGZvcmNhdHMgICAxLjAuMCAgICAgdiBzdHJpbmdyICAgMS41LjFcbnYgbHVicmlkYXRlIDEuOS4zICAgICB2IHRpYmJsZSAgICAzLjIuMVxudiBwdXJyciAgICAgMS4wLjIgICAgIHYgdGlkeXIgICAgIDEuMy4xXG4ifQ== -->
-<pre><code>-- Attaching core tidyverse packages -------------------------------------------------------------------------------------------------------------------------------------------------------------- tidyverse 2.0.0 --
+<!-- rnb-message-begin eyJkYXRhIjoiLS0gQXR0YWNoaW5nIGNvcmUgdGlkeXZlcnNlIHBhY2thZ2VzIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0gdGlkeXZlcnNlIDIuMC4wIC0tXG52IGRwbHlyICAgICAxLjEuNCAgICAgdiByZWFkciAgICAgMi4xLjVcbnYgZm9yY2F0cyAgIDEuMC4wICAgICB2IHN0cmluZ3IgICAxLjUuMVxudiBsdWJyaWRhdGUgMS45LjMgICAgIHYgdGliYmxlICAgIDMuMi4xXG52IHB1cnJyICAgICAxLjAuMiAgICAgdiB0aWR5ciAgICAgMS4zLjFcbiJ9 -->
+<pre><code>-- Attaching core tidyverse packages ---------------------------------------------------------- tidyverse 2.0.0 --
 v dplyr     1.1.4     v readr     2.1.5
 v forcats   1.0.0     v stringr   1.5.1
 v lubridate 1.9.3     v tibble    3.2.1
 v purrr     1.0.2     v tidyr     1.3.1</code></pre>
 <!-- rnb-message-end -->
-<!-- rnb-message-begin eyJkYXRhIjoiLS0gQ29uZmxpY3RzIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tIHRpZHl2ZXJzZV9jb25mbGljdHMoKSAtLVxueCBkcGx5cjo6ZmlsdGVyKCkgbWFza3Mgc3RhdHM6OmZpbHRlcigpXG54IGRwbHlyOjpsYWcoKSAgICBtYXNrcyBzdGF0czo6bGFnKClcbmkgVXNlIHRoZSBjb25mbGljdGVkIHBhY2thZ2UgKDxodHRwOi8vY29uZmxpY3RlZC5yLWxpYi5vcmcvPikgdG8gZm9yY2UgYWxsIGNvbmZsaWN0cyB0byBiZWNvbWUgZXJyb3JzXG4ifQ== -->
-<pre><code>-- Conflicts -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- tidyverse_conflicts() --
+<!-- rnb-message-begin eyJkYXRhIjoiLS0gQ29uZmxpY3RzIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0gdGlkeXZlcnNlX2NvbmZsaWN0cygpIC0tXG54IGRwbHlyOjpmaWx0ZXIoKSBtYXNrcyBzdGF0czo6ZmlsdGVyKClcbnggZHBseXI6OmxhZygpICAgIG1hc2tzIHN0YXRzOjpsYWcoKVxuaSBVc2UgdGhlIGNvbmZsaWN0ZWQgcGFja2FnZSAoPGh0dHA6Ly9jb25mbGljdGVkLnItbGliLm9yZy8+KSB0byBmb3JjZSBhbGwgY29uZmxpY3RzIHRvIGJlY29tZSBlcnJvcnNcbiJ9 -->
+<pre><code>-- Conflicts ---------------------------------------------------------------------------- tidyverse_conflicts() --
 x dplyr::filter() masks stats::filter()
 x dplyr::lag()    masks stats::lag()
 i Use the conflicted package (&lt;http://conflicted.r-lib.org/&gt;) to force all conflicts to become errors</code></pre>
@@ -3026,9 +3026,9 @@ if (!dir.exists(plots_dir)) {
 <!-- rnb-source-begin eyJkYXRhIjoibWV0YWRhdGEgPC0gcmVhZHI6OnJlYWRfdHN2KGFuY2VzdHJ5X2ZpbGUpIn0= -->
 <pre class="r"><code>metadata &lt;- readr::read_tsv(ancestry_file)</code></pre>
 <!-- rnb-source-end -->
-<!-- rnb-message-begin eyJkYXRhIjoiUm93czogMTQ4NCBDb2x1bW5zOiA0MVxu4pSA4pSAIENvbHVtbiBzcGVjaWZpY2F0aW9uIOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgFxuRGVsaW1pdGVyOiBcIlxcdFwiXG5jaHIgKDIyKTogS2lkc19GaXJzdF9CaW9zcGVjaW1lbl9JRCwgcHJlZGljdGVkX2FuY2VzdHJ5LCBLaWRzX0ZpcnN0X1BhcnRpY2lwLi4uXG5kYmwgKDE4KTogRUFTX3Byb2IsIEFGUl9wcm9iLCBBTVJfcHJvYiwgU0FTX3Byb2IsIEVVUl9wcm9iLCBQQzEsIFBDMiwgUEMzLCBQLi4uXG5sZ2wgICgxKTogZ2l2ZW5fYW5jZXN0cnlcblxu4oS5IFVzZSBgc3BlYygpYCB0byByZXRyaWV2ZSB0aGUgZnVsbCBjb2x1bW4gc3BlY2lmaWNhdGlvbiBmb3IgdGhpcyBkYXRhLlxu4oS5IFNwZWNpZnkgdGhlIGNvbHVtbiB0eXBlcyBvciBzZXQgYHNob3dfY29sX3R5cGVzID0gRkFMU0VgIHRvIHF1aWV0IHRoaXMgbWVzc2FnZS5cbiJ9 -->
-<pre><code>Rows: 1484 Columns: 41
-── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+<!-- rnb-message-begin eyJkYXRhIjoiUm93czogMTQ1NCBDb2x1bW5zOiA0MVxu4pSA4pSAIENvbHVtbiBzcGVjaWZpY2F0aW9uIOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgFxuRGVsaW1pdGVyOiBcIlxcdFwiXG5jaHIgKDIyKTogS2lkc19GaXJzdF9CaW9zcGVjaW1lbl9JRCwgcHJlZGljdGVkX2FuY2VzdHJ5LCBLaWRzX0ZpcnN0X1BhcnRpY2lwLi4uXG5kYmwgKDE4KTogRUFTX3Byb2IsIEFGUl9wcm9iLCBBTVJfcHJvYiwgU0FTX3Byb2IsIEVVUl9wcm9iLCBQQzEsIFBDMiwgUEMzLCBQLi4uXG5sZ2wgICgxKTogZ2l2ZW5fYW5jZXN0cnlcblxu4oS5IFVzZSBgc3BlYygpYCB0byByZXRyaWV2ZSB0aGUgZnVsbCBjb2x1bW4gc3BlY2lmaWNhdGlvbiBmb3IgdGhpcyBkYXRhLlxu4oS5IFNwZWNpZnkgdGhlIGNvbHVtbiB0eXBlcyBvciBzZXQgYHNob3dfY29sX3R5cGVzID0gRkFMU0VgIHRvIHF1aWV0IHRoaXMgbWVzc2FnZS5cbiJ9 -->
+<pre><code>Rows: 1454 Columns: 41
+── Column specification ──────────────────────────────────────────────────────────────────────────────────────────
 Delimiter: &quot;\t&quot;
 chr (22): Kids_First_Biospecimen_ID, predicted_ancestry, Kids_First_Particip...
 dbl (18): EAS_prob, AFR_prob, AMR_prob, SAS_prob, EUR_prob, PC1, PC2, PC3, P...
@@ -3873,25 +3873,21 @@ Loglik converged before variable 4 ; coefficient may be infinite.</code></pre>
 <pre><code>Testing model: survival::Surv(OS_days, OS_status) ~ predicted_ancestry with kap.meier
 Testing model: survival::Surv(EFS_days, EFS_status) ~ predicted_ancestry with kap.meier</code></pre>
 <!-- rnb-message-end -->
-<!-- rnb-warning-begin eyJkYXRhIjoiV2FybmluZyBpbiBjb3hwaC5maXQoWCwgWSwgaXN0cmF0LCBvZmZzZXQsIGluaXQsIGNvbnRyb2wsIHdlaWdodHMgPSB3ZWlnaHRzLCA6XG5Mb2dsaWsgY29udmVyZ2VkIGJlZm9yZSB2YXJpYWJsZSAyLDYgOyBjb2VmZmljaWVudCBtYXkgYmUgaW5maW5pdGUuXG4ifQ== -->
+<!-- rnb-warning-begin eyJkYXRhIjoiV2FybmluZyBpbiBjb3hwaC5maXQoWCwgWSwgaXN0cmF0LCBvZmZzZXQsIGluaXQsIGNvbnRyb2wsIHdlaWdodHMgPSB3ZWlnaHRzLCA6XG5Mb2dsaWsgY29udmVyZ2VkIGJlZm9yZSB2YXJpYWJsZSA2IDsgY29lZmZpY2llbnQgbWF5IGJlIGluZmluaXRlLlxuIn0= -->
 <pre><code>Warning in coxph.fit(X, Y, istrat, offset, init, control, weights = weights, :
-Loglik converged before variable 2,6 ; coefficient may be infinite.</code></pre>
-<!-- rnb-warning-end -->
-<!-- rnb-warning-begin eyJkYXRhIjoiV2FybmluZyBpbiBjb3hwaC5maXQoWCwgWSwgaXN0cmF0LCBvZmZzZXQsIGluaXQsIGNvbnRyb2wsIHdlaWdodHMgPSB3ZWlnaHRzLCA6XG5Mb2dsaWsgY29udmVyZ2VkIGJlZm9yZSB2YXJpYWJsZSAyIDsgY29lZmZpY2llbnQgbWF5IGJlIGluZmluaXRlLlxuIn0= -->
-<pre><code>Warning in coxph.fit(X, Y, istrat, offset, init, control, weights = weights, :
-Loglik converged before variable 2 ; coefficient may be infinite.</code></pre>
+Loglik converged before variable 6 ; coefficient may be infinite.</code></pre>
 <!-- rnb-warning-end -->
 <!-- rnb-message-begin eyJkYXRhIjoiVGVzdGluZyBtb2RlbDogc3Vydml2YWw6OlN1cnYoT1NfZGF5cywgT1Nfc3RhdHVzKSB+IHByZWRpY3RlZF9hbmNlc3RyeSB3aXRoIGthcC5tZWllclxuVGVzdGluZyBtb2RlbDogc3Vydml2YWw6OlN1cnYoRUZTX2RheXMsIEVGU19zdGF0dXMpIH4gcHJlZGljdGVkX2FuY2VzdHJ5IHdpdGgga2FwLm1laWVyXG4ifQ== -->
 <pre><code>Testing model: survival::Surv(OS_days, OS_status) ~ predicted_ancestry with kap.meier
 Testing model: survival::Surv(EFS_days, EFS_status) ~ predicted_ancestry with kap.meier</code></pre>
 <!-- rnb-message-end -->
-<!-- rnb-warning-begin eyJkYXRhIjoiV2FybmluZyBpbiBjb3hwaC5maXQoWCwgWSwgaXN0cmF0LCBvZmZzZXQsIGluaXQsIGNvbnRyb2wsIHdlaWdodHMgPSB3ZWlnaHRzLCA6XG5Mb2dsaWsgY29udmVyZ2VkIGJlZm9yZSB2YXJpYWJsZSAyLDQsNiA7IGNvZWZmaWNpZW50IG1heSBiZSBpbmZpbml0ZS5cbiJ9 -->
+<!-- rnb-warning-begin eyJkYXRhIjoiV2FybmluZyBpbiBjb3hwaC5maXQoWCwgWSwgaXN0cmF0LCBvZmZzZXQsIGluaXQsIGNvbnRyb2wsIHdlaWdodHMgPSB3ZWlnaHRzLCA6XG5Mb2dsaWsgY29udmVyZ2VkIGJlZm9yZSB2YXJpYWJsZSA0LDYgOyBjb2VmZmljaWVudCBtYXkgYmUgaW5maW5pdGUuXG4ifQ== -->
 <pre><code>Warning in coxph.fit(X, Y, istrat, offset, init, control, weights = weights, :
-Loglik converged before variable 2,4,6 ; coefficient may be infinite.</code></pre>
+Loglik converged before variable 4,6 ; coefficient may be infinite.</code></pre>
 <!-- rnb-warning-end -->
-<!-- rnb-warning-begin eyJkYXRhIjoiV2FybmluZyBpbiBjb3hwaC5maXQoWCwgWSwgaXN0cmF0LCBvZmZzZXQsIGluaXQsIGNvbnRyb2wsIHdlaWdodHMgPSB3ZWlnaHRzLCA6XG5Mb2dsaWsgY29udmVyZ2VkIGJlZm9yZSB2YXJpYWJsZSAyLDQsNiA7IGNvZWZmaWNpZW50IG1heSBiZSBpbmZpbml0ZS5cbiJ9 -->
+<!-- rnb-warning-begin eyJkYXRhIjoiV2FybmluZyBpbiBjb3hwaC5maXQoWCwgWSwgaXN0cmF0LCBvZmZzZXQsIGluaXQsIGNvbnRyb2wsIHdlaWdodHMgPSB3ZWlnaHRzLCA6XG5Mb2dsaWsgY29udmVyZ2VkIGJlZm9yZSB2YXJpYWJsZSA0LDYgOyBjb2VmZmljaWVudCBtYXkgYmUgaW5maW5pdGUuXG4ifQ== -->
 <pre><code>Warning in coxph.fit(X, Y, istrat, offset, init, control, weights = weights, :
-Loglik converged before variable 2,4,6 ; coefficient may be infinite.</code></pre>
+Loglik converged before variable 4,6 ; coefficient may be infinite.</code></pre>
 <!-- rnb-warning-end -->
 <!-- rnb-message-begin eyJkYXRhIjoiVGVzdGluZyBtb2RlbDogc3Vydml2YWw6OlN1cnYoT1NfZGF5cywgT1Nfc3RhdHVzKSB+IHByZWRpY3RlZF9hbmNlc3RyeSB3aXRoIGthcC5tZWllclxuVGVzdGluZyBtb2RlbDogc3Vydml2YWw6OlN1cnYoRUZTX2RheXMsIEVGU19zdGF0dXMpIH4gcHJlZGljdGVkX2FuY2VzdHJ5IHdpdGgga2FwLm1laWVyXG4ifQ== -->
 <pre><code>Testing model: survival::Surv(OS_days, OS_status) ~ predicted_ancestry with kap.meier
@@ -3993,27 +3989,17 @@ Testing model: survival::Surv(EFS_days, EFS_status) ~ EUR_status with kap.meier<
 <!-- rnb-message-begin eyJkYXRhIjoiVGVzdGluZyBtb2RlbDogc3Vydml2YWw6OlN1cnYoRUZTX2RheXMsIEVGU19zdGF0dXMpIH4gRVVSX3N0YXR1cyB3aXRoIGthcC5tZWllclxuIn0= -->
 <pre><code>Testing model: survival::Surv(EFS_days, EFS_status) ~ EUR_status with kap.meier</code></pre>
 <!-- rnb-message-end -->
-<!-- rnb-warning-begin eyJkYXRhIjoiV2FybmluZyBpbiBjb3hwaC5maXQoWCwgWSwgaXN0cmF0LCBvZmZzZXQsIGluaXQsIGNvbnRyb2wsIHdlaWdodHMgPSB3ZWlnaHRzLCA6XG5Mb2dsaWsgY29udmVyZ2VkIGJlZm9yZSB2YXJpYWJsZSAyIDsgY29lZmZpY2llbnQgbWF5IGJlIGluZmluaXRlLlxuIn0= -->
-<pre><code>Warning in coxph.fit(X, Y, istrat, offset, init, control, weights = weights, :
-Loglik converged before variable 2 ; coefficient may be infinite.</code></pre>
-<!-- rnb-warning-end -->
-<!-- rnb-warning-begin eyJkYXRhIjoiV2FybmluZyBpbiBjb3hwaC5maXQoWCwgWSwgaXN0cmF0LCBvZmZzZXQsIGluaXQsIGNvbnRyb2wsIHdlaWdodHMgPSB3ZWlnaHRzLCA6XG5Mb2dsaWsgY29udmVyZ2VkIGJlZm9yZSB2YXJpYWJsZSAyIDsgY29lZmZpY2llbnQgbWF5IGJlIGluZmluaXRlLlxuIn0= -->
-<pre><code>Warning in coxph.fit(X, Y, istrat, offset, init, control, weights = weights, :
-Loglik converged before variable 2 ; coefficient may be infinite.</code></pre>
-<!-- rnb-warning-end -->
-<!-- rnb-message-begin eyJkYXRhIjoiVGVzdGluZyBtb2RlbDogc3Vydml2YWw6OlN1cnYoT1NfZGF5cywgT1Nfc3RhdHVzKSB+IEVVUl9zdGF0dXMgd2l0aCBrYXAubWVpZXJcblRlc3RpbmcgbW9kZWw6IHN1cnZpdmFsOjpTdXJ2KEVGU19kYXlzLCBFRlNfc3RhdHVzKSB+IEVVUl9zdGF0dXMgd2l0aCBrYXAubWVpZXJcbiJ9 -->
-<pre><code>Testing model: survival::Surv(OS_days, OS_status) ~ EUR_status with kap.meier
-Testing model: survival::Surv(EFS_days, EFS_status) ~ EUR_status with kap.meier</code></pre>
+<!-- rnb-message-begin eyJkYXRhIjoiVGVzdGluZyBtb2RlbDogc3Vydml2YWw6OlN1cnYoT1NfZGF5cywgT1Nfc3RhdHVzKSB+IEVVUl9zdGF0dXMgd2l0aCBrYXAubWVpZXJcbiJ9 -->
+<pre><code>Testing model: survival::Surv(OS_days, OS_status) ~ EUR_status with kap.meier</code></pre>
 <!-- rnb-message-end -->
-<!-- rnb-warning-begin eyJkYXRhIjpbIldhcm5pbmcgaW4gY294cGguZml0KFgsIFksIGlzdHJhdCwgb2Zmc2V0LCBpbml0LCBjb250cm9sLCB3ZWlnaHRzID0gd2VpZ2h0cywgOlxuTG9nbGlrIGNvbnZlcmdlZCBiZWZvcmUgdmFyaWFibGUgMiA7IGNvZWZmaWNpZW50IG1heSBiZSBpbmZpbml0ZS5cbiIsIldhcm5pbmcgaW4gY294cGguZml0KFgsIFksIGlzdHJhdCwgb2Zmc2V0LCBpbml0LCBjb250cm9sLCB3ZWlnaHRzID0gd2VpZ2h0cywgOlxuTG9nbGlrIGNvbnZlcmdlZCBiZWZvcmUgdmFyaWFibGUgMiA7IGNvZWZmaWNpZW50IG1heSBiZSBpbmZpbml0ZS5cbiJdfQ== -->
-<pre><code>Warning in coxph.fit(X, Y, istrat, offset, init, control, weights = weights, :
-Loglik converged before variable 2 ; coefficient may be infinite.
-Warning in coxph.fit(X, Y, istrat, offset, init, control, weights = weights, :
-Loglik converged before variable 2 ; coefficient may be infinite.</code></pre>
-<!-- rnb-warning-end -->
-<!-- rnb-message-begin eyJkYXRhIjoiVGVzdGluZyBtb2RlbDogc3Vydml2YWw6OlN1cnYoT1NfZGF5cywgT1Nfc3RhdHVzKSB+IEVVUl9zdGF0dXMgd2l0aCBrYXAubWVpZXJcblRlc3RpbmcgbW9kZWw6IHN1cnZpdmFsOjpTdXJ2KEVGU19kYXlzLCBFRlNfc3RhdHVzKSB+IEVVUl9zdGF0dXMgd2l0aCBrYXAubWVpZXJcbiJ9 -->
-<pre><code>Testing model: survival::Surv(OS_days, OS_status) ~ EUR_status with kap.meier
-Testing model: survival::Surv(EFS_days, EFS_status) ~ EUR_status with kap.meier</code></pre>
+<!-- rnb-message-begin eyJkYXRhIjoiVGVzdGluZyBtb2RlbDogc3Vydml2YWw6OlN1cnYoRUZTX2RheXMsIEVGU19zdGF0dXMpIH4gRVVSX3N0YXR1cyB3aXRoIGthcC5tZWllclxuIn0= -->
+<pre><code>Testing model: survival::Surv(EFS_days, EFS_status) ~ EUR_status with kap.meier</code></pre>
+<!-- rnb-message-end -->
+<!-- rnb-message-begin eyJkYXRhIjoiVGVzdGluZyBtb2RlbDogc3Vydml2YWw6OlN1cnYoT1NfZGF5cywgT1Nfc3RhdHVzKSB+IEVVUl9zdGF0dXMgd2l0aCBrYXAubWVpZXJcbiJ9 -->
+<pre><code>Testing model: survival::Surv(OS_days, OS_status) ~ EUR_status with kap.meier</code></pre>
+<!-- rnb-message-end -->
+<!-- rnb-message-begin eyJkYXRhIjoiVGVzdGluZyBtb2RlbDogc3Vydml2YWw6OlN1cnYoRUZTX2RheXMsIEVGU19zdGF0dXMpIH4gRVVSX3N0YXR1cyB3aXRoIGthcC5tZWllclxuIn0= -->
+<pre><code>Testing model: survival::Surv(EFS_days, EFS_status) ~ EUR_status with kap.meier</code></pre>
 <!-- rnb-message-end -->
 <!-- rnb-warning-begin eyJkYXRhIjoiV2FybmluZyBpbiBjb3hwaC5maXQoWCwgWSwgaXN0cmF0LCBvZmZzZXQsIGluaXQsIGNvbnRyb2wsIHdlaWdodHMgPSB3ZWlnaHRzLCA6XG5Mb2dsaWsgY29udmVyZ2VkIGJlZm9yZSB2YXJpYWJsZSAxLDQgOyBjb2VmZmljaWVudCBtYXkgYmUgaW5maW5pdGUuXG4ifQ== -->
 <pre><code>Warning in coxph.fit(X, Y, istrat, offset, init, control, weights = weights, :

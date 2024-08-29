@@ -125,8 +125,6 @@ for (surv in c("EFS", "OS")){
       
     }
     
-  }
-    
     # extract chi-squared a p-values from predicted ancestry coxph models
     survival_anc_stats[group_df$group[i],]$chisq_superpop <- round(anova(survival_anc)["predicted_ancestry", 2], 1)
     survival_anc_stats[group_df$group[i],]$p_superpop <- round(anova(survival_anc)["predicted_ancestry", 4], 2)
@@ -141,6 +139,8 @@ for (surv in c("EFS", "OS")){
       dplyr::filter(term == "EUR_statusnon-EUR") %>%
       dplyr::mutate(p.value = round(p.value, 2)) %>%
       pull(p.value)
+    
+  }
     
   # calculaate FDRs
   survival_anc_stats <- survival_anc_stats %>%
