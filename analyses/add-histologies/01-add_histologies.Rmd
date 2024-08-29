@@ -77,11 +77,13 @@ ancestry <- ancestry %>%
                      'age_at_chemo_start', 'age_at_radiation_start')], 
             by = 'Kids_First_Participant_ID') %>%
   # There is one sample (BS_M52K86E6) with no matched tumor in OPC v14, but is known to have an oligodendroglioma. We will manually enter braod_histology and cancer_group info
+  # Additionally, 4 PNOC samples have incorrect cancer_group assignment; should be DMG but is listed as High-grade glioma. We will update here
   dplyr::mutate(broad_histology = case_when(
     Kids_First_Biospecimen_ID == "BS_M52K86E6" ~ "Diffuse astrocytic and oligodendroglial tumor",
     TRUE ~ broad_histology),
     cancer_group = case_when(
       Kids_First_Biospecimen_ID == "BS_M52K86E6" ~ "Oligodendroglioma",
+      sample_id %in% c("7316-4994", "7316-3220", "7316-3232", "7316-4998") ~ "Diffuse midline glioma",
       TRUE ~ cancer_group)
     ) %>%
   dplyr::left_join(plot_mapping[,c('broad_histology', 'cancer_group', 'plot_group')], by = c('broad_histology', 'cancer_group'))
@@ -119,7 +121,15 @@ ancestry_unique <- ancestry_unique %>%
     Kids_First_Biospecimen_ID_tumor == "BS_6Z213H2V" ~ "Schwannoma",
     is.na(plot_group) ~ "Other tumor",
     TRUE ~ plot_group
-  ))
+  )) %>%
+  # Three patients with medullo are recorded as only having biopsies taken, but path reports have confirmed partial resection; update here
+  dplyr::mutate(extent_of_tumor_resection = case_when(
+    plot_group == "Medulloblastoma" & extent_of_tumor_resection == "Biopsy only" ~ "Partial resection",
+    TRUE ~ extent_of_tumor_resection
+  )) %>%
+  # filter out patients > 40yo (14610 days); PT_7S81MVTV does not have age listed but is confirmed to be >40yo
+  dplyr::filter(is.na(age_at_diagnosis_days) |  age_at_diagnosis_days < 14610,
+                Kids_First_Participant_ID != "PT_7S81MVTV")
 
 ```
 

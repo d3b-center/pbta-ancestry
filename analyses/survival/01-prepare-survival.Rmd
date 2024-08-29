@@ -81,6 +81,12 @@ ancestry <- ancestry %>%
 ```{r format mol sub gruop}
 
 ancestry <- ancestry %>%
+    # The molecular subtypes for several DIPG/DMG samples is incorrectly assigned as an HGG subtype; modify here:
+    mutate(molecular_subtype = case_when(
+      plot_group == "DIPG or DMG" & grepl("HGG", molecular_subtype) & grepl("TP53", molecular_subtype) ~ "DMG, H3 K28, TP53",
+      plot_group == "DIPG or DMG" & grepl("HGG", molecular_subtype) ~ "DMG, H3 K28",
+      TRUE ~ molecular_subtype
+    )) %>%
     mutate(mol_sub_group = case_when(
     plot_group %in% c("DIPG or DMG", "Other high-grade glioma") & grepl("wildtype", molecular_subtype) ~ "HGG, H3 WT",
     plot_group %in% c("DIPG or DMG", "Other high-grade glioma") & grepl("K28", molecular_subtype) ~ "DMG, H3 K28",
