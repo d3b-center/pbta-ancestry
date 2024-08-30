@@ -1,0 +1,404 @@
+---
+title: "PBTA Ancestry Principal Component Survival Analyses"
+output: 
+  html_notebook:
+    toc: TRUE
+    toc_float: TRUE
+author: Ryan Corbett
+date: 2023
+---
+
+**Purpose:** 
+
+Runs survival analysis models within tumor histologies and molecular subtypes by somalier-derived principal component (PC) values
+
+## Setup
+
+#### Packages and functions
+
+Read in set up script.
+
+```{r Set up library}
+library(survival)
+library(ggpubr)
+library(tidyverse)
+library(ComplexHeatmap)
+library(circlize)
+
+# Set directories
+root_dir <- rprojroot::find_root(rprojroot::has_dir(".git"))
+analysis_dir <- file.path(root_dir, "analyses", "survival-pcs")
+# Source this script, which contains a wrapper function that can conduct the survival analyses, from OpenPBTA
+source(file.path(root_dir, "analyses", "survival", "util", "survival_models_additive.R"))
+source(file.path(root_dir, "analyses", "survival", "util", "heatmap_function.R"))
+# Magrittr pipe
+`%>%` <- dplyr::`%>%`
+```
+
+#### Set up files and directories
+
+Set up output directories. 
+```{r Set up directories}
+results_dir <- file.path(analysis_dir, "results")
+plots_dir <- file.path(analysis_dir, "plots")
+```
+
+Make output directories.
+```{r Make output directories}
+if (!dir.exists(results_dir)) {
+  dir.create(results_dir)
+}
+if (!dir.exists(plots_dir)) {
+  dir.create(plots_dir)
+}
+```
+
+Declare input file paths and useful variables
+```{r Set input file paths}
+ancestry_file <- file.path(root_dir, "analyses", 
+                           "survival", "results", 
+                           "merged_ancestry_histology_survival.tsv")
+```
+
+## Import the metadata
+```{r Read in metadata}
+metadata <- readr::read_tsv(ancestry_file)
+
+metadata <- metadata %>%
+  dplyr::mutate(predicted_ancestry = factor(predicted_ancestry,
+                                            levels = c("AFR", "AMR", "EAS", "EUR", "SAS")
+                                            )) %>%
+  dplyr::mutate(extent_of_tumor_resection = case_when(
+          extent_of_tumor_resection %in% c('Not Reported', "Unavailable") ~ NA_character_,
+          extent_of_tumor_resection == "Not Applicable" ~ "No resection",
+          TRUE ~ extent_of_tumor_resection
+        ))
+```
+
+Define variables (here, PC values from somalier)
+```{r format race and ethnicity}
+variable <- c("PC1", "PC2", "PC3", "PC4", "PC5")
+```
+
+Define plot groups for which survival analyses should be run
+```{r define histologies}
+# Define groups for survival analyses
+groups <- c("Atypical Teratoid Rhabdoid Tumor", "Craniopharyngioma",
+            "DIPG or DMG|Other high-grade glioma", "Ependymoma",
+            "Germ cell tumor",
+            "Mixed neuronal-glial tumor", "Low-grade glioma",
+            "Medulloblastoma", "Meningioma",
+            "Mesenchymal tumor", "Neurofibroma plexiform", 
+            "Oligodendroglioma", "Schwannoma"
+)
+
+# create names vector for output files
+plot_names <- c("ATRT", "CRANIO", "HGG", "EPN", "GERM", "GNG", "LGG", "MB", "MNG", "MES", "NFP", "OLIGO", "SWN")
+names(plot_names) <- groups
+```
+
+Loop through PCs and groups and create Kaplan Meier survival and Cox Proportional Hazard models for OS and EFS
+```{r histology survival}
+for (var in variable){
+
+  for (group in groups){
+    
+    results_dir <- file.path(analysis_dir, "results", plot_names[group])
+    
+    if (!dir.exists(results_dir)) {
+      dir.create(results_dir)
+      
+      }
+    
+    # Define output files
+    km_os_model_file <- file.path(results_dir,
+                                      glue::glue("logrank_{plot_names[group]}_OS_{var}.RDS"))
+
+    coxph_os_model_file <- ifelse(group %in% c("Low-grade glioma"),
+                               file.path(results_dir,
+                                         glue::glue("cox_{plot_names[group]}_OS_additive_terms_subtype_resection_{var}.RDS")),
+                               file.path(results_dir,
+                                         glue::glue("cox_{plot_names[group]}_OS_additive_terms_subtype_{var}.RDS"))
+    )
+    
+    km_efs_model_file <- file.path(results_dir,
+                                      glue::glue("logrank_{plot_names[group]}_EFS_{var}.RDS"))
+
+    coxph_efs_model_file <- ifelse(group %in% c("Low-grade glioma"),
+                               file.path(results_dir,
+                                         glue::glue("cox_{plot_names[group]}_EFS_additive_terms_subtype_resection_{var}.RDS")),
+                               file.path(results_dir,
+                                         glue::glue("cox_{plot_names[group]}_EFS_additive_terms_subtype_{var}.RDS"))
+    )
+    
+    # Subset histology
+    group_hist <- metadata %>%
+      filter(grepl(group, plot_group)) %>%
+      dplyr::mutate(mol_sub_group = factor(mol_sub_group))
+
+    # Define high and low PC patients to stratify for KM survival analyses
+    group_hist <- group_hist %>%
+      dplyr::mutate(PC_group = case_when(
+      group_hist[,var] > summary(unlist(group_hist[,var]), na.rm = TRUE)["3rd Qu."] ~ glue::glue("High {var}"),
+      group_hist[,var] < summary(unlist(group_hist[,var]), na.rm = TRUE)["1st Qu."] ~ glue::glue("Low {var}"),
+      TRUE ~ NA_character_
+    )) %>%
+      dplyr::mutate(PC_group = factor(PC_group,
+                                      c(glue::glue("Low {var}"), glue::glue("High {var}"))))
+
+    if (group == "DIPG or DMG|Other high-grade glioma"){
+      group_hist <- group_hist %>%
+       mutate(mol_sub_group = fct_relevel(mol_sub_group, c("HGG, H3 WT",
+                                                       "DHG, H3 G35",
+                                                       "IHG", "HGG, IDH")))
+    } 
+    
+    if (group == "Ependymoma") {
+      group_hist <- group_hist %>%
+        dplyr::mutate(mol_sub_group = fct_relevel(mol_sub_group,
+                      c("EPN, ST ZFTA", "EPN, ST YAP1", "EPN, PF A", 
+                        "EPN, PF B", "EPN, MPE", "EPN, SP", "EPN, SP-MYCN",
+                        "EPN, To be classified")))
+        
+    } 
+    
+    if (group == "Low-grade glioma") {
+      group_hist <- group_hist %>%
+        dplyr::mutate(mol_sub_group = fct_relevel(mol_sub_group,
+                                                  c("LGG, WT", "LGG, BRAF V600E",
+                                                    "LGG, BRAF fusion",
+                                                    "LGG, Other alteration",
+                                                    "SEGA",
+                                                    "LGG, To be classified")))
+    }
+    
+    if (group == "Medulloblastoma") {
+      group_hist <- group_hist %>%
+        dplyr::mutate(mol_sub_group = fct_relevel(mol_sub_group,
+                                                  c("MB, WNT", "MB, Group3",
+                                                    "MB, Group4", "MB, SHH")))
+    }
+    
+    if (group == "Mesenchymal tumor") {
+      group_hist <- group_hist %>%
+        dplyr::mutate(cancer_group = fct_relevel(cancer_group,
+                                                  c("Sarcoma", "Chordoma", "Chondromyxoid fibroma",
+                                                    "Ewing sarcoma", "Hemangioblastoma",
+                                                    "Inflammatory Myofibroblastic Tumor",
+                                                    "Mesenchymal tumor")))
+    }
+    
+    if (group == "Mixed neuronal-glial tumor") {
+      group_hist <- group_hist %>%
+        dplyr::mutate(mol_sub_group = fct_relevel(mol_sub_group,
+                                                  c("GNG/GNT, WT", "GNG/GNT, BRAF V600E",
+                                                    "GNG/GNT, BRAF fusion",
+                                                    "GNG/GNT, Other alteration",
+                                                    "GNG, To be classified",
+                                                    "GNT, To be classified")))
+    }
+
+    # Run kaplain-meier survival models
+    kap_os <- survival_analysis(
+    metadata  = group_hist[!grepl("To be classified", group_hist$mol_sub_group),],
+    ind_var = "PC_group",
+    test = "kap.meier",
+    metadata_sample_col = "Kids_First_Biospecimen_ID",
+    days_col = "OS_days",
+    status_col = "OS_status"
+    )
+
+    readr::write_rds(kap_os, km_os_model_file)
+
+    kap_efs <- survival_analysis(
+    metadata  = group_hist[!grepl("To be classified", group_hist$mol_sub_group),],
+    ind_var = "PC_group",
+    test = "kap.meier",
+    metadata_sample_col = "Kids_First_Biospecimen_ID",
+    days_col = "EFS_days",
+    status_col = "EFS_status"
+    )
+
+    readr::write_rds(kap_efs, km_efs_model_file)
+  
+    # Run cox proportional hazards model
+    add_model_os <- fit_save_model(group_hist[!grepl("To be classified", group_hist$mol_sub_group),],
+                                    terms = ifelse(
+                                        group %in% c("Low-grade glioma", "Atypical Teratoid Rhabdoid Tumor", "Medulloblastoma"),
+                                        glue::glue("extent_of_tumor_resection+mol_sub_group+age_at_diagnosis_years+{var}"),
+                                        ifelse(
+                                          group == "Other high-grade glioma",
+                                          glue::glue("extent_of_tumor_resection+molecular_subtype+age_at_diagnosis_years+{var}"),
+                                          ifelse(
+                                            group == "DIPG or DMG", 
+                                            glue::glue("molecular_subtype+age_at_diagnosis_years+{var}"),
+                                            ifelse(
+                                              group %in% c("Ependymoma", "Medulloblastoma", "Mixed neuronal-glial tumor"),
+                                              glue::glue("mol_sub_group+age_at_diagnosis_years+{var}"),
+                                              ifelse(
+                                                group %in% c("Germ cell tumor", "Mesenchymal tumor"),
+                                                glue::glue("cancer_group+age_at_diagnosis_years+{var}"),
+                                                ifelse(group == "Schwannoma",
+                                                       glue::glue("extent_of_tumor_resection+age_at_diagnosis_years+{var}"),
+                                                       glue::glue("age_at_diagnosis_years+{var}")
+                                                        )))))),
+               coxph_os_model_file,
+               "multivariate",
+               years_col = "OS_years", status_col = "OS_status"
+              )
+    
+    add_model_efs <- fit_save_model(group_hist[!grepl("To be classified", group_hist$mol_sub_group),],
+                                    terms = ifelse(
+                                        group %in% c("Low-grade glioma", "Atypical Teratoid Rhabdoid Tumor", "Medulloblastoma"),
+                                        glue::glue("extent_of_tumor_resection+mol_sub_group+age_at_diagnosis_years+{var}"),
+                                        ifelse(
+                                          group == "Other high-grade glioma",
+                                          glue::glue("extent_of_tumor_resection+molecular_subtype+age_at_diagnosis_years+{var}"),
+                                          ifelse(
+                                            group == "DIPG or DMG", 
+                                            glue::glue("molecular_subtype+age_at_diagnosis_years+{var}"),
+                                            ifelse(
+                                              group %in% c("Ependymoma", "Medulloblastoma", "Mixed neuronal-glial tumor"),
+                                              glue::glue("mol_sub_group+age_at_diagnosis_years+{var}"),
+                                              ifelse(
+                                                group %in% c("Germ cell tumor", "Mesenchymal tumor"),
+                                                glue::glue("cancer_group+age_at_diagnosis_years+{var}"),
+                                                ifelse(group == "Schwannoma",
+                                                       glue::glue("extent_of_tumor_resection+age_at_diagnosis_years+{var}"),
+                                                       glue::glue("age_at_diagnosis_years+{var}")
+                                                        )))))),
+               coxph_efs_model_file,
+               "multivariate",
+               years_col = "EFS_years", status_col = "EFS_status"
+              )
+    
+  }
+}
+```
+
+Loop through molecular subtypes to generate subtype-specific survival models by predicted ancestry, reported race, and reported ancestry
+```{r subtype survival}
+# define subtype df including subtypes with n>=20
+subtype_df <- metadata %>%
+  count(mol_sub_group, plot_group) %>%
+  filter(n >=20 & !grepl("classified", mol_sub_group) & !is.na(mol_sub_group)) %>%
+  dplyr::mutate(hist = unlist(lapply(strsplit(mol_sub_group, ", "), function(x) x[1])),
+                subtype = case_when(
+                  grepl(",", mol_sub_group) ~ unlist(lapply(strsplit(mol_sub_group, ", "), function(x) x[2])),
+                  TRUE ~ NA_character_)) %>%
+  dplyr::mutate(subtype = str_replace_all(subtype, " ", "-")) %>%
+  dplyr::mutate(hist = case_when(
+    hist == "GNG/GNT" ~ "GNG",
+    TRUE ~ hist
+  ))
+
+for (var in variable){
+  
+  for (i in 1:nrow(subtype_df)) {
+    
+    results_dir <- file.path(analysis_dir, "results", subtype_df$hist[i])
+    
+    if (!dir.exists(results_dir)) {
+      dir.create(results_dir)
+      
+      }
+    
+    km_os_model_file <- file.path(results_dir,
+                                      glue::glue("logrank_{subtype_df$hist[i]}_{subtype_df$subtype[i]}_OS_{var}.RDS"))
+
+    coxph_os_model_file <- ifelse(subtype_df$hist[i] %in% c("LGG"),
+                               file.path(results_dir,
+                                        glue::glue("cox_{subtype_df$hist[i]}_{subtype_df$subtype[i]}_OS_additive_terms_subtype_resection_{var}.RDS")),
+                               file.path(results_dir,
+                                         glue::glue("cox_{subtype_df$hist[i]}_{subtype_df$subtype[i]}_OS_additive_terms_subtype_{var}.RDS"))
+    )
+  
+      km_efs_model_file <- file.path(results_dir,
+                                      glue::glue("logrank_{subtype_df$hist[i]}_{subtype_df$subtype[i]}_EFS_{var}.RDS"))
+
+    coxph_efs_model_file <- ifelse(subtype_df$hist[i] %in% c("LGG"),
+                               file.path(results_dir,
+                                        glue::glue("cox_{subtype_df$hist[i]}_{subtype_df$subtype[i]}_EFS_additive_terms_subtype_resection_{var}.RDS")),
+                               file.path(results_dir,
+                                         glue::glue("cox_{subtype_df$hist[i]}_{subtype_df$subtype[i]}_EFS_additive_terms_subtype_{var}.RDS"))
+    )
+    
+    # subset data for subtype
+    subtype_hist <- metadata %>%
+      filter(plot_group == subtype_df$plot_group[i] & grepl(subtype_df$mol_sub_group[i], mol_sub_group))
+    
+    if (subtype_df$plot_group[i] %in% c("Low-grade glioma")){
+    
+      # identify high PC and low PC samples
+      subtype_hist <- subtype_hist %>%
+        dplyr::mutate(PC_group = case_when(
+        subtype_hist[,var] > summary(unlist(subtype_hist[,var]), na.rm = TRUE)["3rd Qu."] ~ glue::glue("High {var}"),
+        subtype_hist[,var] < summary(unlist(subtype_hist[,var]), na.rm = TRUE)["1st Qu."] ~ glue::glue("Low {var}"),
+        TRUE ~ NA_character_
+      )) %>%
+        dplyr::mutate(PC_group = factor(PC_group,
+                                        c(glue::glue("Low {var}"), glue::glue("High {var}"))))
+    
+    } else {
+      subtype_hist <- subtype_hist %>%
+      # filter(!is.na(OS_days) & !is.na(EFS_days)) %>%
+        dplyr::mutate(PC_group = case_when(
+        subtype_hist[,var] > summary(unlist(subtype_hist[,var]), na.rm = TRUE)["3rd Qu."] ~ glue::glue("High {var}"),
+        subtype_hist[,var] < summary(unlist(subtype_hist[,var]), na.rm = TRUE)["1st Qu."] ~ glue::glue("Low {var}"),
+        TRUE ~ NA_character_
+      )) %>%
+        dplyr::mutate(PC_group = factor(PC_group,
+                                        c(glue::glue("Low {var}"), glue::glue("High {var}"))))
+    
+  }
+      
+    # Run Kaplan-Meier survival models
+    kap_os <- survival_analysis(
+    metadata  = subtype_hist,
+    ind_var = "PC_group",
+    test = "kap.meier",
+    metadata_sample_col = "Kids_First_Biospecimen_ID",
+    days_col = "OS_days",
+    status_col = "OS_status"
+    )
+
+    readr::write_rds(kap_os, km_os_model_file)
+
+    kap_efs <- survival_analysis(
+    metadata  = subtype_hist,
+    ind_var = "PC_group",
+    test = "kap.meier",
+    metadata_sample_col = "Kids_First_Biospecimen_ID",
+    days_col = "EFS_days",
+    status_col = "EFS_status"
+    )
+
+    readr::write_rds(kap_efs, km_efs_model_file)
+
+    add_model_os <- fit_save_model(subtype_hist,
+                                  terms = ifelse(subtype_df$plot_group[i] %in% c("Low-grade glioma"),
+                                                 glue::glue("extent_of_tumor_resection+age_at_diagnosis_years+{var}"),
+                                                 glue::glue("age_at_diagnosis_years+{var}")),
+                                   coxph_os_model_file,
+                                   "multivariate",
+                                   years_col = "OS_years", status_col = "OS_status"
+                                  )
+    
+    add_model_efs <- fit_save_model(subtype_hist,
+                                  terms = ifelse(subtype_df$plot_group[i] %in% c("Low-grade glioma"),
+                                                 glue::glue("extent_of_tumor_resection+age_at_diagnosis_years+{var}"),
+                                                 glue::glue("age_at_diagnosis_years+{var}")),
+                                     coxph_efs_model_file,
+                                     "multivariate",
+                                     years_col = "EFS_years", status_col = "EFS_status"
+                                    )
+    
+  }
+    
+}
+```
+
+Print session info
+```{r sessionInfo}
+sessionInfo()
+```
