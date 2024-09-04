@@ -137,10 +137,12 @@ os_p_mat <- merged_res %>%
   spread(PC, OS_p) %>%
   column_to_rownames("group")
 
-os_p_mat <- as.matrix(os_p_mat)
-
+os_p_mat <- as.matrix(os_p_mat) 
 os_p_mat <- ifelse(os_p_mat >= 0.01, round(os_p_mat, 2),
                    "<0.01*")
+os_p_mat <- ifelse(os_p_mat < 0.05 & os_p_mat >= 0.01, 
+                   paste0(os_p_mat, "*"),
+                   os_p_mat)
 
 efs_mat <- merged_res %>%
   dplyr::select(group, EFS_HR) %>%
@@ -155,10 +157,11 @@ efs_p_mat <- merged_res %>%
   column_to_rownames("group")
 
 efs_p_mat <- as.matrix(efs_p_mat)
-
 efs_p_mat <- ifelse(efs_p_mat >= 0.01, round(efs_p_mat, 2),
                    "<0.01*")
-
+efs_p_mat <- ifelse(efs_p_mat < 0.05 & efs_p_mat >= 0.01, 
+                   paste0(efs_p_mat, "*"),
+                   efs_p_mat)
 # merge HR and p-valules in matrix
 for (i in 1:nrow(efs_mat)){
   
