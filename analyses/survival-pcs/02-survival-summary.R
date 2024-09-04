@@ -122,9 +122,10 @@ for (pc in pcs){
 
 # Create OS HR matrix
 
-merged_res <- Reduce(rbind, pc_res_list)
+merged_res <- Reduce(rbind, pc_res_list) 
 
 os_mat <- merged_res %>%
+  # remove NAs
   dplyr::select(group, OS_HR) %>%
   dplyr::mutate(PC = rep(c("PC1", "PC2", "PC3", "PC4", "PC5"), each = nrow(group_df))) %>%
   spread(PC, OS_HR) %>%
@@ -139,7 +140,7 @@ os_p_mat <- merged_res %>%
 os_p_mat <- as.matrix(os_p_mat)
 
 os_p_mat <- ifelse(os_p_mat >= 0.01, round(os_p_mat, 2),
-                   "<0.01")
+                   "<0.01*")
 
 efs_mat <- merged_res %>%
   dplyr::select(group, EFS_HR) %>%
@@ -156,7 +157,7 @@ efs_p_mat <- merged_res %>%
 efs_p_mat <- as.matrix(efs_p_mat)
 
 efs_p_mat <- ifelse(efs_p_mat >= 0.01, round(efs_p_mat, 2),
-                   "<0.01")
+                   "<0.01*")
 
 # merge HR and p-valules in matrix
 for (i in 1:nrow(efs_mat)){
@@ -174,7 +175,8 @@ for (i in 1:nrow(efs_mat)){
 }
 
 # plot OS and EFS HRs
-col_fun = colorRamp2(c(0, 0.5, 1), c("green", "white", "orangered"))
+col_fun_EFS = colorRamp2(c(min(efs_mat, na.rm = TRUE), max(efs_mat, na.rm = TRUE)), c("white", "orangered"))
+col_fun_OS = colorRamp2(c(min(os_mat, na.rm = TRUE), max(os_mat, na.rm = TRUE)), c("white", "orangered"))
 
 pdf(file.path(plots_dir, "EFS_PC_HR_matrix.pdf"),
     width = 9, height = 7)
@@ -184,7 +186,7 @@ Heatmap(efs_mat,
         cluster_rows = FALSE,
         cluster_columns = FALSE,
         rect_gp = gpar(col = "black", lwd = 2),
-        col = col_fun,
+        col = col_fun_EFS,
         cell_fun = function(j, i, x, y, width, height, fill) {
           grid.text(sprintf("%s", efs_p_mat[i, j]), x, y, gp = gpar(fontsize = 12))
         })
@@ -199,9 +201,10 @@ Heatmap(os_mat,
         cluster_rows = FALSE,
         cluster_columns = FALSE,
         rect_gp = gpar(col = "black", lwd = 2),
-        col = col_fun,
+        col = col_fun_OS,
         cell_fun = function(j, i, x, y, width, height, fill) {
           grid.text(sprintf("%s", os_p_mat[i, j]), x, y, gp = gpar(fontsize = 12))
         })
 
 dev.off()
+
