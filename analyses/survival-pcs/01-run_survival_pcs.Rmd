@@ -72,7 +72,10 @@ metadata <- metadata %>%
           extent_of_tumor_resection %in% c('Not Reported', "Unavailable") ~ NA_character_,
           extent_of_tumor_resection == "Not Applicable" ~ "No resection",
           TRUE ~ extent_of_tumor_resection
-        ))
+        )) %>%
+  dplyr::mutate(extent_of_tumor_resection = fct_relevel(extent_of_tumor_resection,
+                                                        c("Gross/Near total resection",
+                                                          "Partial resection", "Biopsy only")))
 ```
 
 Define variables (here, PC values from somalier)
@@ -144,7 +147,7 @@ for (var in variable){
       TRUE ~ NA_character_
     )) %>%
       dplyr::mutate(PC_group = factor(PC_group,
-                                      c(glue::glue("Low {var}"), glue::glue("High {var}"))))
+                                      c(glue::glue("High {var}"), glue::glue("Low {var}"))))
 
     if (group == "DIPG or DMG|Other high-grade glioma"){
       group_hist <- group_hist %>%
