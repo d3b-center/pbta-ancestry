@@ -2,6 +2,9 @@
 
 Ryan J. Corbett, Cricket C. Gullickson, Zhuangzhuang Geng, Miguel A. Brown, Bo Zhang, Chuwei Zhong, Nicholas Van Kuren, Antonia Chroni, Christopher Blackden, Ammar S. Naqvi, Alexa Plisiewicz, Sean McHugh, Emmett Drake, Kaitlin Lehmann, Tom B. Davidson, Michael Prados, Phillip B. Storm, Adam C. Resnick, Angela J. Waanders, Sebastian M. Waszak, Sabine Mueller, Jo Lynne Rokita, Cassie Kline
 
+This repository is no longer maintained.
+Please see https://github.com/rokitalab/pbta-genetic-ancestry for future updates.
+
 ### To reproduce the code in this repository
 
 1. Clone the repository:
@@ -32,6 +35,9 @@ docker exec -ti <CONTAINER_NAME> bash
 bash download_data.sh
 ```
 
+### Code Author
+Ryan Corbett ([@rjcorb](https://github.com/rjcorb))
+
 ### Contact
 
-For questions, please submit an issue or send an email to Ryan Corbett ([@rjcorb](https://github.com/rjcorb)): corbettr@chop.edu
+For questions, please submit an issue to https://github.com/rokitalab/pbta-genetic-ancestry.
